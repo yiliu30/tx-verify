@@ -568,6 +568,32 @@ The audit found a real dependency the README had not recorded:
 `Classical.choice`; nothing in the decoder reasons classically. It is listed as
 a documented exception with that reason rather than silently allowed.
 
+## Stage 37: distributed staging across lanes
+
+`Intel/LaneStaging.lean` gives the workgroup copy a per-lane reading: lane `l`
+moves the `c` words at `slm[dst + l * c]`, and the workgroup copy is the fold
+over lanes.
+
+The fold nests copies inside-out — lane 0 first, lane `l` last — which is
+exactly `copyStrided` with row stride and row length `c`:
+
+```lean
+def laneBlockFold ...
+theorem laneBlockFold_eq_copyStrided ...   -- no axioms: definitional
+theorem laneBlock_value ...                -- lane j's word i comes from the same offset
+theorem laneBlock_frame ...                -- nothing outside the slab moves
+theorem laneBlock_disjoint ...             -- an earlier lane's chunk is never clobbered
+```
+
+So stage 25's value and frame laws carry over verbatim, and the "one bulk
+copy" of stages 24/25 is now also a distribution with stated ownership. A fold
+that applied lane `l` first would write the same memory but would not line up
+with the strided copy's recursion — that ordering is what makes the
+identification definitional, and it is noted in the module.
+
+`#print axioms`: `laneBlockFold_eq_copyStrided` uses none; the rest only
+`[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -580,8 +606,9 @@ a documented exception with that reason rather than silently allowed.
   concrete quantum roundings including ties-to-even, but IEEE-754 subnormals
   and the fp16 exponent range are not modeled.
 - Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
-- Per-work-item staging schedules: the copies are workgroup-wide
-  instructions rather than a per-lane distribution.
+- Strided per-thread staging as SYCL-TLA's copy atoms use it: stage 37 models
+  a block distribution (lane `l` owns a contiguous chunk), not the interleaved
+  per-thread addressing.
 
 ## Build
 
@@ -628,4 +655,5 @@ lake build Intel
 33. Stage 33: executable smoke tests.
 34. Stage 34: exactness on a shared quantization grid.
 35. Stage 35: executable checks for the workgroup stages.
-36. Stage 36 (this PR): axiom audit over the whole stack.
+36. Stage 36: axiom audit over the whole stack.
+37. Stage 37 (this PR): distributed staging across lanes.
