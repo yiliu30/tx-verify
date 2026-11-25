@@ -64,8 +64,11 @@ on a silent assumption.
 
 1. **Memory model** — word-addressed, modelled `d32` accesses 4-byte aligned.
    Lives in `Intel/Asm.lean`. Not discharged.
-2. **One lane per data/control step** — SIMD masks and GRF regions are not
-   modelled. `Intel/Asm.lean`. Not discharged.
+2. **Lane dimension** — the machines are scalar. Stage 59 adds a SIMD layer
+   (`Intel/Simd.lean`): per-lane scalar states plus a mask, with predication
+   (`simdRun`), and `add_one_simd` lifting the stage-1 proof to every active
+   lane. Discharged in part — GRF regions and sub-group packing are not
+   modelled.
 3. **Uniform control flow** — `Intel/WControl.lean` gets it for free via a
    single predicate. Stage 58 states what it buys (`Intel/Divergence.lean`): a
    barrier retires only when every lane has parked, so one diverged lane leaves
@@ -1108,6 +1111,31 @@ control flow has to be uniform, and why stages 16/17 model it that way.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 59: a SIMD lane dimension
+
+Assumption 2 said there is one lane per step with no masks. `Intel/Simd.lean`
+adds the lane dimension *on top of* the scalar core rather than rebuilding it:
+
+```lean
+structure Simd where            -- width, per-lane scalar states, mask
+  width : Nat
+  lanes : Nat → State
+  mask : Nat → Bool
+def simdRun ...                 -- active lanes run, masked lanes are untouched
+theorem simdRun_active ...      -- an active lane is the scalar result
+theorem simdRun_masked ...      -- a masked lane is unchanged
+theorem add_one_simd ...        -- stage-1 correctness lifts to every active lane
+```
+
+Predication, not branching: `simdRun` runs the same instruction stream and
+gates lanes by mask. So the scalar theorems apply per lane instead of being
+re-derived — which is what the scalar model was for.
+
+Still not modelled, and stated: GRF regions and sub-group packing.
+
+`#print axioms`: the two `simdRun` lemmas use `[propext]`, `add_one_simd` uses
+`[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -1199,4 +1227,5 @@ lake build Intel
 55. Stage 55: why the barrier is necessary.
 56. Stage 56: the two scales agree.
 57. Stage 57: interleaved staging, covered.
-58. Stage 58 (this PR): what uniform control flow buys.
+58. Stage 58: what uniform control flow buys.
+59. Stage 59 (this PR): a SIMD lane dimension.
