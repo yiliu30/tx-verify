@@ -389,6 +389,33 @@ the layout a depth-`r` DPAS reads.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 29: a concrete rounding and its derived contract
+
+Stage 27 takes the per-step error `eps` as a hypothesis. `Intel/Rounding.lean`
+supplies a concrete rounding and derives it.
+
+```lean
+def truncQ (q : Nat) (x : Int) : Int      -- truncate toward zero to a multiple of q
+theorem truncQ_bound ... :                -- error strictly below q
+    (truncQ q x - x).natAbs < q
+theorem truncQ_one (z : Int) : truncQ 1 z = z
+def stepTrunc (q : Nat) ...               -- machine multiply-add with truncation
+theorem stepTrunc_contract ... :          -- meets the stage-27 contract, eps = q - 1
+    (stepTrunc q c x y - (c + x * y)).natAbs ≤ q - 1
+theorem truncDot_error ... :              -- accumulated bound
+    ... ≤ n * (q - 1)
+theorem truncDot_exact ...                -- q = 1 ⇒ exact
+```
+
+`#eval truncQ 8 37` is `32` and `#eval truncQ 8 (-37)` is `-32`, as a
+toward-zero truncation should be.
+
+The remaining assumption is now "the hardware truncates to the accumulator
+quantum" instead of an abstract error bound. IEEE-754 subnormals, ties-to-even
+and fp16 exponent range are still out of scope.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -397,8 +424,9 @@ the layout a depth-`r` DPAS reads.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
-- Bit-level fp16/bf16 rounding: the numeric layer takes the per-step error as
-  a stated hardware contract instead of deriving it.
+- Bit-level fp16/bf16 rounding: stage 29 derives the per-step error from a
+  truncating quantum, but IEEE-754 subnormals and ties-to-even are not
+  modeled.
 - Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
 - Per-work-item staging schedules: the copies are workgroup-wide
   instructions rather than a per-lane distribution.
@@ -440,4 +468,5 @@ lake build Intel
 25. Stage 25: the composed mainloop (stage, sync, DPAS).
 26. Stage 26: the full tile pipeline (mainloop + epilogue).
 27. Stage 27: rounding contract and accumulation error bound.
-28. Stage 28 (this PR): executed tail slab, so the pipeline covers every K.
+28. Stage 28: executed tail slab, so the pipeline covers every K.
+29. Stage 29 (this PR): concrete truncating rounding, deriving the contract.
