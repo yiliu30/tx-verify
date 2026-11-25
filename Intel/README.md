@@ -96,9 +96,10 @@ on a silent assumption.
 8. **Staging** — **discharged in both shapes**. Block distribution: stage 37.
    Interleaved: `copyInterleaved` (stage 50), residue-class disjointness
    (stage 51), and full slab coverage `lanesInterleaved_covers` (stage 57).
-9. **fp16 classes** — NaN and infinity carry a class but no payload;
-   subnormals are values in units of `2 ^ -24`. `Intel/Fp16Value.lean`,
-   `Intel/Fp16Scaled.lean`. Not discharged.
+9. **fp16 classes** — **discharged**. NaN carries a payload with a stated
+   propagation rule (`Fp16Value.lean`, stage 61); infinities carry a sign and
+   follow the same-sign/opposite-sign rule (stage 44); subnormals are values in
+   units of `2 ^ -24` (stage 46) tied to the numeric scale (stage 56).
 
 Assumption 7 is the one with real numeric content, and it is the one that has
 been reduced furthest: on a shared quantization grid the rounding is the
@@ -1158,6 +1159,27 @@ assumption.
 
 `#print axioms`: `[propext]` or `[propext, Quot.sound]` throughout.
 
+## Stage 61: NaN payloads
+
+The last fully-open ledger item. `Fval.nan` now carries a payload, and the step
+propagates it:
+
+```lean
+inductive Fval
+  | nan (payload : Nat)
+  | inf (neg : Bool)
+  | fin (v : Fixed)
+theorem vstep_nan_acc (pl) : vstep stepF (.nan pl) x y = .nan pl
+theorem vstep_nan_left (pl) : (vstep stepF (.nan pl) x y).isNan = true
+```
+
+The rule is stated, not assumed: the accumulator's payload wins, then the first
+operand's, then the second's. The isolation results of stage 44 are unchanged —
+a non-finite accumulator still never becomes finite — so nothing downstream
+moves.
+
+`#print axioms` on each reports only `[propext]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -1251,4 +1273,5 @@ lake build Intel
 57. Stage 57: interleaved staging, covered.
 58. Stage 58: what uniform control flow buys.
 59. Stage 59: a SIMD lane dimension.
-60. Stage 60 (this PR): memory-model laws.
+60. Stage 60: memory-model laws.
+61. Stage 61 (this PR): NaN payloads.
