@@ -708,6 +708,34 @@ separation law says the head cannot touch it.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 43: a bit-level fp16 encoding
+
+Stage 38 models `sign * mantissa * 2 ^ exponent` and takes the shape on faith.
+`Intel/Fp16Bits.lean` grounds it in the 16-bit layout: sign bit, 5-bit biased
+exponent, 10-bit mantissa.
+
+```lean
+abbrev Fp16 := BitVec 16
+def signBit / expField / mantField ...   -- the three fields
+def decode (w : Fp16) : Option Fixed     -- none for the out-of-scope classes
+theorem decode_some ...                  -- a successful decode pins the fields
+theorem decode_exp_ne ...                -- a decoded word is never NaN/Inf
+theorem fp16_bits_exact ...              -- decoded operands on a grid are exact
+```
+
+`decode` returns `none` for NaN, infinities, subnormals, and biased exponents
+below the bias (fractional values) — everything the development does not model.
+Everything else comes back with the implicit leading significand bit restored
+(`mant = 1024 + mantField`).
+
+`fp16_bits_exact` takes the exponent bound *at the bit level*
+(`e0 ≤ expField w - 15`) and uses `decode_some` to turn it into the `Fixed`
+bound stage 38 needs, so the hypotheses are load-bearing rather than decorative.
+
+`#eval decode 0x3C00` is `some { sign := false, mant := 1024, exp := 0 }` (1.0),
+`#eval decode 0x7C00` is `none` (+inf). `#print axioms` on each reports only
+`[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -716,9 +744,9 @@ separation law says the head cannot touch it.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
-- Bit-level fp16/bf16: stage 38 derives the shared-grid hypothesis from an
-  fp16-shaped value, but only for nonnegative exponents. Subnormals, NaN/Inf
-  and exponent overflow still need a real IEEE-754 value semantics.
+- IEEE-754 value semantics: stage 43 decodes the real 16-bit layout, but NaN,
+  infinities, subnormals and fractional values all decode to `none` rather than
+  to a value with those semantics.
 - Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
 - Strided per-thread staging as SYCL-TLA's copy atoms use it: stage 37 models
   a block distribution (lane `l` owns a contiguous chunk), not the interleaved
@@ -775,4 +803,5 @@ lake build Intel
 39. Stage 39: the epilogue is a frame-preserving write.
 40. Stage 40: one output buffer for all tiles (frame law).
 41. Stage 41: blocks are separated.
-42. Stage 42 (this PR): the shared buffer is complete.
+42. Stage 42: the shared buffer is complete.
+43. Stage 43 (this PR): a bit-level fp16 encoding.
