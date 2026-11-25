@@ -680,8 +680,31 @@ address arithmetic is the part stage 40 could not do with `BN ≤ ldC` alone:
 global columns reach `p.2 * BN + n`, so the bound has to be the matrix width,
 not the tile width.
 
-Still open and stated as such: `writeTiles_block` — that a word *inside* a
-block ends up holding that tile's accumulator.
+Stage 42 finishes the story: `writeTiles_block` shows that a word *inside* a
+block ends up holding that tile's accumulator, given separated blocks and
+distinct origins.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
+## Stage 42: the shared buffer is complete
+
+`writeTiles_block` closes the other half:
+
+```lean
+theorem writeTiles_block ... :
+    -- separated blocks, distinct origins, p in the list
+    writeTiles ... origins mem (sliceAddr ... p m n) = acc p.1 p.2 m n
+```
+
+Together with `writeTiles_frame`, writing the tiles in sequence into one `C`
+gives every tile its own block and disturbs nothing outside the blocks — the
+stage-23 functional stitching is now a special case rather than the only
+option.
+
+The proof is an induction on the origin list. For the head tile it uses the
+epilogue's own correctness for its block and the frame law for the rest; for a
+tile in the tail it uses the induction hypothesis directly, because the
+separation law says the head cannot touch it.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
@@ -751,4 +774,5 @@ lake build Intel
 38. Stage 38: fp16-shaped values on a shared grid.
 39. Stage 39: the epilogue is a frame-preserving write.
 40. Stage 40: one output buffer for all tiles (frame law).
-41. Stage 41 (this PR): blocks are separated.
+41. Stage 41: blocks are separated.
+42. Stage 42 (this PR): the shared buffer is complete.

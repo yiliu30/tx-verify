@@ -18,14 +18,17 @@ nothing else.
 - `writeTiles`: fold the per-tile epilogues over a list of tile origins.
 - `writeTiles_frame`: a word outside every block is left alone by the whole
   fold.
+- `writeTiles_block`: a word inside tile `p`'s block holds `p`'s accumulator.
 
 `Separated` states that different tile origins never share a block address.
 `separated_of_width` derives it from the matrix width: a matrix of width `N`
 with `N ≤ ldC` whose tile blocks fit inside `N`.
 
-Still open, and stated as such: that a word *inside* a block ends up holding
-that tile's accumulator (`writeTiles_block`). That proof is in progress and is
-not claimed here.
+- `writeTiles_block`: a word inside tile `p`'s block holds `p`'s accumulator
+  after the fold, given separated blocks and distinct origins.
+
+So the tiles really do share one buffer: each block ends up with its own
+accumulator, and nothing outside the blocks moves.
 -/
 
 namespace IntelGpu
@@ -141,5 +144,59 @@ theorem separated_of_width (base ldC BM BN N : Nat)
   obtain ⟨hc, _⟩ := mul_add_inj BN n n' p.2 q.2 hn hn' hcols
   exact hpq (Prod.ext hr hc)
 
+
+
+/-- A word inside tile `p`'s block holds `p`'s accumulator after the fold, given
+separated blocks and distinct origins. -/
+theorem writeTiles_block (base ldC BM BN : Nat) (hBN : 0 < BN)
+    (hldC : BN ≤ ldC) (acc : Nat → Nat → Nat → Nat → Word) (origins : List (Nat × Nat))
+    (hsep : Separated base ldC BM BN origins) (hnd : origins.Nodup) :
+    ∀ (mem : Nat → Word) (p : Nat × Nat), p ∈ origins → ∀ m < BM, ∀ n < BN,
+      writeTiles base ldC BM BN acc origins mem (sliceAddr base ldC BM BN p m n) =
+        acc p.1 p.2 m n := by
+  intro mem p
+  induction origins generalizing mem with
+  | nil => intro hp; exact absurd hp (List.not_mem_nil)
+  | cons q rest ih =>
+      intro hp m hm n hn
+      have hnd' := List.nodup_cons.mp hnd
+      have hq_notin : q ∉ rest := hnd'.1
+      have hnd_rest : rest.Nodup := hnd'.2
+      have hsep_rest : Separated base ldC BM BN rest := by
+        intro a ha b hb hab m' hm' n' hn' m'' hm'' n'' hn''
+        exact hsep a (List.mem_cons_of_mem q ha) b (List.mem_cons_of_mem q hb) hab
+          m' hm' n' hn' m'' hm'' n'' hn''
+      have hstep : writeTiles base ldC BM BN acc (q :: rest) mem =
+          writeTiles base ldC BM BN acc rest (tileEpilogue base ldC BM BN acc mem q) := rfl
+      rw [hstep]
+      by_cases hpq : p = q
+      · subst p
+        have hwritten : tileEpilogue base ldC BM BN acc mem q
+            (sliceAddr base ldC BM BN q m n) = acc q.1 q.2 m n := by
+          have hb := (epilogueLd_correct (base + q.1 * BM * ldC + q.2 * BN) ldC BN BM
+            hBN hldC mem (acc q.1 q.2)).2 m hm n hn
+          have hconv : sliceAddr base ldC BM BN q m n =
+              base + q.1 * BM * ldC + q.2 * BN + m * ldC + n :=
+            sliceAddr_eq base ldC BM BN q m n
+          rw [hconv]
+          exact hb
+        have htail : writeTiles base ldC BM BN acc rest
+            (tileEpilogue base ldC BM BN acc mem q) (sliceAddr base ldC BM BN q m n) =
+            tileEpilogue base ldC BM BN acc mem q (sliceAddr base ldC BM BN q m n) :=
+          writeTiles_frame base ldC BM BN hBN hldC acc rest
+            (tileEpilogue base ldC BM BN acc mem q) (sliceAddr base ldC BM BN q m n) (by
+              intro r hr m' hm' n' hn'
+              have hrq : r ≠ q := by
+                intro h
+                exact hq_notin (h ▸ hr)
+              exact hsep q List.mem_cons_self r (List.mem_cons_of_mem q hr) (Ne.symm hrq)
+                m hm n hn m' hm' n' hn')
+        rw [htail]
+        exact hwritten
+      · have hp' : p ∈ rest := by
+          rcases List.mem_cons.mp hp with h | h
+          · exact absurd h hpq
+          · exact h
+        exact ih hsep_rest hnd_rest (tileEpilogue base ldC BM BN acc mem q) hp' m hm n hn
 
 end IntelGpu
