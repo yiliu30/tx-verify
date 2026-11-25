@@ -84,11 +84,9 @@ on a silent assumption.
 7. **Accumulator rounding** — nearest, ties to even, on the accumulator
    quantum. `Intel/NumericBridge.lean` (`hstep`). Discharged on a shared grid
    (stage 34); bounded by `n * (q / 2)` off it (stages 30-32).
-8. **Staging** — `Intel/LaneStaging.lean` models a per-lane block distribution
-   (contiguous chunks). Stage 50 adds the interleaved copy primitive
-   (`copyInterleaved`, lane `l` taking words `l, l + L, l + 2L, ...`) and the
-   residue-class disjointness that interleaving needs (`lane_mod`, stage 51).
-   Proving that the lane fold *covers* the slab is still open.
+8. **Staging** — **discharged in both shapes**. Block distribution: stage 37.
+   Interleaved: `copyInterleaved` (stage 50), residue-class disjointness
+   (stage 51), and full slab coverage `lanesInterleaved_covers` (stage 57).
 9. **fp16 classes** — NaN and infinity carry a class but no payload;
    subnormals are values in units of `2 ^ -24`. `Intel/Fp16Value.lean`,
    `Intel/Fp16Scaled.lean`. Not discharged.
@@ -1060,6 +1058,34 @@ guarantee, and the module says so rather than pretending they are free.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 57: interleaved staging, covered
+
+The last blocked proof in the ledger. `Intel/InterleavedLanes.lean` now has:
+
+```lean
+theorem lanesInterleaved_frame ...   -- the fold leaves other words alone
+theorem lanesInterleaved_value ...   -- lane l's word t comes from source t
+theorem lanesInterleaved_covers ... :
+    -- L lanes of n words at stride L fill [dst, dst + L * n)
+    ∀ k < L * n, lanesInterleaved ... L (dst + k) = srcMem (src + k)
+```
+
+So assumption 8 is discharged in both shapes: contiguous chunks (stage 37) and
+interleaved per-thread words (here), each with proven coverage.
+
+It took six attempts. The fixes, in order of how much they mattered:
+
+1. generalise the starting memory in the induction, as `laneBlockFold` needed;
+2. apply the induction hypothesis with `exact ih …`, never `rw [ih …]`;
+3. `simpa [Nat.add_assoc]` whenever the goal and lemma disagree on
+   parenthesisation;
+4. `Nat.div_lt_iff_lt_mul` wants `k < n * L`, not `L * n`;
+5. `Nat.add_mul_mod_self_left` wants `l + L * t`, not `l + t * L` (stage 51).
+
+Every failure was one of these five, and each cost an iteration because I fixed
+it at the use site instead of understanding it first. `#eval` on the definition
+(stage 55) ruled out the definition being wrong.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -1149,4 +1175,5 @@ lake build Intel
 53. Stage 53: known-answer tests for an fp16 dot.
 54. Stage 54: the headline table regenerates itself.
 55. Stage 55: why the barrier is necessary.
-56. Stage 56 (this PR): the two scales agree.
+56. Stage 56: the two scales agree.
+57. Stage 57 (this PR): interleaved staging, covered.
