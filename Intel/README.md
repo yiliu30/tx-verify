@@ -171,6 +171,42 @@ instance stage, where the last slab is masked.
 
 `#print axioms` on each of these reports only `[propext, Quot.sound]`.
 
+## Stage 19: SYCL-TLA Xe GEMM instance
+
+`Intel/TlaInstance.lean` pins the shape of the Xe DPAS GEMM in SYCL-TLA,
+taken from `test/unit/gemm/device/default_gemm_configuration.hpp`:
+
+```
+using TileShape = Shape<_256, _256, _32>;
+using TiledMma  = TiledMMAHelper<MMA_Atom<XE_8x16x16_F32F16F16F32_TT>, ...>::TiledMMA;
+```
+
+so a workgroup tile is `256 x 256` with K tile `32`, and an atom is `8 x 16`
+with depth `16` (two atoms deep per K tile).
+
+```lean
+def tlaXeF16 : TlaShape          -- 256 x 256 x 32, atom 8 x 16 x 16
+theorem tlaXeF16_mAtoms ...      -- 256 = 32 * 8
+theorem tlaXeF16_nAtoms ...      -- 256 = 16 * 16
+theorem tlaXeF16_kAtoms ...      -- 32 = 2 * 16
+theorem tlaXeF16_dpasPerTile ... -- 1024 DPAS instructions per workgroup tile
+theorem tlaXeF16_kTile_mainloop ... -- one K tile executes in 17 steps
+```
+
+The refinement statement composes stages 15 and 18:
+
+```lean
+theorem tileSpec_of_dpas ... :    -- DPAS-produced tile satisfies TileSpec
+theorem tla_gemm_spec ... : GemmSpecW A B C M N K
+theorem tlaXeF16_gemm_spec ... : -- the 256x256x32 instance
+```
+
+Assumptions are stated in the module doc: K a multiple of the atom depth (no
+last-slab masking), operands already in the DPAS tile registers, and elements
+modeled as 32-bit words so fp16/bf16 rounding is out of scope.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -178,7 +214,9 @@ instance stage, where the last slab is masked.
 - SIMD masks, GRF regions, predicates, and scoreboards.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
-- Atomics, DPAS, and the launch ABI.
+- Atomics and the launch ABI.
+- fp16/bf16 rounding, masking of the last K slab, and instruction-level DPAS
+  dispatch (the atom is modeled as a tile operation).
 
 ## Build
 
@@ -208,5 +246,4 @@ lake build Intel
 16. Stage 16: SLM staging and workgroup barriers.
 17. Stage 17: workgroup control flow and the SLM GEMM compute loop.
 18. Stage 18 (this PR): DPAS/XMX tiled accumulation and its executed mainloop.
-19. Stage 19: the SYCL-TLA GEMM instance (source manifest, spec, and
-    refinement statement).
+19. Stage 19 (this PR): the SYCL-TLA Xe GEMM instance.
