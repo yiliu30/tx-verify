@@ -131,6 +131,8 @@ def main() -> int:
                         help="extra Module,theorem entries to audit")
     parser.add_argument("--all", action="store_true",
                         help="audit every theorem in every Intel module, not just the headlines")
+    parser.add_argument("--md", action="store_true",
+                        help="emit the curated stage table as Markdown")
     args = parser.parse_args()
 
     if args.all:
@@ -158,6 +160,20 @@ def main() -> int:
             print(f"{len(bad)} dirty of {count} theorems")
             return 1
         print(f"OK: all {count} theorems, {len(known)} documented exception(s)")
+        return 0
+
+    if args.md:
+        print("| # | Module | Headline theorem | Axioms |")
+        print("|---|---|---|---|")
+        for n, (module, theorem) in enumerate(THEOREMS, start=1):
+            axes = axioms_of(module, theorem)
+            if axes is None:
+                status = "missing"
+            elif axes - ALLOWED:
+                status = ", ".join(sorted(axes - ALLOWED))
+            else:
+                status = ", ".join(sorted(axes)) or "none"
+            print(f"| {n} | `{module}` | `{theorem.split('.')[-1]}` | {status} |")
         return 0
 
     entries = list(THEOREMS)

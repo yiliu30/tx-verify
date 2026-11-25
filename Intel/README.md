@@ -3,7 +3,58 @@
 A staged Lean verification effort toward a SYCL-TLA GEMM kernel. Stage 1 built
 the ISA core; later stages add the GEMM spec, the IGC parser, tiling, SLM,
 DPAS, the SYCL-TLA instance, the numeric layer and the fp16 encoding. The
-roadmap at the end lists all 47 stages.
+roadmap at the end lists all 54 stages.
+
+## Audited headline theorems
+
+`python3 Tools/check_axioms.py --md` regenerates this table. It is a curated
+subset — one headline per layer — not every stage, and the numbers are table
+entries, not stage numbers. The full sweep is `--all`.
+
+| # | Module | Headline theorem | Axioms |
+|---|---|---|---|
+| 1 | `Intel.AddOne` | `core_correct` | Quot.sound, propext |
+| 2 | `Intel.Gemm` | `gemmRun_acc` | propext |
+| 3 | `Intel.GemmBody` | `gemmBody_correct` | Quot.sound, propext |
+| 4 | `Intel.Examples.GemmLoopDecoded` | `decode_gemmLoop` | Classical.choice |
+| 5 | `Intel.GemmControl` | `gemmBodyD_correct` | Quot.sound, propext |
+| 6 | `Intel.GemmLoop` | `dotProgram_correct` | Quot.sound, propext |
+| 7 | `Intel.Address` | `gemmMemoryBody_correct` | Quot.sound, propext |
+| 8 | `Intel.GemmMemoryLoop` | `mProgram_correct` | Quot.sound, propext |
+| 9 | `Intel.GemmMatrix` | `mProgram_matrix` | Quot.sound, propext |
+| 10 | `Intel.GemmTiling` | `gemmSpecW_of_tiles` | Quot.sound, propext |
+| 11 | `Intel.GemmScheduler` | `mem_tileSchedule_of_lt` | Quot.sound, propext |
+| 12 | `Intel.GemmScheduleProof` | `gemmSpecW_of_schedule` | Quot.sound, propext |
+| 13 | `Intel.GemmSlm` | `gemmTile_slm_correct` | Quot.sound, propext |
+| 14 | `Intel.GemmSlmCompute` | `gemmTile_executed` | Quot.sound, propext |
+| 15 | `Intel.Dpas` | `dpasRun_correct` | Quot.sound, propext |
+| 16 | `Intel.GemmDpasLoop` | `dpasProg_correct` | Quot.sound, propext |
+| 17 | `Intel.TlaInstance` | `tlaXeF16_gemm_spec` | Quot.sound, propext |
+| 18 | `Intel.DpasAtom` | `dpasSlab_two_atoms` | Quot.sound, propext |
+| 19 | `Intel.DpasMask` | `tlaXeF16_gemm_spec_tail` | Quot.sound, propext |
+| 20 | `Intel.Epilogue` | `gemmTile_end_to_end` | Quot.sound, propext |
+| 21 | `Intel.EpilogueLd` | `epilogueLd_correct` | Quot.sound, propext |
+| 22 | `Intel.EpilogueFrame` | `epilogueLd_frame` | Quot.sound, propext |
+| 23 | `Intel.SharedBuffer` | `writeTiles_frame` | Quot.sound, propext |
+| 24 | `Intel.SharedBuffer` | `separated_of_width` | Quot.sound, propext |
+| 25 | `Intel.SharedBuffer` | `writeTiles_block` | Quot.sound, propext |
+| 26 | `Intel.GemmAssembly` | `tlaXeF16_gemm_executed` | Quot.sound, propext |
+| 27 | `Intel.Staging` | `stageSlab_correct` | Quot.sound, propext |
+| 28 | `Intel.Mainloop` | `mainloop_correct` | Quot.sound, propext |
+| 29 | `Intel.LaneStaging` | `laneBlock_value` | Quot.sound, propext |
+| 30 | `Intel.Interleaved` | `copyInterleaved_value` | Quot.sound, propext |
+| 31 | `Intel.InterleavedLanes` | `lane_mod` | Quot.sound, propext |
+| 32 | `Intel.TilePipeline` | `mainloop_epilogue` | Quot.sound, propext |
+| 33 | `Intel.Numeric` | `maccDot_error` | Quot.sound, propext |
+| 34 | `Intel.Rounding` | `truncDot_error` | Quot.sound, propext |
+| 35 | `Intel.RoundingNearest` | `roundDot_error` | Quot.sound, propext |
+| 36 | `Intel.RoundingEven` | `evenDot_error` | Quot.sound, propext |
+| 37 | `Intel.NumericBridge` | `wpDot_error` | Quot.sound, propext |
+| 38 | `Intel.Exactness` | `evenDot_exact_on_grid` | Quot.sound, propext |
+| 39 | `Intel.Fp16Shape` | `fp16_grid_exact_of_exp` | Quot.sound, propext |
+| 40 | `Intel.Fp16Bits` | `fp16_bits_exact` | Quot.sound, propext |
+| 41 | `Intel.Fp16Value` | `foldVal_fin` | propext |
+| 42 | `Intel.Fp16Scaled` | `scaled_normal` | Quot.sound, propext |
 
 ## Assumption ledger
 
@@ -942,6 +993,25 @@ One test I wrote was **wrong** and `decide` refused it: I expected
 the sign lives in `Fixed.sign`, not in `scaled`. The test now records the
 actual behaviour and says why. That is exactly what these tests are for.
 
+## Stage 54: the headline table regenerates itself
+
+The README now carries a table of the audited headline theorems with their axiom
+footprints, and `python3 Tools/check_axioms.py --md` regenerates it:
+
+```
+| # | Module | Headline theorem | Axioms |
+|---|---|---|---|
+| 1 | `Intel.AddOne` | `core_correct` | Quot.sound, propext |
+...
+| 4 | `Intel.Examples.GemmLoopDecoded` | `decode_gemmLoop` | Classical.choice |
+```
+
+Every row is `[propext]`, `[propext, Quot.sound]`, or the one documented
+`Classical.choice` exception. The table is a curated subset — one headline per
+layer — and says so; the numbers are table entries, not stage numbers, which the
+caption also says because my first version labelled them "Stage" and would have
+misled a reader.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -1027,4 +1097,5 @@ lake build Intel
 50. Stage 50: interleaved copies.
 51. Stage 51: residue classes for interleaved lanes.
 52. Stage 52: the audit covers every theorem.
-53. Stage 53 (this PR): known-answer tests for an fp16 dot.
+53. Stage 53: known-answer tests for an fp16 dot.
+54. Stage 54 (this PR): the headline table regenerates itself.
