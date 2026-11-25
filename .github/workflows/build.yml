@@ -16,4 +16,4 @@ jobs:
           build-args: Intel
 
       - name: Axiom audit
-        run: python3 Tools/check_axioms.py
+        run: python3 Tools/check_axioms.py --all

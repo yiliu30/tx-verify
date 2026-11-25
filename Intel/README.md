@@ -44,8 +44,10 @@ been reduced furthest: on a shared quantization grid the rounding is the
 identity (stage 34), so exactness holds outright; off the grid the error is
 bounded by `n * (q / 2)` (stages 30-32).
 
-`python3 Tools/check_axioms.py` audits the headline theorem of every stage;
-`.github/workflows/build.yml` runs it on every push and pull request.
+`python3 Tools/check_axioms.py --all` audits **every** theorem in every Intel
+module — 200 of them — and `.github/workflows/build.yml` runs that on every push
+and pull request. The curated default (one headline per stage) is the quick
+check; `--all` is the gate.
 
 ## What is modeled (stage 1)
 
@@ -907,6 +909,25 @@ as discharged up to the residue argument and no further.
 
 `#print axioms lane_mod` reports only `[propext, Quot.sound]`.
 
+## Stage 52: the audit covers every theorem
+
+Stage 36 audited one headline theorem per stage. This stage audits all of them:
+
+```
+$ python3 Tools/check_axioms.py --all
+KNOWN: IntelGpu.decode_gemmLoop also depends on Classical.choice (documented)
+OK: all 200 theorems, 1 documented exception(s)
+```
+
+Discovery walks `Intel/**/*.lean` and runs `#print axioms` once per module, so a
+dirty lemma anywhere — not just at a headline — fails the gate. The workflow now
+runs `--all`.
+
+Two things this caught in itself: the first sweep silently skipped
+`Intel/Examples/` (so the one known exception vanished from the report), and the
+helper had a 105-column line. Both fixed before the run that produced the result
+above.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -990,4 +1011,5 @@ lake build Intel
 48. Stage 48: consolidate the assumption ledger.
 49. Stage 49: DPAS at instruction granularity.
 50. Stage 50: interleaved copies.
-51. Stage 51 (this PR): residue classes for interleaved lanes.
+51. Stage 51: residue classes for interleaved lanes.
+52. Stage 52 (this PR): the audit covers every theorem.
