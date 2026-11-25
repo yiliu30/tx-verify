@@ -370,6 +370,25 @@ and reusable.
 `#print axioms` on these reports only `[propext, Quot.sound]` (`maccDot_zero_error`
 uses no axioms).
 
+## Stage 28: executed tail slab
+
+The stage-25 mainloop needs `K = T * d`. `Intel/MainloopTail.lean` adds the
+partial last slab, so the executed pipeline covers every depth `K`:
+
+```lean
+def tailProg (t r : Nat)          -- stage A tail, stage B tail, barrier, depth-r DPAS
+theorem stagedTail_A ...          -- SLM holds A[i + m][t*d + k] in the tail layout
+theorem stagedTail_B ...
+theorem tail_correct ...          -- depth-r tail on top of a depth-t*d accumulator
+theorem mainloop_tail_correct ... :
+    T full slabs then a depth-r tail give dotMat at depth T * d + r
+```
+
+The tail keeps its own SLM layout (`m * r + k`, `M * r + k * N + n`), which is
+the layout a depth-`r` DPAS reads.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -420,4 +439,5 @@ lake build Intel
 24. Stage 24: operand staging from global memory into SLM.
 25. Stage 25: the composed mainloop (stage, sync, DPAS).
 26. Stage 26: the full tile pipeline (mainloop + epilogue).
-27. Stage 27 (this PR): rounding contract and accumulation error bound.
+27. Stage 27: rounding contract and accumulation error bound.
+28. Stage 28 (this PR): executed tail slab, so the pipeline covers every K.
