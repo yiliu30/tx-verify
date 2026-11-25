@@ -63,13 +63,48 @@ SYCL-TLA tile/DPAS kernel are later stages.
 `Intel/Examples/GemmLoop.lean`, and `--check` verifies the generated file is
 current. Operands remain raw strings; decoding is the next stage.
 
+## Stage 16: SLM staging and workgroup barriers
+
+`Intel/Slm.lean` adds a two-lane workgroup machine over word-indexed global
+memory plus shared local memory:
+
+```lean
+structure WState where
+  lanes : Nat → Lane   -- regs, global pointer, SLM pointer, done
+  mem : Nat → Word
+  slm : SLM
+  phase : Nat
+```
+
+`barrier` retires only when no lane has finished early (`barrierOK`) and bumps
+`phase`; a lane that already executed `eot` leaves the barrier stuck, which is
+the modeled deadlock symptom for divergent exit.
+
+`Intel/GemmSlm.lean` uses GEMM as the worked example. Lane 0 stages A row 0
+into SLM words `[0, K)`, lane 1 stages A row 1 into `[K, 2K)`, the workgroup
+hits a barrier, and the compute phase reads the staged tile:
+
+```lean
+theorem stageProg_correct ... : StageInv K K mem (wrun s (stageProg K))
+theorem stageBarrier_correct ... :
+    let s' := wrun s (stageProg K ++ [.barrier])
+    s'.phase = 1 ∧ s'.mem = mem ∧ ...   -- staged tile readable by the group
+theorem lane0_reads_lane1 ...           -- lane 0 reads lane 1's staged row
+theorem gemmTile_slm_correct ... :
+    ∀ l < 2, dotRange (fun t => s'.slm (l * K + t)) (fun t => B t 0) 0 K =
+      dotMat A B l 0 K
+```
+
+`#print axioms` on each of these reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
 - The compiler-generated prolog and global-id / address computation.
 - SIMD masks, GRF regions, predicates, and scoreboards.
 - SEND/EOT details beyond a halted flag.
-- SLM, barriers, atomics, DPAS, and the launch ABI.
+- SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
+- Atomics, DPAS, and the launch ABI.
 
 ## Build
 
@@ -95,6 +130,7 @@ lake build Intel
 12. Stage 12: matrix GEMM specification.
 13. Stage 13: GEMM tiling and tile coverage.
 14. Stage 14: tile scheduler enumeration.
-15. Stage 15 (this PR): scheduled-tile correctness and global composition.
-16. Stage 16: SLM/barrier semantics.
-17. Stage 17: DPAS and SYCL-TLA GEMM instance.
+15. Stage 15: scheduled-tile correctness and global composition.
+16. Stage 16 (this PR): SLM staging and workgroup barriers.
+17. Stage 17: workgroup control flow and the SLM GEMM compute loop.
+18. Stage 18: DPAS/XMX and the SYCL-TLA GEMM instance.
