@@ -70,6 +70,7 @@ THEOREMS = [
     ("Intel.Fp16Shape", "IntelGpu.fp16_grid_exact_of_exp"),
     ("Intel.Fp16Bits", "IntelGpu.fp16_bits_exact"),
     ("Intel.Fp16Value", "IntelGpu.foldVal_fin"),
+    ("Intel.Fp16Scaled", "IntelGpu.scaled_normal"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
