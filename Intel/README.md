@@ -85,5 +85,6 @@ lake build Intel
 2. Stage 2: GEMM specification and loop invariant.
 3. Stage 3: GEMM loop-body semantics.
 4. Stage 4 (this PR): IGC syntax and parser.
-5. Stage 5: IGC operand decoding and loop control.
-6. Stage 6: SYCL-TLA GEMM instance.
+5. Stage 5 (this PR): typed IGC operand decoding.
+6. Stage 6: IGC loop control and full GEMM proof.
+7. Stage 7: SYCL-TLA GEMM instance.
