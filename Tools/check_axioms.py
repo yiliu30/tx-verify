@@ -62,6 +62,7 @@ THEOREMS = [
     ("Intel.Mainloop", "IntelGpu.mainloop_correct"),
     ("Intel.LaneStaging", "IntelGpu.laneBlock_value"),
     ("Intel.Interleaved", "IntelGpu.copyInterleaved_value"),
+    ("Intel.InterleavedLanes", "IntelGpu.lane_mod"),
     ("Intel.TilePipeline", "IntelGpu.mainloop_epilogue"),
     ("Intel.Numeric", "IntelGpu.maccDot_error"),
     ("Intel.Rounding", "IntelGpu.truncDot_error"),

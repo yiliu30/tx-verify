@@ -32,9 +32,9 @@ on a silent assumption.
    (stage 34); bounded by `n * (q / 2)` off it (stages 30-32).
 8. **Staging** — `Intel/LaneStaging.lean` models a per-lane block distribution
    (contiguous chunks). Stage 50 adds the interleaved copy primitive
-   (`copyInterleaved`, lane `l` taking words `l, l + L, l + 2L, ...`), so this
-   is discharged in part; composing lanes into a workgroup copy and proving
-   coverage is still open.
+   (`copyInterleaved`, lane `l` taking words `l, l + L, l + 2L, ...`) and the
+   residue-class disjointness that interleaving needs (`lane_mod`, stage 51).
+   Proving that the lane fold *covers* the slab is still open.
 9. **fp16 classes** — NaN and infinity carry a class but no payload;
    subnormals are values in units of `2 ^ -24`. `Intel/Fp16Value.lean`,
    `Intel/Fp16Scaled.lean`. Not discharged.
@@ -889,6 +889,24 @@ overclaiming again.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 51: residue classes for interleaved lanes
+
+```lean
+theorem lane_mod (L : Nat) :
+    ∀ l l' t t', l < L → l' < L → l + t * L = l' + t' * L → l = l'
+def lanesInterleaved ...        -- the workgroup copy, folded over lanes
+```
+
+Two lanes below `L` write different residue classes, so an interleaved copy can
+never have two lanes collide: every earlier attempt to prove slab coverage died
+on exactly this step.
+
+Not proved: that the fold covers the slab. The residue argument is in place and
+the fold induction that consumes it is not, so the ledger records assumption 8
+as discharged up to the residue argument and no further.
+
+`#print axioms lane_mod` reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -971,4 +989,5 @@ lake build Intel
 47. Stage 47: executable checks for the fp16 path.
 48. Stage 48: consolidate the assumption ledger.
 49. Stage 49: DPAS at instruction granularity.
-50. Stage 50 (this PR): interleaved copies.
+50. Stage 50: interleaved copies.
+51. Stage 51 (this PR): residue classes for interleaved lanes.
