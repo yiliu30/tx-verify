@@ -546,6 +546,28 @@ Lane 1 computing `138` rather than `88` is the model behaving correctly: each
 lane reads its own staged row. I got that wrong when writing the test and
 `#eval` corrected me, which is the point of having executable checks.
 
+## Stage 36: an axiom audit over the whole stack
+
+Every stage advertises an axiom footprint. `Tools/check_axioms.py` checks that
+claim mechanically over one headline theorem per stage:
+
+```bash
+python3 Tools/check_axioms.py
+# OK: 30 theorems, 1 documented exception(s), axioms within {Quot.sound, propext}
+```
+
+It writes a temporary Lean file per theorem and parses `#print axioms`, so a
+regression shows up as a build-time failure rather than a stale claim. One
+Lean run per theorem is deliberate: `Intel.GemmLoop` and
+`Intel.GemmMemoryLoop` both define `dotRange`, so importing them into one
+environment fails.
+
+The audit found a real dependency the README had not recorded:
+`IntelGpu.decode_gemmLoop` (stage 5) uses `Classical.choice`. The cause is
+`String.toList` in Lean's core library, which is itself proved with
+`Classical.choice`; nothing in the decoder reasons classically. It is listed as
+a documented exception with that reason rather than silently allowed.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -605,4 +627,5 @@ lake build Intel
 32. Stage 32: bridging word arithmetic to the numeric bound.
 33. Stage 33: executable smoke tests.
 34. Stage 34: exactness on a shared quantization grid.
-35. Stage 35 (this PR): executable checks for the workgroup stages.
+35. Stage 35: executable checks for the workgroup stages.
+36. Stage 36 (this PR): axiom audit over the whole stack.
