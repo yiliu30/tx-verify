@@ -623,6 +623,22 @@ fractional values), NaN/Inf, and exponent overflow.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 39: the epilogue is a frame-preserving write
+
+Stage 22 proves what the epilogue writes; `Intel/EpilogueFrame.lean` proves what
+it does not touch. That is what a shared output buffer needs — writing tile
+after tile into one `C` cannot disturb a tile already written.
+
+```lean
+structure LInvF ...              -- the stage-22 invariant plus a frame field
+theorem lstep_iter_frame ...     -- one iteration keeps the block and the frame
+theorem epilogueLd_frame ... :
+    -- a outside the M x N block ⇒ the epilogue leaves mem a alone
+    ... .mem a = mem a
+```
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -686,4 +702,5 @@ lake build Intel
 35. Stage 35: executable checks for the workgroup stages.
 36. Stage 36: axiom audit over the whole stack.
 37. Stage 37: distributed staging across lanes.
-38. Stage 38 (this PR): fp16-shaped values on a shared grid.
+38. Stage 38: fp16-shaped values on a shared grid.
+39. Stage 39 (this PR): the epilogue is a frame-preserving write.
