@@ -35,6 +35,8 @@ structure State where
 inductive Instr where
   | load32 (dst addrReg : Nat)
   | addImm (dst src : Nat) (imm : Word)
+  | add (dst src1 src2 : Nat)
+  | mul (dst src1 src2 : Nat)
   | store32 (addrReg src : Nat)
   | eot
   deriving Repr
@@ -65,6 +67,12 @@ def step : State → Instr → State
           if r = dst then load32 s.mem (s.addrRegs addrReg).toNat else s.regs r }
   | s, .addImm dst src imm =>
       { s with regs := fun r => if r = dst then s.regs src + imm else s.regs r }
+  | s, .add dst src1 src2 =>
+      { s with regs := fun r =>
+          if r = dst then s.regs src1 + s.regs src2 else s.regs r }
+  | s, .mul dst src1 src2 =>
+      { s with regs := fun r =>
+          if r = dst then s.regs src1 * s.regs src2 else s.regs r }
   | s, .store32 addrReg src =>
       { s with mem := store32 s.mem (s.addrRegs addrReg).toNat (s.regs src) }
   | s, .eot => { s with halted := true }
