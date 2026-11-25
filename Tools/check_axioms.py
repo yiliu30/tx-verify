@@ -48,6 +48,7 @@ THEOREMS = [
     ("Intel.SlmLatency", "IntelGpu.fresh_with_barrier"),
     ("Intel.Divergence", "IntelGpu.barrier_needs_all_lanes"),
     ("Intel.Simd", "IntelGpu.add_one_simd"),
+    ("Intel.MemoryLaws", "IntelGpu.store32_store32_commute"),
     ("Intel.GemmSlmCompute", "IntelGpu.gemmTile_executed"),
     ("Intel.Dpas", "IntelGpu.dpasRun_correct"),
     ("Intel.GemmDpasLoop", "IntelGpu.dpasProg_correct"),
