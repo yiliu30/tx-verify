@@ -464,6 +464,30 @@ untouched.
 `#print axioms` on `roundEven_bound` and `evenDot_error` reports only
 `[propext, Quot.sound]`; the branch lemmas use no axioms at all.
 
+## Stage 32: from word arithmetic to the numeric bound
+
+Stages 27-31 bound an accumulation over `Int`; the machines compute over
+`Word`. `Intel/NumericBridge.lean` connects them.
+
+```lean
+def wpDot ...                        -- depth-ordered accumulation over Word
+theorem wpDot_toInt ... :            -- equality: the reading of the word run is
+    toInt (wpDot step a b acc n) =   --   the stage-31 machine accumulation
+      maccDot (stepEven q) ... n
+theorem wpDot_error ... :            -- error at most n * (q / 2)
+    ... ≤ n * (q / 2)
+theorem dpasWord_error ... :         -- T slabs of depth d: T * d * (q / 2)
+    ... ≤ T * d * (q / 2)
+```
+
+`wpDot_toInt` is an equality, not a bound: if the word step implements
+ties-to-even rounding on the signed reading (`hstep`), the word accumulation
+*is* the machine accumulation of stage 31, and the error bound follows. The
+single hypothesis left is the fp32 accumulator contract, stated explicitly.
+
+`#print axioms`: `wpDot_toInt` uses none; `wpDot_error` and `dpasWord_error`
+use only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -519,4 +543,5 @@ lake build Intel
 28. Stage 28: executed tail slab, so the pipeline covers every K.
 29. Stage 29: concrete truncating rounding, deriving the contract.
 30. Stage 30: round-to-nearest, halving the accumulation bound.
-31. Stage 31 (this PR): ties-to-even, the hardware tie rule.
+31. Stage 31: ties-to-even, the hardware tie rule.
+32. Stage 32 (this PR): bridging word arithmetic to the numeric bound.
