@@ -5,4 +5,5 @@ load.ugm.d32.a64 r30:2 [r26:4]
 mul r32.0 r22.0 r30.0
 add r14.0 r14.0 r32.0
 add r3.8 r3.8 1
-jmpi _0_004
+cmp.lt r40.0 r3.8 64
+jmpi.cond r40.0 _0_004
