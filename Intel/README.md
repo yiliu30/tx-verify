@@ -1038,6 +1038,28 @@ I first wrote the cross-lane statement as `= s.committed b` and `simp` refused
 it: the barrier exposes the whole pending buffer, so a *different* address reads
 its pending value. The module records both the statement and the mistake.
 
+## Stage 56: the two scales agree
+
+Stage 46 fixes a scale of `2 ^ -24`; the numeric layer works in units of `2 ^ -10`
+(normal) with `Fixed.mag`. `Intel/Fp16Gluing.lean` proves the relation:
+
+```lean
+theorem scaled_eq_mag (hne : expField w ≠ 0) (hge : 15 ≤ expField w) :
+    scaled w = v.mant * 2 ^ v.exp * 2 ^ 14
+theorem scaled_eq_mag' ... :
+    scaled w = v.mag * 2 ^ 14
+```
+
+So a decoded word's scaled value is the `Fixed` magnitude times `2 ^ 14`, and the
+grid results of stages 34 and 38 apply to decoded operands directly.
+
+The field conditions are hypotheses. Deriving them from `decode w = some v`
+needs the decoder's branch structure, and two earlier attempts died in
+elaboration there; the conditions are exactly what `decode`'s branches
+guarantee, and the module says so rather than pretending they are free.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -1046,9 +1068,10 @@ its pending value. The module records both the statement and the mistake.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
-- IEEE-754 value semantics: stages 43-47 cover the bit layout, the value
-  domain, and values in units of `2 ^ -24` for normals, subnormals and
-  fractions, with executable checks. NaN *payloads* remain unmodeled.
+- IEEE-754 value semantics: stages 43-56 cover the bit layout, the value
+  domain, values in units of `2 ^ -24` for normals, subnormals and fractions,
+  and the glue between that scale and the numeric layer's. NaN *payloads*
+  remain unmodeled.
 - Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
 - Strided per-thread staging as SYCL-TLA's copy atoms use it: stage 37 models
   a block distribution (lane `l` owns a contiguous chunk), not the interleaved
@@ -1125,4 +1148,5 @@ lake build Intel
 52. Stage 52: the audit covers every theorem.
 53. Stage 53: known-answer tests for an fp16 dot.
 54. Stage 54: the headline table regenerates itself.
-55. Stage 55 (this PR): why the barrier is necessary.
+55. Stage 55: why the barrier is necessary.
+56. Stage 56 (this PR): the two scales agree.
