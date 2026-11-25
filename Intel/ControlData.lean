@@ -45,6 +45,12 @@ def drun (prog : List DInstr) : Nat → DState → DState
   | 0, s => s
   | n + 1, s => drun prog n (dstep prog s)
 
+@[simp] theorem drun_zero (prog : List DInstr) (s : DState) :
+    drun prog 0 s = s := rfl
+
+@[simp] theorem drun_succ (prog : List DInstr) (n : Nat) (s : DState) :
+    drun prog (n + 1) s = drun prog n (dstep prog s) := rfl
+
 theorem dstep_load32 (prog : List DInstr) (s : DState) (dst addrReg : Nat)
     (hAt : prog[s.pc]? = some (.data (.load32 dst addrReg))) :
     (dstep prog s).data.regs dst =
