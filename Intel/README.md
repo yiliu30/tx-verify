@@ -247,6 +247,22 @@ theorem tileSpec_of_store ...       -- bridges the store to TileSpec
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 22: epilogue with a leading dimension
+
+`Intel/EpilogueLd.lean` generalizes the stage-21 store from a packed tile to a
+row-major output with leading dimension `ldC ≥ N`.
+
+The only new ingredient is that strided tile indices must not alias:
+
+```lean
+theorem packed_inj ...               -- k ↦ (k / N) * ldC + k % N is injective
+theorem epilogueLd_correct ... :
+    let s' := lrun base ldC N (epilogueProg (M * N)) (5 * (M * N) + 3) (eHead mem acc)
+    s'.halted = true ∧ ∀ m < M, ∀ n < N, s'.mem (base + m * ldC + n) = acc m n
+```
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -257,8 +273,8 @@ theorem tileSpec_of_store ...       -- bridges the store to TileSpec
 - Atomics and the launch ABI.
 - fp16/bf16 rounding and instruction-level DPAS dispatch (the atom is modeled
   as a tile operation).
-- A general leading dimension for the output tile: the epilogue writes the
-  tile packed at width `N`.
+- Multi-tile composition into one output buffer: each tile is verified with
+  its own epilogue run.
 
 ## Build
 
@@ -290,4 +306,5 @@ lake build Intel
 18. Stage 18 (this PR): DPAS/XMX tiled accumulation and its executed mainloop.
 19. Stage 19: the SYCL-TLA Xe GEMM instance.
 20. Stage 20: partial K tail, so the instance holds for every K.
-21. Stage 21 (this PR): executed epilogue store and the end-to-end tile.
+21. Stage 21: executed epilogue store and the end-to-end tile.
+22. Stage 22 (this PR): epilogue leading dimension.
