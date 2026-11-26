@@ -101,6 +101,10 @@ inductive RInstr where
   | or (exec : Exec) (dst a b : Grf)
   /-- `cmp.lt` into a predicate register. -/
   | cmpLt (exec : Exec) (pred : Nat) (src : Grf) (imm : Nat) (w : Width)
+  /-- Predicate `and`: `dst = a && b` per lane. -/
+  | predAnd (exec : Exec) (dst a b : Nat)
+  /-- Predicate `or`: `dst = a || b` per lane. -/
+  | predOr (exec : Exec) (dst a b : Nat)
   /-- An unconditional `goto`. -/
   | goto (exec : Exec) (label : String)
   /-- A predicated `goto`; `negated` records the `(!P1)` spelling. -/
@@ -339,6 +343,13 @@ def decodeReal : Stmt → Option RInstr
       | "or", [e, d, a, b] =>
           match parseExec e, parseGrf d, parseGrf a, parseGrf b with
           | some n, some x, some y, some z => some (.or n x y z)
+          | _, _, _, _ =>
+              match parseExec e, parsePred d, parsePred a, parsePred b with
+              | some n, some x, some y, some z => some (.predOr n x y z)
+              | _, _, _, _ => none
+      | "and", [e, d, a, b] =>
+          match parseExec e, parsePred d, parsePred a, parsePred b with
+          | some n, some x, some y, some z => some (.predAnd n x y z)
           | _, _, _, _ => none
       | "cmp.lt", [e, p, a, b] =>
           match parseExec e, parsePred p, parseGrf a, parseLit b, parseWidth b with

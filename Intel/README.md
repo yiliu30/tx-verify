@@ -1928,6 +1928,22 @@ and the two predicated `goto`s.
 This stage is decoding only: `stepWith` still uses the execution size and does
 not yet apply the mask offset to lane selection or partial-register writes.
 
+## Stage 93: predicate `and` and `or`
+
+The two predicate-logic forms in the vector-add loop now decode and execute:
+
+```lean
+theorem predAnd_lane : (stepWith ... (.predAnd e p a b)).preds p l =
+  (s.preds a l && s.preds b l)
+theorem predOr_lane  : (stepWith ... (.predOr e p a b)).preds p l =
+  (s.preds a l || s.preds b l)
+```
+
+Both write only active lanes, preserve other predicates and preserve inactive
+lanes; the six frame/lane theorems are in the axiom audit. The vector-add
+decoder now accepts 33 of 41 instructions. The remaining eight refusals are the
+four register `cmp.lt`s, two `cmp.eq`s and two predicated `goto`s.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1940,8 +1956,9 @@ not yet apply the mask offset to lane selection or partial-register writes.
 - SIMD execution-mask execution, predicate logic and scoreboards. Stage 64
   interprets this kernel's broadcast and dense GRF regions, not the general
   region algebra; stage 66 models one uniform predicate bit for the GEMM's
-  control flow; stages 90-91 add per-lane predicates and predicated `sel`;
-  stage 92 decodes M1-M8 masks but does not yet apply their lane offset.
+  control flow; stages 90-93 add per-lane predicates, predicated `sel` and
+  predicate `and`/`or`; stage 92 decodes M1-M8 masks but does not yet apply
+  their lane offset.
 - SEND issue/completion/wait and the register scoreboard are stage 78; raw
   message operand layout, EOT details beyond a halted flag, and the exact SBID
   assignments (not printed in the assembly) remain.
@@ -2075,4 +2092,5 @@ lake build Intel
 89. Stage 89: negative tests for the address scale and SEND waits.
 90. Stage 90: model per-lane predicates.
 91. Stage 91: execute predicated select per lane.
-92. Stage 92 (this PR): decode M1-M8 execution masks without dropping them.
+92. Stage 92: decode M1-M8 execution masks without dropping them.
+93. Stage 93 (this PR): execute predicate `and` and `or` per lane.

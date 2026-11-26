@@ -291,6 +291,14 @@ def stepWith (alias : Nat → Nat) (typeOf : Nat → Option RegType) :
           if p' = p ∧ l < n then
             decide (low32 (readSrcWith alias s src l) < BitVec.ofNat 32 imm)
           else s.preds p' l }
+  | s, .predAnd n p a b =>
+      { s with
+        preds := fun p' l =>
+          if p' = p ∧ l < n then s.preds a l && s.preds b l else s.preds p' l }
+  | s, .predOr n p a b =>
+      { s with
+        preds := fun p' l =>
+          if p' = p ∧ l < n then s.preds a l || s.preds b l else s.preds p' l }
   | s, .goto _ _ => s
   | s, .gotoIf _ _ _ _ => s
 
@@ -398,6 +406,8 @@ def RInstr.regionsSimple : RInstr → Bool
   | .movImm _ d _ _ => d.dstSimple
   | .or _ d a b => d.dstSimple && a.simple && b.simple
   | .cmpLt _ _ _ _ _ => true
+  | .predAnd _ _ _ _ => true
+  | .predOr _ _ _ _ => true
   | .goto _ _ => true
   | .gotoIf _ _ _ _ => true
   | .loadScaled _ _ _ _ _ => true
@@ -479,6 +489,8 @@ def RInstr.dstCountOk : RInstr → Bool
   | .movImm n d _ _ => regElems d.num == n && (regType d.num).isSome
   | .or n d _ _ => regElems d.num == n && (regType d.num).isSome
   | .cmpLt _ _ _ _ _ => true
+  | .predAnd _ _ _ _ => true
+  | .predOr _ _ _ _ => true
   | .goto _ _ => true
   | .gotoIf _ _ _ _ => true
   | .loadScaled n d _ _ _ => regElems d == n && (regType d).isSome
@@ -609,6 +621,44 @@ theorem cmpLt_inactive (alias : Nat → Nat) (typeOf : Nat → Option RegType)
     (s : RealState) (e : Exec) (p imm : Nat) (src : Grf) (w : Width) (l : Nat)
     (hl : ¬ l < e.size) :
     (stepWith alias typeOf s (.cmpLt e p src imm w)).preds p l = s.preds p l := by
+  simp [stepWith, hl]
+
+/-- Predicate `and` combines the two source predicates on active lanes. -/
+theorem predAnd_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p a b : Nat) (l : Nat) (hl : l < e.size) :
+    (stepWith alias typeOf s (.predAnd e p a b)).preds p l =
+      (s.preds a l && s.preds b l) := by
+  simp [stepWith, hl]
+
+/-- A different predicate is untouched by `and`. -/
+theorem predAnd_other (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p a b : Nat) (p' l : Nat) (hp : p' ≠ p) :
+    (stepWith alias typeOf s (.predAnd e p a b)).preds p' l = s.preds p' l := by
+  simp [stepWith, hp]
+
+/-- A lane outside the execution size is untouched by `and`. -/
+theorem predAnd_inactive (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p a b : Nat) (l : Nat) (hl : ¬ l < e.size) :
+    (stepWith alias typeOf s (.predAnd e p a b)).preds p l = s.preds p l := by
+  simp [stepWith, hl]
+
+/-- Predicate `or` combines the two source predicates on active lanes. -/
+theorem predOr_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p a b : Nat) (l : Nat) (hl : l < e.size) :
+    (stepWith alias typeOf s (.predOr e p a b)).preds p l =
+      (s.preds a l || s.preds b l) := by
+  simp [stepWith, hl]
+
+/-- A different predicate is untouched by `or`. -/
+theorem predOr_other (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p a b : Nat) (p' l : Nat) (hp : p' ≠ p) :
+    (stepWith alias typeOf s (.predOr e p a b)).preds p' l = s.preds p' l := by
+  simp [stepWith, hp]
+
+/-- A lane outside the execution size is untouched by `or`. -/
+theorem predOr_inactive (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p a b : Nat) (l : Nat) (hl : ¬ l < e.size) :
+    (stepWith alias typeOf s (.predOr e p a b)).preds p l = s.preds p l := by
   simp [stepWith, hl]
 
 /-- A predicated select reads `a` on true lanes and `b` on false lanes. -/
