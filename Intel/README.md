@@ -1670,6 +1670,28 @@ model's 8x16x16. The existing `dpasSlab_two_atoms` theorem stays scoped to the
 SYCL-TLA fp16/fp32 configuration; the fp8 FMHA path needs its own 8x8x32 atom.
 That is a mapping result the review asked for, and it is a negative one.
 
+## Stage 80: zero times infinity is invalid
+
+`Fp16Value.vstep` treats every finite operand times an infinity as an
+infinity. IEEE-754 makes `0 * inf` an invalid operation. `Intel/Fp16Ieee.lean`
+adds the refined step:
+
+- `vstepIEEE`: NaN absorbs; `inf * inf` keeps the same sign and is NaN for
+  opposite signs; zero times an infinity is NaN; a non-zero finite operand
+  times an infinity is an infinity.
+- `vstepIEEE_zero_left` / `vstepIEEE_zero_right`: the invalid cases, with
+  payload `0`.
+- `foldValIEEE_fin`: all-finite operands still compute exactly the machine
+  accumulation.
+- `foldValIEEE_ne_fin`: a non-finite accumulator never becomes finite.
+- `vstep_zero_inf_old`: the old step returns an infinity there, so the
+  refinement changes exactly the invalid operation.
+
+The payload policy is explicit: an invalid operation produces `NaN` with
+payload `0`; the stage-61 NaN-payload propagation rules are unchanged. This is
+not yet a full IEEE FMA: subnormals, exponent overflow/underflow, signed zero
+and rounding are still outside the class model.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1689,8 +1711,10 @@ That is a mapping result the review asked for, and it is a negative one.
 - Atomics and the launch ABI.
 - IEEE-754 value semantics: stages 43-56 cover the bit layout, the value
   domain, values in units of `2 ^ -24` for normals, subnormals and fractions,
-  and the glue between that scale and the numeric layer's. NaN *payloads*
-  remain unmodeled.
+  and the glue between that scale and the numeric layer's; stage 61 covers NaN
+  payload propagation and stage 80 adds `0 * inf = NaN`. A full IEEE FMA
+  (subnormal arithmetic, exponent overflow/underflow, signed zero, rounding)
+  remains outside the class model.
 - Instruction-level DPAS: stage 79 decodes a real 8x8x32 fp8 form and shows it
   is not the model's 8x16x16 atom; the full fp8 dataflow/numerics remains.
 - Strided per-thread staging as SYCL-TLA's copy atoms use it: stage 37 models
@@ -1799,4 +1823,5 @@ lake build Intel
 76. Stage 76: prove the epilogue store at `C`.
 77. Stage 77: the real GEMM's end-to-end output theorem.
 78. Stage 78: model SEND/SBID issue, completion, wait and commit.
-79. Stage 79 (this PR): decode a real FMHA DPAS and check the atom mapping.
+79. Stage 79: decode a real FMHA DPAS and check the atom mapping.
+80. Stage 80 (this PR): refine the value step with `0 * inf = NaN`.

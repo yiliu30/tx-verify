@@ -203,6 +203,10 @@ THEOREMS = [
     ("Intel.RealDpas", "IntelGpu.realFmhaDpas_form"),
     ("Intel.RealDpas", "IntelGpu.fmhaDpas_not_tlaAtom"),
     ("Intel.RealDpas", "IntelGpu.fmhaDpas_shape_and_depth"),
+    ("Intel.Fp16Ieee", "IntelGpu.vstepIEEE_zero_left"),
+    ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_fin"),
+    ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_ne_fin"),
+    ("Intel.Fp16Ieee", "IntelGpu.vstep_zero_inf_old"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
