@@ -444,6 +444,8 @@ THEOREMS = [
     ("Intel.LoopP6Size", "IntelGpu.inc_high2_preserves49"),
     ("Intel.LoopP6Size", "IntelGpu.vaPackIncBoth_preserves49"),
     ("Intel.LoopP6Size", "IntelGpu.vaPackIncBoth_preserves49_low32"),
+    ("Intel.LoopP6", "IntelGpu.vaLoopP6_packed"),
+    ("Intel.LoopP6", "IntelGpu.vaLoopP6_packed_full"),
     ("Intel.Fp16Ieee", "IntelGpu.vstepIEEE_zero_left"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_fin"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_ne_fin"),
