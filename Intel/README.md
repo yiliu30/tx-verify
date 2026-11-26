@@ -2086,6 +2086,27 @@ were updated. `Grf.dstSimple` now means a unit-stride destination.
 This was a real correctness bug: the old decoded M5 stride-two moves would
 have fallen through the masked-write helper without writing their destination.
 
+## Stage 104: the loop vector add's real tables and index
+
+The original dump behind `Intel/Examples/RealVectorAdd.lean` was located
+locally, including its `.decl` table. `Intel/VectorAddLoop.lean` now transcribes
+the aliases, register types and element counts and proves the exact preamble:
+
+```lean
+theorem vaLoopPreamble_id :
+  (runVAL s vaLoopPreamble).regs 59 l =
+    zext localSize * zext r0 + (localId l).zeroExtend 64 + zext globalOffset
+```
+
+The result is the real 64-bit loop index. `vaLoopPreamble_mem` shows the
+preamble changes registers only.
+
+This also exposes the next model boundary: `V0059` is a qword-per-lane
+register and `V0061` is its dword view. The current `RealState` stores one
+64-bit slot per element and models register-number aliases, not bitwise
+dword/qword views, so the pack/select loop body still needs a dword-level
+register model before its effect can be claimed.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2107,6 +2128,9 @@ have fallen through the masked-write helper without writing their destination.
   message operand layout, EOT details beyond a halted flag, and the exact SBID
   assignments (not printed in the assembly) remain.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
+- Bitwise dword/qword register views (`V0061` over `V0059`); the loop vector
+  add's real tables and index preamble are stage 104, but its pack/select body
+  is not yet executed.
 - Atomics and the launch ABI.
 - IEEE-754 value semantics: stages 43-56 cover the bit layout, the value
   domain, values in units of `2 ^ -24` for normals, subnormals and fractions,
@@ -2247,4 +2271,5 @@ lake build Intel
 100. Stage 100: prove the packed DPAS address maps are collision-free.
 101. Stage 101: decode the real DPAS register bases.
 102. Stage 102: execute a packed DPAS known-answer test.
-103. Stage 103 (this PR): parse destination regions as `<hstride>`.
+103. Stage 103: parse destination regions as `<hstride>`.
+104. Stage 104 (this PR): import the loop vector add's tables and prove its index.
