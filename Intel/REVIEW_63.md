@@ -34,7 +34,7 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (113 jobs) and `Tools/check_axioms.py --all`
-  (1044 theorems, 268 documented exceptions at stage 157).
+  (1120 theorems, 329 documented exceptions at stage 158).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -53,7 +53,11 @@ Parser/decoder scope:
   return `none`;
 - M1-M8 and `_NM` masks are decoded into `Exec`; masked moves and the loop
   body's add/load/store have mask-aware execution (stages 141, 151);
-- the scaled memory decoder accepts only the `0x4*index` form.
+- the scaled memory decoder accepts only the `0x4*index` form;
+- the loop-back writeback packs dwords into `V0059`, while the body load reads
+  qword lanes; `vaLoopLoopBack_dword_counterexample` shows the existing model
+  does not literally identify the two views, so multi-iteration execution is
+  proved on a value-level reentry state rather than the raw decoded state.
 
 Model assumptions:
 
@@ -73,8 +77,12 @@ from `Classical.choose` in the racing-store model.
 ## Remaining work
 
 - masked/predicated loop vector add: predicate logic, both predicated `goto`s,
-  the false-lane memory frame and generic mask laws are stages 130-146;
-  applying `(M5, 16)` execution masks to the decoded loop kernel remains;
+  the false-lane memory frame and generic mask laws are stages 130-151; the
+  decoded PC 36-43 loop-back block and its value-level second iteration are
+  stage 158. A literal second iteration is blocked by a dword/qword aliasing
+  gap: the dword-view writeback does not reconstruct qword lane `l` for
+  `l < 24`, while the body load reads `regs 59 l`; closing it needs a
+  coalescing step in the existing semantics;
 - FMHA/SageAttention execution: the 8x8x32 DPAS value path, the fp8 E4M3
   element path, one register-level DPAS step and a T-step register-level
   mainloop are modelled (stages 142, 148, 150, 155); physical tile packing,
