@@ -2405,6 +2405,12 @@ At PC 25, `vaLoopIncAdd_value` proves the loop computes
 `V0072[l] = V0059[l] + V0067[0]`, the next ID per lane, and
 `vaLoopIncAdd_preserves49` keeps the size dwords available for P6.
 
+## Stage 132: executing the decoded P3 prefix
+
+`Intel/LoopP3Exec.lean` proves the decoded PC 8..16 slice is exactly the pack
+plus first guard and that running it sets `P3` to the proved guard on every
+active lane.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2598,4 +2604,5 @@ lake build Intel
 128. Stage 128: prove increment packs preserve the size dwords.
 129. Stage 129: derive full P6 from executed increment packs.
 130. Stage 130: compose the decoded P3/P6 branches.
-131. Stage 131 (this PR): prove the increment add.
+131. Stage 131: prove the increment add.
+132. Stage 132 (this PR): execute the decoded P3 prefix.
