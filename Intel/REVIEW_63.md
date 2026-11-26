@@ -15,7 +15,7 @@ fork.
 | P0 GRF and SIMD | 64 (#66), 66 (#68), 68 (#70), 83 (#85), 90-98, 103, 105, 107, 112, 141 | regions, aliases, execution sizes in `Grf`/`gemmAlias`; per-lane predicates, predicated `sel`, predicate `and`/`or`, register comparisons, both predicated gotos; M1-M8 masks, all six masked moves, frame laws, a wrong-mask negative test, correct destination `<hstride>` parsing, dword/qword view laws, the 24-lane pack layout and a per-lane CF interpreter; generic active-window, operand-index, write-coverage and commutation laws | partial: masked moves execute with lane offsets, but other instructions do not yet consume `Exec`; decoded branch composition is stages 130-138 |
 | P0 SEND and SBID | 78 (#80) | `issueLoad`/`issueStore`/`wait`/`commitLoad`, `loadPipeline_value`, `storePipeline_value`, `addOnePipeline_value` | mechanism modeled; exact SBIDs are not printed and remain assumptions |
 | P1 memory and concurrency | 60, 64 (#66), 67 (#69), 106, 139 | word/byte memory, alignment, `load32LE_store32LE_*`, `realAddOne_byteRangesDisjoint`, per-lane stores and frames, real loop-body `load/add/store` effect; a per-location visibility model with release/acquire message passing | partial: cacheless model with full fences; no caches, relaxed atomics or SLM aliasing |
-| P1 DPAS refinement | 49, 50, 79 (#81), 86 (#88), 99-101 | decoded `dpas.8x8`; `fmhaFp8Atom` 8x8x32 vs `tlaXeF16Atom` 8x16x16; atom counts 1 vs 2; packed A/B/C layouts, collision-free addresses and decoded register bases | addressed for the coded 8x8x32 layout |
+| P1 DPAS refinement | 49, 50, 79 (#81), 86 (#88), 99-101, 142 | decoded `dpas.8x8`; `fmhaFp8Atom` 8x8x32 vs `tlaXeF16Atom` 8x16x16; atom counts 1 vs 2; packed A/B/C layouts, collision-free addresses and decoded register bases; value equality with one depth-32 slab, K=16 split and 2x1/2x2 tile composition | addressed for the coded 8x8x32 layout |
 | P1 numerical semantics | 27-31, 43-56, 61, 80 (#82) | fixed-point bounds, NaN payload propagation, `vstepIEEE` with `0 * inf = NaN` | partial: not a full IEEE FMA |
 | P1 hardware conformance | 81 (#83) | GPU vs `gemmDot`: `C00=-2 C11=-5 C6363=4 checksum=4294967290 bad=0`; add-one and vector-add runs | addressed at source level; the GEMM dump was compiled with a different compiler minor version |
 | P2 complex kernels | 79 (#81), 82-85 (#84-#87), 99-102 | real FMHA DPAS decoded, packed and smoke-tested; real straight-line vector add end-to-end | open: full FMHA/SageAttention execution and low-precision paths |
@@ -34,7 +34,7 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (77 jobs) and `Tools/check_axioms.py --all`
-  (628 theorems, 228 documented exceptions at stage 141).
+  (648 theorems, 228 documented exceptions at stage 142).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
