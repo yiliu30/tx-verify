@@ -286,9 +286,60 @@ theorem gemmEpilogue_store_mem (s : RealState) (aPtr bPtr cPtr : Addr)
   rw [gemmEpilogue_mem]
   exact gemmEpilogue_store_at s aPtr bPtr cPtr i j0 k sum goX l hl w hw h hdistinct
 
+
+theorem gemmEpilogue_halted (s : RealState) :
+    (runGemm s gemmEpilogue).halted = true := by
+  unfold gemmEpilogue runGemm
+  simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
+    readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
+    binOpWide, add3Wide, shlWide]
+
+/-- The C byte address divided by four is the C word index. -/
+theorem nat_wordC (cPtr : Addr) (i j0 goX : Word) (hc : cPtr.toNat % 4 = 0)
+    (hbound : cPtr.toNat + 4 * (i * 64 + j0 + goX).toNat < 2 ^ 64) :
+    (((zext (i * 64 + j0 + goX)) <<< 2 + cPtr).toNat / 4) =
+      cPtr.toNat / 4 + (i * 64 + j0 + goX).toNat := by
+  rw [show (zext (i * 64 + j0 + goX)) <<< 2 + cPtr =
+      cPtr + (zext (i * 64 + j0 + goX)) <<< 2 from BitVec.add_comm _ _]
+  exact wordOf_ptr_add_shift cPtr (i * 64 + j0 + goX) hc hbound
+
+/-- The real GEMM's output: at lane `l`, the C word `w` holds the K-dot
+product and the kernel has halted. -/
+theorem realGemm_output (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 goX : Word) (l : Nat) (hl : l < 32)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 0 0 goX)
+    (hi : i.toNat < 64) (hj0 : j0.toNat < 64) (hgoX : goX.toNat < 64)
+    (ha : aPtr.toNat % 4 = 0) (hb : bPtr.toNat % 4 = 0) (hc : cPtr.toNat % 4 = 0)
+    (hboundA : ∀ kk : Word, kk.toNat < 64 →
+      aPtr.toNat + 4 * (i * 64 + kk).toNat < 2 ^ 64)
+    (hboundB : ∀ kk : Word, kk.toNat < 64 →
+      bPtr.toNat + 4 * (kk * 64 + j0 + goX).toNat < 2 ^ 64)
+    (hboundC : cPtr.toNat + 4 * (i * 64 + j0 + goX).toNat < 2 ^ 64)
+    (w : Nat) (hw : w = cPtr.toNat / 4 + (i * 64 + j0 + goX).toNat)
+    (hdistinct : ∀ l', l' < 32 → l' ≠ l →
+      ((runGemm (runGemm (gemmStepIter 63 s) gemmFinalStep) gemmEpilogue).regs 85 l').toNat / 4 ≠
+        ((runGemm (runGemm (gemmStepIter 63 s) gemmFinalStep) gemmEpilogue).regs 85 l).toNat / 4) :
+    (runGemm (runGemm (gemmStepIter 63 s) gemmFinalStep) gemmEpilogue).mem w =
+        gemmDot s.mem (aPtr.toNat / 4) (bPtr.toNat / 4) i j0 goX 0 64 ∧
+    (runGemm (runGemm (gemmStepIter 63 s) gemmFinalStep) gemmEpilogue).halted = true := by
+  have hloop := gemmLoop_final s aPtr bPtr cPtr i j0 goX l h hi hj0 hgoX ha hb
+    hboundA hboundB
+  have haddr := gemmEpilogue_address (runGemm (gemmStepIter 63 s) gemmFinalStep)
+    aPtr bPtr cPtr i j0 63 (gemmDot s.mem (aPtr.toNat / 4) (bPtr.toNat / 4) i j0 goX 0 64)
+    goX l hloop.1
+  have hw' : w = ((runGemm (runGemm (gemmStepIter 63 s) gemmFinalStep)
+      gemmEpilogue).regs 85 l).toNat / 4 := by
+    rw [haddr, nat_wordC cPtr i j0 goX hc hboundC]
+    exact hw
+  have hstore := gemmEpilogue_store_mem (runGemm (gemmStepIter 63 s) gemmFinalStep)
+    aPtr bPtr cPtr i j0 63 (gemmDot s.mem (aPtr.toNat / 4) (bPtr.toNat / 4) i j0 goX 0 64)
+    goX l hl w hw' hloop.1 hdistinct
+  exact ⟨hstore, gemmEpilogue_halted _⟩
+
 end
 
 end IntelGpu
+
 
 
 

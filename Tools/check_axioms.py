@@ -104,6 +104,8 @@ KNOWN = {
     "IntelGpu.gemmEpilogue_mem": {"Classical.choice"},
     "IntelGpu.gemmEpilogue_store_at": {"Classical.choice"},
     "IntelGpu.gemmEpilogue_store_mem": {"Classical.choice"},
+    "IntelGpu.gemmEpilogue_halted": {"Classical.choice"},
+    "IntelGpu.realGemm_output": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -191,6 +193,8 @@ THEOREMS = [
     ("Intel.GemmRealLoop", "IntelGpu.gemmEpilogue_mem"),
     ("Intel.GemmRealLoop", "IntelGpu.gemmEpilogue_store"),
     ("Intel.GemmRealLoop", "IntelGpu.gemmEpilogue_store_mem"),
+    ("Intel.GemmRealLoop", "IntelGpu.nat_wordC"),
+    ("Intel.GemmRealLoop", "IntelGpu.realGemm_output"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")

@@ -1596,6 +1596,27 @@ theorem gemmEpilogue_store_mem :
 The explicit `w` keeps the dependent index out of the statement; the final
 output theorem will instantiate `w = cPtr/4 + (i*64+j0+goX).toNat`.
 
+## Stage 77: the real GEMM's end-to-end output
+
+`realGemm_output` composes the loop, the final body and the epilogue:
+
+```lean
+theorem realGemm_output :
+    (runGemm (runGemm (gemmStepIter 63 s) gemmFinalStep) gemmEpilogue).mem w =
+      gemmDot s.mem (aPtr/4) (bPtr/4) i j0 goX 0 64 ∧
+    (runGemm (runGemm (gemmStepIter 63 s) gemmFinalStep) gemmEpilogue).halted = true
+```
+
+for a lane `l < 32`, an admitted launch (`GemmLoopInv` at `k = 0`, `sum = 0`,
+plus the pointer/index bounds), aligned A/B/C pointers, and
+`w = cPtr/4 + (i*64+j0+goX).toNat`.
+`nat_wordC` turns the C byte address into that word index, and
+`gemmEpilogue_halted` covers the return.
+
+So one real, unmodified IGC `_main_0` integer GEMM is now decoded, executed,
+and proved to write `C[i*64+j] = sum_k A[i*64+k] * B[k*64+j]`, under the
+stated alignment, bounds and per-lane (race-freedom) hypotheses.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1719,4 +1740,5 @@ lake build Intel
 73. Stage 73: prove the GEMM epilogue's C address.
 74. Stage 74: prove the K-induction over repeated loop steps.
 75. Stage 75: prove the final iteration and the total `gemmDot 0 64`.
-76. Stage 76 (this PR): prove the epilogue store at `C`.
+76. Stage 76: prove the epilogue store at `C`.
+77. Stage 77 (this PR): the real GEMM's end-to-end output theorem.
