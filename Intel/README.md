@@ -1551,6 +1551,28 @@ The remaining GEMM pieces are the final body at `k = 63` (where `cmp.lt` is
 false and the counter is not incremented), the sum `gemmDot 0 64`, and the
 epilogue store at `C`.
 
+## Stage 75: the final iteration and the total sum
+
+`gemmFinalStep` is the `k = 63` iteration: the body plus `cmp.lt`, without the
+counter increment. `gemmFinalStep_inv` proves the invariant at the same `k`
+with `sum + gemmTerm k`, the exit predicate `P1 = (k < 63)`, and unchanged
+memory.
+
+`gemmDot_append` shows that the last term is appended at counter `k + n`, and
+`gemmLoop_final` composes the whole loop:
+
+```lean
+theorem gemmLoop_final :
+    GemmLoopInv (runGemm (gemmStepIter 63 s) gemmFinalStep) ... 63
+      (gemmDot s.mem (aPtr/4) (bPtr/4) i j0 goX 0 64) goX ∧
+    (runGemm (gemmStepIter 63 s) gemmFinalStep).preds 1 = false ∧
+    (runGemm (gemmStepIter 63 s) gemmFinalStep).mem = s.mem
+```
+
+So 63 loop steps plus the final body accumulate all 64 terms and leave the
+exit predicate false. The remaining piece is the epilogue store at `C` and the
+final output statement.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1672,4 +1694,5 @@ lake build Intel
 71. Stage 71: prove one full loop iteration and its inductive invariant.
 72. Stage 72: make the GEMM loop invariant per-lane, matching the launch.
 73. Stage 73: prove the GEMM epilogue's C address.
-74. Stage 74 (this PR): prove the K-induction over repeated loop steps.
+74. Stage 74: prove the K-induction over repeated loop steps.
+75. Stage 75 (this PR): prove the final iteration and the total `gemmDot 0 64`.
