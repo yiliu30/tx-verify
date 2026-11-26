@@ -144,10 +144,18 @@ def afterComma : List Char → Option (List Char)
   | ',' :: rest => some rest
   | _ :: rest => afterComma rest
 
+/-- Only the M1 and M1_NM masks are modelled. A masked form such as
+`(M5, 16)` is refused rather than silently treated as `(M1, 16)`. -/
+def execMaskOk : List Char → Bool
+  | '(' :: 'M' :: '1' :: ',' :: _ => true
+  | '(' :: 'M' :: '1' :: '_' :: 'N' :: 'M' :: ',' :: _ => true
+  | _ => false
+
 /-- Execution size, printed as `(M1, 32)` or `(M1_NM, 1)`. The execution mode
 may contain digits, so the size is read from after the comma. -/
 def parseExec (s : String) : Option Nat :=
   let cs := s.toList
+  if !execMaskOk cs then none else
   match cs with
   | '(' :: 'M' :: _ =>
       match afterComma cs, cs.getLast? with
