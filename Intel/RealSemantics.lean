@@ -354,7 +354,7 @@ theorem runReal_append (s : RealState) (is js : List RInstr) :
 /-- The address computation, as decoded: mul, two moves, add3, shift and add. -/
 def realAddOnePreamble : List RInstr :=
   [ .prologue,
-    .mul 1 ⟨44, 0, 0, 1, 1, 0⟩ ⟨38, 0, 0, 0, 1, 0⟩ ⟨36, 0, 1, 0, 1, 0⟩,
+    .mul (Exec.nm 1) ⟨44, 0, 0, 1, 1, 0⟩ ⟨38, 0, 0, 0, 1, 0⟩ ⟨36, 0, 1, 0, 1, 0⟩,
     .mov 32 ⟨45, 0, 0, 1, 1, 0⟩ ⟨46, 0, 0, 1, 1, 0⟩,
     .add3 32 ⟨47, 0, 0, 1, 1, 0⟩ ⟨44, 0, 0, 0, 1, 0⟩ ⟨45, 0, 0, 1, 1, 0⟩
       ⟨37, 0, 0, 0, 1, 0⟩,
@@ -591,27 +591,30 @@ end
 
 /-- `cmp.lt` writes the per-lane comparison on active lanes. -/
 theorem cmpLt_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
-    (s : RealState) (n p imm : Nat) (src : Grf) (w : Width) (l : Nat) (hl : l < n) :
-    (stepWith alias typeOf s (.cmpLt n p src imm w)).preds p l =
+    (s : RealState) (e : Exec) (p imm : Nat) (src : Grf) (w : Width) (l : Nat)
+    (hl : l < e.size) :
+    (stepWith alias typeOf s (.cmpLt e p src imm w)).preds p l =
       decide (low32 (readSrcWith alias s src l) < BitVec.ofNat 32 imm) := by
   simp [stepWith, hl]
 
 /-- A different predicate is untouched. -/
 theorem cmpLt_other (alias : Nat → Nat) (typeOf : Nat → Option RegType)
-    (s : RealState) (n p imm : Nat) (src : Grf) (w : Width) (p' l : Nat) (hp : p' ≠ p) :
-    (stepWith alias typeOf s (.cmpLt n p src imm w)).preds p' l = s.preds p' l := by
+    (s : RealState) (e : Exec) (p imm : Nat) (src : Grf) (w : Width) (p' l : Nat)
+    (hp : p' ≠ p) :
+    (stepWith alias typeOf s (.cmpLt e p src imm w)).preds p' l = s.preds p' l := by
   simp [stepWith, hp]
 
 /-- A lane outside the execution size is untouched. -/
 theorem cmpLt_inactive (alias : Nat → Nat) (typeOf : Nat → Option RegType)
-    (s : RealState) (n p imm : Nat) (src : Grf) (w : Width) (l : Nat) (hl : ¬ l < n) :
-    (stepWith alias typeOf s (.cmpLt n p src imm w)).preds p l = s.preds p l := by
+    (s : RealState) (e : Exec) (p imm : Nat) (src : Grf) (w : Width) (l : Nat)
+    (hl : ¬ l < e.size) :
+    (stepWith alias typeOf s (.cmpLt e p src imm w)).preds p l = s.preds p l := by
   simp [stepWith, hl]
 
 /-- A predicated select reads `a` on true lanes and `b` on false lanes. -/
 theorem sel_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
-    (s : RealState) (n p : Nat) (dst a b : Grf) (l : Nat) :
-    (stepWith alias typeOf s (.sel n p dst a b)).regs (alias dst.num) l =
+    (s : RealState) (e : Exec) (p : Nat) (dst a b : Grf) (l : Nat) :
+    (stepWith alias typeOf s (.sel e p dst a b)).regs (alias dst.num) l =
       if s.preds p l then readSrcWith alias s a l else readSrcWith alias s b l := by
   simp [stepWith, writeVecWith, setReg]
 

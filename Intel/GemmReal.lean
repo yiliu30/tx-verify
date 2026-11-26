@@ -182,15 +182,15 @@ two zero initialisers. -/
 def gemmPreamble : List RInstr :=
   [ .label "_main_0",
     .prologue,
-    .mul 1 ⟨50, 0, 0, 1, 1, 0⟩ ⟨40, 0, 1, 0, 1, 0⟩ ⟨38, 0, 6, 0, 1, 0⟩,
+    .mul (Exec.nm 1) ⟨50, 0, 0, 1, 1, 0⟩ ⟨40, 0, 1, 0, 1, 0⟩ ⟨38, 0, 6, 0, 1, 0⟩,
     .mov 32 ⟨51, 0, 0, 1, 1, 0⟩ ⟨52, 0, 0, 1, 1, 0⟩,
     .add3 32 ⟨53, 0, 0, 1, 1, 0⟩ ⟨50, 0, 0, 0, 1, 0⟩ ⟨51, 0, 0, 1, 1, 0⟩
       ⟨39, 0, 1, 0, 1, 0⟩,
-    .mul 1 ⟨54, 0, 0, 1, 1, 0⟩ ⟨40, 0, 0, 0, 1, 0⟩ ⟨38, 0, 1, 0, 1, 0⟩,
+    .mul (Exec.nm 1) ⟨54, 0, 0, 1, 1, 0⟩ ⟨40, 0, 0, 0, 1, 0⟩ ⟨38, 0, 1, 0, 1, 0⟩,
     .mov 32 ⟨55, 0, 0, 1, 1, 0⟩ ⟨56, 0, 0, 1, 1, 0⟩,
     .add 32 ⟨57, 0, 0, 1, 1, 0⟩ ⟨54, 0, 0, 0, 1, 0⟩ ⟨55, 0, 0, 1, 1, 0⟩,
     .shl 32 ⟨58, 0, 0, 1, 1, 0⟩ ⟨53, 0, 0, 1, 1, 0⟩ 6,
-    .movImm 1 ⟨61, 0, 0, 1, 1, 0⟩ 0 .d32,
+    .movImm (Exec.nm 1) ⟨61, 0, 0, 1, 1, 0⟩ 0 .d32,
     .movImm 32 ⟨62, 0, 0, 1, 1, 0⟩ 0 .d32 ]
 
 theorem realGemm_preamble_prefix :
@@ -400,7 +400,7 @@ def gemmIndexBlock : List RInstr :=
     .mov 32 ⟨64, 0, 0, 1, 1, 0⟩ ⟨65, 0, 0, 1, 1, 0⟩,
     .shl 32 ⟨66, 0, 0, 1, 1, 0⟩ ⟨64, 0, 0, 1, 1, 0⟩ 2,
     .add 32 ⟨67, 0, 0, 1, 1, 0⟩ ⟨66, 0, 0, 1, 1, 0⟩ ⟨59, 0, 0, 0, 1, 0⟩,
-    .shl 1 ⟨70, 0, 0, 1, 1, 0⟩ ⟨61, 0, 0, 0, 1, 0⟩ 6,
+    .shl (Exec.nm 1) ⟨70, 0, 0, 1, 1, 0⟩ ⟨61, 0, 0, 0, 1, 0⟩ 6,
     .add3 32 ⟨71, 0, 0, 1, 1, 0⟩ ⟨70, 0, 0, 0, 1, 0⟩ ⟨57, 0, 0, 1, 1, 0⟩
       ⟨39, 0, 0, 0, 1, 0⟩ ]
 
@@ -484,7 +484,7 @@ def gemmBodyBlock : List RInstr :=
     .shl 32 ⟨66, 0, 0, 1, 1, 0⟩ ⟨64, 0, 0, 1, 1, 0⟩ 2,
     .add 32 ⟨67, 0, 0, 1, 1, 0⟩ ⟨66, 0, 0, 1, 1, 0⟩ ⟨59, 0, 0, 0, 1, 0⟩,
     .load 32 69 .d32 68,
-    .shl 1 ⟨70, 0, 0, 1, 1, 0⟩ ⟨61, 0, 0, 0, 1, 0⟩ 6,
+    .shl (Exec.nm 1) ⟨70, 0, 0, 1, 1, 0⟩ ⟨61, 0, 0, 0, 1, 0⟩ 6,
     .add3 32 ⟨71, 0, 0, 1, 1, 0⟩ ⟨70, 0, 0, 0, 1, 0⟩ ⟨57, 0, 0, 1, 1, 0⟩
       ⟨39, 0, 0, 0, 1, 0⟩,
     .mov 32 ⟨72, 0, 0, 1, 1, 0⟩ ⟨73, 0, 0, 1, 1, 0⟩,
@@ -686,8 +686,8 @@ theorem gemmBody (s : RealState) (aPtr bPtr cPtr : Addr)
 /-- The loop body plus `cmp.lt` and the counter increment. -/
 def gemmBodyStep : List RInstr :=
   gemmBodyBlock ++
-    [ .cmpLt 32 1 ⟨79, 0, 0, 0, 1, 0⟩ 63 .ud,
-      .addImm 1 ⟨61, 0, 0, 1, 1, 0⟩ ⟨61, 0, 0, 0, 1, 0⟩ 1 .w16 ]
+    [ .cmpLt (Exec.nm 32) 1 ⟨79, 0, 0, 0, 1, 0⟩ 63 .ud,
+      .addImm (Exec.nm 1) ⟨61, 0, 0, 1, 1, 0⟩ ⟨61, 0, 0, 0, 1, 0⟩ 1 .w16 ]
 
 /-- The body block leaves the loop invariants untouched. -/
 theorem gemmBodyBlock_frame (s : RealState) (l w p : Nat) :
@@ -720,9 +720,10 @@ theorem gemmBodyStep_pred (s : RealState) (aPtr bPtr cPtr : Addr)
     (i j0 k sum goX : Word) (l : Nat)
     (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX) (hk : k.toNat < 63) :
     (runGemm s gemmBodyStep).preds 1 0 = true := by
+  have h32 : (Exec.nm 32).size = 32 := rfl
   unfold gemmBodyStep runGemm
   rw [runRealWith_append]
-  simp [runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
+  simp [h32, runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
     readRegWith, readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType,
     RegType.is64, binOpWide, add3Wide, shlWide, addImmWide, load32, h.v61]
   bv_omega

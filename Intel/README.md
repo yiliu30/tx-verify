@@ -1907,6 +1907,27 @@ the new instruction. The vector-add decoder's accepted list therefore includes
 the two selects; only the M5 masks, predicate `and`/`or` and predicated `goto`s
 remain rejected in that dump.
 
+## Stage 92: execution masks decoded
+
+`parseExec` now returns an `Exec` record rather than a bare size:
+
+```lean
+structure Exec where
+  size   : Nat
+  offset : Nat
+  noMask : Bool
+```
+
+The offset follows the vISA M1-M8 table (M1 = 0, M2 = 4, …, M5 = 16, M8 = 28),
+and `_NM` is retained. `execMask_M5` checks the offset, `masked_mov_decodes`
+shows that a real `(M5, 16)` move keeps its mask, and `parseExec_rejects_M9`
+keeps the mask range closed. The vector-add decoder now accepts all six M5
+moves; the remaining twelve refusals are the predicate `cmp`/`and`/`or` forms
+and the two predicated `goto`s.
+
+This stage is decoding only: `stepWith` still uses the execution size and does
+not yet apply the mask offset to lane selection or partial-register writes.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1916,10 +1937,11 @@ remain rejected in that dump.
   instance's indices, loop, epilogue and output are stages 68-77.
 - Cross-workgroup visibility, synchronization, caches and SLM aliasing; stage
   67 refines aligned accesses to bytes and proves byte-range disjointness.
-- SIMD execution masks, predicate logic and scoreboards. Stage 64 interprets
-  this kernel's broadcast and dense GRF regions, not the general region
-  algebra; stage 66 models one uniform predicate bit for the GEMM's control
-  flow; stages 90-91 add per-lane predicates and predicated `sel`.
+- SIMD execution-mask execution, predicate logic and scoreboards. Stage 64
+  interprets this kernel's broadcast and dense GRF regions, not the general
+  region algebra; stage 66 models one uniform predicate bit for the GEMM's
+  control flow; stages 90-91 add per-lane predicates and predicated `sel`;
+  stage 92 decodes M1-M8 masks but does not yet apply their lane offset.
 - SEND issue/completion/wait and the register scoreboard are stage 78; raw
   message operand layout, EOT details beyond a halted flag, and the exact SBID
   assignments (not printed in the assembly) remain.
@@ -2052,4 +2074,5 @@ lake build Intel
 88. Stage 88: prove the 8x8x32 DPAS atom's dataflow.
 89. Stage 89: negative tests for the address scale and SEND waits.
 90. Stage 90: model per-lane predicates.
-91. Stage 91 (this PR): execute predicated select per lane.
+91. Stage 91: execute predicated select per lane.
+92. Stage 92 (this PR): decode M1-M8 execution masks without dropping them.

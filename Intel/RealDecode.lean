@@ -19,9 +19,10 @@ GEMM's control-flow shell, and fails closed on everything else:
   that. Any other spelling is refused.
 - `Width`: the typed suffix (`d32`, `a64`, `q`, `w`, `ud`), read literally
   after the colon.
-- `RInstr`: the decoded instruction, with execution size kept. `lsc_load.ugm`
-  and `lsc_store.ugm` name their payload register without a region, so those
-  operands are bare register numbers.
+- `RInstr`: the decoded instruction. `Exec` keeps the execution size, the
+  M1-M8 channel offset and the `_NM` flag instead of discarding the mask.
+  `lsc_load.ugm` and `lsc_store.ugm` name their payload register without a
+  region, so those operands are bare register numbers.
 - `decodeReal` / `decodeRealProgram`: the decoder, `Option`-valued. Besides
   arithmetic, loads and stores it reads labels, `mov` with an immediate source,
   the three-operand `or`, `cmp.lt` into a predicate, `goto` and the predicated
@@ -51,6 +52,24 @@ structure Grf where
   hstride : Nat
   deriving Repr, DecidableEq
 
+/-- The execution-size and execution-mask control printed on an instruction.
+`offset` follows the vISA table: M1 starts at channel 0, M5 at 16, and so on.
+`noMask` records the `_NM` spelling. -/
+structure Exec where
+  size : Nat
+  offset : Nat
+  noMask : Bool
+  deriving Repr, DecidableEq
+
+/-- Numeric execution sizes default to M1, which keeps the existing explicit
+instruction lists readable. -/
+instance : OfNat Exec n := ⟨n, 0, false⟩
+
+instance : Coe Exec Nat := ⟨Exec.size⟩
+
+/-- An explicit `M1_NM` execution control. -/
+def Exec.nm (size : Nat) : Exec := ⟨size, 0, true⟩
+
 /-- Typed suffix on an operand. -/
 inductive Width where
   | d32
@@ -63,36 +82,36 @@ inductive Width where
 /-- The decoded instruction. Load and store payloads are bare registers, as
 IGC prints them. -/
 inductive RInstr where
-  | mul (exec : Nat) (dst a b : Grf)
-  | mov (exec : Nat) (dst src : Grf)
-  | add3 (exec : Nat) (dst a b c : Grf)
-  | shl (exec : Nat) (dst src : Grf) (amount : Nat)
-  | add (exec : Nat) (dst a b : Grf)
-  | addImm (exec : Nat) (dst src : Grf) (imm : Nat) (w : Width)
-  | load (exec : Nat) (dst : Nat) (w : Width) (addrReg : Nat)
-  | store (exec : Nat) (addrReg : Nat) (w : Width) (src : Nat)
-  | ret (exec : Nat)
+  | mul (exec : Exec) (dst a b : Grf)
+  | mov (exec : Exec) (dst src : Grf)
+  | add3 (exec : Exec) (dst a b c : Grf)
+  | shl (exec : Exec) (dst src : Grf) (amount : Nat)
+  | add (exec : Exec) (dst a b : Grf)
+  | addImm (exec : Exec) (dst src : Grf) (imm : Nat) (w : Width)
+  | load (exec : Exec) (dst : Nat) (w : Width) (addrReg : Nat)
+  | store (exec : Exec) (addrReg : Nat) (w : Width) (src : Nat)
+  | ret (exec : Exec)
   /-- The `%cr0` prologue, matched exactly. -/
   | prologue
   /-- A label. -/
   | label (name : String)
   /-- `mov dst imm:w`, the loop's zero initialisers. -/
-  | movImm (exec : Nat) (dst : Grf) (imm : Nat) (w : Width)
+  | movImm (exec : Exec) (dst : Grf) (imm : Nat) (w : Width)
   /-- Three-operand bitwise `or` (`dst = a ||| b`). -/
-  | or (exec : Nat) (dst a b : Grf)
+  | or (exec : Exec) (dst a b : Grf)
   /-- `cmp.lt` into a predicate register. -/
-  | cmpLt (exec : Nat) (pred : Nat) (src : Grf) (imm : Nat) (w : Width)
+  | cmpLt (exec : Exec) (pred : Nat) (src : Grf) (imm : Nat) (w : Width)
   /-- An unconditional `goto`. -/
-  | goto (exec : Nat) (label : String)
+  | goto (exec : Exec) (label : String)
   /-- A predicated `goto`; `negated` records the `(!P1)` spelling. -/
-  | gotoIf (exec : Nat) (pred : Nat) (negated : Bool) (label : String)
+  | gotoIf (exec : Exec) (pred : Nat) (negated : Bool) (label : String)
   /-- A scaled global load `flat(base)[4*index]`: scalar base plus a per-lane
   32-bit index, byte scale four. -/
-  | loadScaled (exec : Nat) (dst : Nat) (w : Width) (base idx : Nat)
+  | loadScaled (exec : Exec) (dst : Nat) (w : Width) (base idx : Nat)
   /-- A scaled global store `flat(base)[4*index]`. -/
-  | storeScaled (exec : Nat) (base idx : Nat) (w : Width) (src : Nat)
+  | storeScaled (exec : Exec) (base idx : Nat) (w : Width) (src : Nat)
   /-- A predicated select `(Pp) sel`: `dst = pred ? a : b` per lane. -/
-  | sel (exec : Nat) (pred : Nat) (dst a b : Grf)
+  | sel (exec : Exec) (pred : Nat) (dst a b : Grf)
   deriving Repr, DecidableEq
 
 /-- Every decimal run in a list, in order. Structural on the fuel; each step
@@ -151,26 +170,43 @@ def afterComma : List Char → Option (List Char)
   | ',' :: rest => some rest
   | _ :: rest => afterComma rest
 
-/-- Only the M1 and M1_NM masks are modelled. A masked form such as
-`(M5, 16)` is refused rather than silently treated as `(M1, 16)`. -/
-def execMaskOk : List Char → Bool
-  | '(' :: 'M' :: '1' :: ',' :: _ => true
-  | '(' :: 'M' :: '1' :: '_' :: 'N' :: 'M' :: ',' :: _ => true
-  | _ => false
+/-- The channel offset of the vISA execution masks M1 through M8. -/
+def execMaskOffset : Nat → Option Nat
+  | 1 => some 0
+  | 2 => some 4
+  | 3 => some 8
+  | 4 => some 12
+  | 5 => some 16
+  | 6 => some 20
+  | 7 => some 24
+  | 8 => some 28
+  | _ => none
 
-/-- Execution size, printed as `(M1, 32)` or `(M1_NM, 1)`. The execution mode
-may contain digits, so the size is read from after the comma. -/
-def parseExec (s : String) : Option Nat :=
+/-- The suffix after an `M<n>` mask: either a comma or `_NM,`. -/
+def parseMaskSuffix : List Char → Option Bool
+  | ',' :: _ => some false
+  | '_' :: 'N' :: 'M' :: ',' :: _ => some true
+  | _ => none
+
+/-- Execution size and mask, printed as `(M1, 32)`, `(M1_NM, 1)` or
+`(M5, 16)`. The size is read from after the comma, so digits in the mask name
+do not confuse it. -/
+def parseExec (s : String) : Option Exec :=
   let cs := s.toList
-  if !execMaskOk cs then none else
   match cs with
-  | '(' :: 'M' :: _ =>
-      match afterComma cs, cs.getLast? with
-      | some tail, some ')' =>
-          let body := dropSpaces tail.dropLast
-          if body.isEmpty then none
-          else if allDigits body then some (digitsToNat body) else none
-      | _, _ => none
+  | '(' :: 'M' :: rest =>
+      let digits := rest.takeWhile isDigit
+      if digits.isEmpty then none
+      else
+        match parseMaskSuffix (rest.dropWhile isDigit), afterComma cs, cs.getLast? with
+        | some noMask, some tail, some ')' =>
+            match execMaskOffset (digitsToNat digits) with
+            | some offset =>
+                let body := dropSpaces tail.dropLast
+                if body.isEmpty then none
+                else if allDigits body then some ⟨digitsToNat body, offset, noMask⟩ else none
+            | none => none
+        | _, _, _ => none
   | _ => none
 
 /-- A GRF operand: `V0045(0,0)<1>` or `V0045(0,0)<1;1,0>`. -/
