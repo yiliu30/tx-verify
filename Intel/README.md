@@ -1525,6 +1525,32 @@ The store itself writes the per-lane sum `V0062` at that address; its
 word-level correctness needs the per-lane distinctness hypothesis and is the
 next step, together with the K-induction over repeated loop steps.
 
+## Stage 74: the GEMM K-induction
+
+`Intel/GemmRealLoop.lean` iterates the one-step invariant without unfolding a
+whole program. `gemmStepIter n s` applies `runGemm s gemmBodyStep` exactly `n`
+times, and `gemmDot` accumulates one term per step:
+
+```
+gemmDot k 0       = 0
+gemmDot k (n + 1) = gemmTerm k + gemmDot (k + 1) n
+```
+
+```lean
+theorem gemmStepIter_inv :
+    GemmLoopInv (gemmStepIter n s) ... l i j0 (k + n)
+      (sum + gemmDot s.mem ... k n) goX ∧
+    (gemmStepIter n s).mem = s.mem
+```
+
+This is the K-induction. Stating it as a recursion on states rather than a
+list-append fold keeps the kernel obligations small; the earlier list-based
+attempt timed out on whole-state unfolding.
+
+The remaining GEMM pieces are the final body at `k = 63` (where `cmp.lt` is
+false and the counter is not incremented), the sum `gemmDot 0 64`, and the
+epilogue store at `C`.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1645,4 +1671,5 @@ lake build Intel
     accumulation.
 71. Stage 71: prove one full loop iteration and its inductive invariant.
 72. Stage 72: make the GEMM loop invariant per-lane, matching the launch.
-73. Stage 73 (this PR): prove the GEMM epilogue's C address.
+73. Stage 73: prove the GEMM epilogue's C address.
+74. Stage 74 (this PR): prove the K-induction over repeated loop steps.
