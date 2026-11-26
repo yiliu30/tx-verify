@@ -122,4 +122,45 @@ theorem fmhaDpas_shape_and_depth :
     DpasShape.m8n8.m = 8 ∧ DpasShape.m8n8.n = 8 ∧ DpasType.hf8.k = 32 :=
   ⟨rfl, rfl, rfl⟩
 
+
+/-- A DPAS atom shape: M, N, K depth, source and accumulator types. -/
+structure DpasAtomShape where
+  m : Nat
+  n : Nat
+  k : Nat
+  src : DpasType
+  acc : DpasType
+  deriving Repr, DecidableEq
+
+/-- The SYCL-TLA `XE_8x16x16_F32F16F16F32` atom. -/
+def tlaXeF16Atom : DpasAtomShape := ⟨8, 16, 16, .f16, .f32⟩
+
+/-- The compiled FMHA fp8 atom: one 8x8x32 DPAS. -/
+def fmhaFp8Atom : DpasAtomShape := ⟨8, 8, 32, .hf8, .f32⟩
+
+/-- The decoded form's atom shape. -/
+def DpasForm.toAtom (f : DpasForm) : DpasAtomShape :=
+  ⟨f.shape.m, f.shape.n, f.src.k, f.src, f.acc⟩
+
+/-- The decoded FMHA instruction is exactly the 8x8x32 fp8 atom. -/
+theorem realFmhaDpas_atom :
+    (parseDpas "dpas.8x8" "(16|M0)" "r383:f" "r39:hf8" "r335.0:hf8").map DpasForm.toAtom =
+      some fmhaFp8Atom := by
+  decide
+
+/-- DPAS instructions per K=32 tile for an atom of depth `atomK`. -/
+def atomsPerTile (atomK kTile : Nat) : Nat := kTile / atomK
+
+/-- One K=32 tile needs one FMHA fp8 DPAS. -/
+theorem fmha_fp8_k32_atoms : atomsPerTile fmhaFp8Atom.k 32 = 1 := by
+  decide
+
+/-- The same K=32 tile needs two SYCL-TLA fp16 DPAS instructions. -/
+theorem tla_f16_k32_atoms : atomsPerTile tlaXeF16Atom.k 32 = 2 := by
+  decide
+
+/-- The N dims differ: 8 for FMHA fp8, 16 for SYCL-TLA fp16. -/
+theorem fmha_atom_not_tla : fmhaFp8Atom.n ≠ tlaXeF16Atom.n := by
+  decide
+
 end IntelGpu

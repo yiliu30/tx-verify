@@ -1811,6 +1811,28 @@ So the real, straight-line `nd_range` SIMD vector add writes
 under aligned A/B/C pointers, the index bounds and per-lane distinctness. The
 hardware run of the same source is `bad=0`.
 
+## Stage 86: DPAS atom shapes, quantified
+
+The real FMHA form and the SYCL-TLA atom are now both recorded as data:
+
+```lean
+def tlaXeF16Atom : DpasAtomShape := ⟨8, 16, 16, .f16, .f32⟩
+def fmhaFp8Atom  : DpasAtomShape := ⟨8, 8, 32, .hf8, .f32⟩
+```
+
+`realFmhaDpas_atom` ties the decoded `dpas.8x8` instruction to the FMHA atom;
+`fmha_atom_not_tla` records the N difference. `atomsPerTile` quantifies the
+consequence for a K=32 tile:
+
+```lean
+theorem fmha_fp8_k32_atoms : atomsPerTile fmhaFp8Atom.k 32 = 1
+theorem tla_f16_k32_atoms  : atomsPerTile tlaXeF16Atom.k 32 = 2
+```
+
+So the compiled FMHA fp8 mainloop issues one 8x8x32 DPAS per K=32, while the
+SYCL-TLA fp16 path issues two 8x16x16 DPAS instructions — the existing
+`dpasSlab_two_atoms` split. The atom mapping is now explicit in both directions.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1949,4 +1971,5 @@ lake build Intel
     a fail-closed mask check.
 83. Stage 83: decode scaled memory and prove the vector-add index preamble.
 84. Stage 84: prove the vector-add loads and sum.
-85. Stage 85 (this PR): the real vector add end-to-end.
+85. Stage 85: the real vector add end-to-end.
+86. Stage 86 (this PR): record and quantify the real DPAS atom shapes.
