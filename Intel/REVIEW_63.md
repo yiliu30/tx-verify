@@ -34,7 +34,7 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (113 jobs) and `Tools/check_axioms.py --all`
-  (1224 theorems, 329 documented exceptions at stage 159).
+  (1267 theorems, 357 documented exceptions at stage 160).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -56,8 +56,9 @@ Parser/decoder scope:
 - the scaled memory decoder accepts only the `0x4*index` form;
 - the loop-back writeback packs dwords into `V0059`, while the body load reads
   qword lanes; `vaLoopLoopBack_dword_counterexample` shows the existing model
-  does not literally identify the two views, so multi-iteration execution is
-  proved on a value-level reentry state rather than the raw decoded state.
+  does not literally identify the two views. Stage 160 adds an explicit
+  `coalesceReg59` adapter and proves the literal second iteration; it does not
+  change the raw semantics.
 
 Model assumptions:
 
@@ -79,10 +80,9 @@ from `Classical.choose` in the racing-store model.
 - masked/predicated loop vector add: predicate logic, both predicated `goto`s,
   the false-lane memory frame and generic mask laws are stages 130-151; the
   decoded PC 36-43 loop-back block and its value-level second iteration are
-  stage 158. A literal second iteration is blocked by a dword/qword aliasing
-  gap: the dword-view writeback does not reconstruct qword lane `l` for
-  `l < 24`, while the body load reads `regs 59 l`; closing it needs a
-  coalescing step in the existing semantics;
+  stage 158. The dword/qword aliasing gap is bridged by the explicit
+  coalescing adapter of stage 160, which proves the literal second-iteration
+  store; a multi-iteration induction and the all-32-lane extension remain;
 - FMHA/SageAttention execution: the 8x8x32 DPAS value path, the fp8 E4M3
   element path, one register-level DPAS step and a T-step register-level
   mainloop are modelled (stages 142, 148, 150, 155); physical tile packing,

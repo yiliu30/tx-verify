@@ -2913,4 +2913,5 @@ lake build Intel
 156. Stage 156: fp16 special values and overflow.
 157. Stage 157: coherence traffic between two caches.
 158. Stage 158: the decoded loop-back block.
-159. Stage 159 (this PR): directed fp16 rounding.
+159. Stage 159: directed fp16 rounding.
+160. Stage 160 (this PR): dword/qword coalescing adapter.
