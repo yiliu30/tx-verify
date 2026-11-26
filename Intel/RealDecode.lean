@@ -94,7 +94,7 @@ def beforeColon : List Char → List Char
   | ':' :: _ => []
   | c :: rest => c :: beforeColon rest
 
-def core (s : String) : String := String.ofList (beforeColon s.toList)
+def operandCore (s : String) : String := String.ofList (beforeColon s.toList)
 
 /-- The characters after the first colon. -/
 def afterColon : List Char → Option (List Char)
@@ -144,7 +144,7 @@ def parseExec (s : String) : Option Nat :=
 
 /-- A GRF operand: `V0045(0,0)<1>` or `V0045(0,0)<1;1,0>`. -/
 def parseGrf (s : String) : Option Grf :=
-  match numRuns (core s) with
+  match numRuns (operandCore s) with
   | [n, r, c, v] => some ⟨n, r, c, v, 1, 0⟩
   | [n, r, c, v, w, h] => some ⟨n, r, c, v, w, h⟩
   | _ => none
@@ -167,7 +167,7 @@ def hexDigitsToNat : List Char → Nat
 
 /-- An integer literal with optional typed suffix: `0x2`, `0x1:w`, `7`. -/
 def parseLit (s : String) : Option Nat :=
-  match (core s).toList with
+  match (operandCore s).toList with
   | '0' :: 'x' :: rest =>
       if rest.isEmpty then none
       else if allHexDigits rest then some (hexDigitsToNat rest) else none
@@ -177,7 +177,7 @@ def parseLit (s : String) : Option Nat :=
 
 /-- A bare register operand: `V0054`, with any typed suffix ignored. -/
 def parsePlainReg (s : String) : Option Nat :=
-  match numRuns (core s) with
+  match numRuns (operandCore s) with
   | [n] => some n
   | _ => none
 
