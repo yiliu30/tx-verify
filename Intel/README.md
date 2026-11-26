@@ -1875,6 +1875,23 @@ hits a different word. The SEND lemmas show that waiting or committing before
 completion stalls or writes nothing, so the model cannot silently observe an
 in-flight value.
 
+## Stage 90: per-lane predicates
+
+`RealState.preds` is now indexed by predicate and lane. `cmp.lt` writes the
+comparison on every active lane; a different predicate or an inactive lane is
+untouched:
+
+```lean
+theorem cmpLt_lane     : (cmpLt n p src imm w).preds p l = decide (low32 (src l) < imm)
+theorem cmpLt_other    : p' ≠ p -> (cmpLt ...).preds p' l = s.preds p' l
+theorem cmpLt_inactive : ¬ l < n -> (cmpLt ...).preds p l = s.preds p l
+```
+
+The GEMM's uniform branch reads lane 0 (`runRealCF`), so all its control-flow
+proofs are unchanged; the vector-add loop's per-lane predicate logic now has a
+model to build on. Execution masks `(M1, …, M5, …)`, `sel`, predicated `goto`
+and the grid-stride loop remain.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2017,4 +2034,5 @@ lake build Intel
 86. Stage 86: record and quantify the real DPAS atom shapes.
 87. Stage 87: consolidate the issue #63 response and trusted base.
 88. Stage 88: prove the 8x8x32 DPAS atom's dataflow.
-89. Stage 89 (this PR): negative tests for the address scale and SEND waits.
+89. Stage 89: negative tests for the address scale and SEND waits.
+90. Stage 90 (this PR): model per-lane predicates.

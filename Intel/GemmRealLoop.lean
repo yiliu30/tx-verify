@@ -137,7 +137,7 @@ theorem gemmFinalStep_sum (s : RealState) (aPtr bPtr cPtr : Addr)
 theorem gemmFinalStep_pred (s : RealState) (aPtr bPtr cPtr : Addr)
     (i j0 k sum goX : Word) (l : Nat)
     (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX) :
-    (runGemm s gemmFinalStep).preds 1 = decide (k < 63) := by
+    (runGemm s gemmFinalStep).preds 1 0 = decide (k < 63) := by
   unfold gemmFinalStep runGemm
   rw [runRealWith_append]
   simp [runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
@@ -171,7 +171,7 @@ theorem gemmFinalStep_inv (s : RealState) (aPtr bPtr cPtr : Addr)
     GemmLoopInv (runGemm s gemmFinalStep) aPtr bPtr cPtr l i j0 k
         (sum + gemmTerm s.mem (aPtr.toNat / 4) (bPtr.toNat / 4) i j0 goX k)
         goX ∧
-    (runGemm s gemmFinalStep).preds 1 = decide (k < 63) ∧
+    (runGemm s gemmFinalStep).preds 1 0 = decide (k < 63) ∧
     (runGemm s gemmFinalStep).mem = s.mem := by
   have hf := gemmFinalStep_frame s l 0
   have hf0 := gemmFinalStep_frame s 0 0
@@ -223,7 +223,7 @@ theorem gemmLoop_final (s : RealState) (aPtr bPtr cPtr : Addr)
     GemmLoopInv (runGemm (gemmStepIter 63 s) gemmFinalStep) aPtr bPtr cPtr l i j0 63
         (gemmDot s.mem (aPtr.toNat / 4) (bPtr.toNat / 4) i j0 goX 0 64)
         goX ∧
-    (runGemm (gemmStepIter 63 s) gemmFinalStep).preds 1 = false ∧
+    (runGemm (gemmStepIter 63 s) gemmFinalStep).preds 1 0 = false ∧
     (runGemm (gemmStepIter 63 s) gemmFinalStep).mem = s.mem := by
   have h63 := gemmStepIter_inv 63 s aPtr bPtr cPtr i j0 0 0 goX l h
     hi hj0 hgoX (by decide) ha hb hboundA hboundB

@@ -697,7 +697,7 @@ theorem gemmBodyBlock_frame (s : RealState) (l w p : Nat) :
     (runGemm s gemmBodyBlock).regs 35 l = s.regs 35 l ∧
     (runGemm s gemmBodyBlock).regs 36 l = s.regs 36 l ∧
     (runGemm s gemmBodyBlock).regs 39 l = s.regs 39 l ∧
-    (runGemm s gemmBodyBlock).preds p = s.preds p ∧
+    (runGemm s gemmBodyBlock).preds p l = s.preds p l ∧
     (runGemm s gemmBodyBlock).mem w = s.mem w := by
   unfold gemmBodyBlock runGemm
   simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
@@ -718,7 +718,7 @@ theorem gemmBodyStep_counter (s : RealState) (aPtr bPtr cPtr : Addr)
 theorem gemmBodyStep_pred (s : RealState) (aPtr bPtr cPtr : Addr)
     (i j0 k sum goX : Word) (l : Nat)
     (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX) (hk : k.toNat < 63) :
-    (runGemm s gemmBodyStep).preds 1 = true := by
+    (runGemm s gemmBodyStep).preds 1 0 = true := by
   unfold gemmBodyStep runGemm
   rw [runRealWith_append]
   simp [runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
@@ -790,7 +790,7 @@ theorem gemmBodyStep_inv (s : RealState) (aPtr bPtr cPtr : Addr)
     GemmLoopInv (runGemm s gemmBodyStep) aPtr bPtr cPtr l i j0 (k + 1)
         (sum + s.mem (aPtr.toNat / 4 + (i * 64 + k).toNat) *
           s.mem (bPtr.toNat / 4 + (k * 64 + j0 + goX).toNat)) goX ∧
-    (runGemm s gemmBodyStep).preds 1 = true ∧
+    (runGemm s gemmBodyStep).preds 1 0 = true ∧
     (runGemm s gemmBodyStep).mem = s.mem := by
   have hf0 := gemmBodyStep_frame s 0 0
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
