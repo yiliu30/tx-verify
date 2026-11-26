@@ -1892,6 +1892,21 @@ proofs are unchanged; the vector-add loop's per-lane predicate logic now has a
 model to build on. Execution masks `(M1, …, M5, …)`, `sel`, predicated `goto`
 and the grid-stride loop remain.
 
+## Stage 91: predicated select
+
+The decoder now accepts the vector-add dump's `(P6) sel` form, and `stepWith`
+selects each lane independently:
+
+```lean
+theorem sel_lane : (stepWith alias typeOf s (.sel n p dst a b)).regs (alias dst.num) l
+  = if s.preds p l then readSrcWith alias s a l else readSrcWith alias s b l
+```
+
+Both the destination region check and the GEMM destination-count invariant cover
+the new instruction. The vector-add decoder's accepted list therefore includes
+the two selects; only the M5 masks, predicate `and`/`or` and predicated `goto`s
+remain rejected in that dump.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1901,9 +1916,10 @@ and the grid-stride loop remain.
   instance's indices, loop, epilogue and output are stages 68-77.
 - Cross-workgroup visibility, synchronization, caches and SLM aliasing; stage
   67 refines aligned accesses to bytes and proves byte-range disjointness.
-- SIMD masks and scoreboards. Stage 64 interprets this kernel's broadcast and
-  dense GRF regions, not the general region algebra; stage 66 models one
-  uniform predicate bit for the GEMM's control flow.
+- SIMD execution masks, predicate logic and scoreboards. Stage 64 interprets
+  this kernel's broadcast and dense GRF regions, not the general region
+  algebra; stage 66 models one uniform predicate bit for the GEMM's control
+  flow; stages 90-91 add per-lane predicates and predicated `sel`.
 - SEND issue/completion/wait and the register scoreboard are stage 78; raw
   message operand layout, EOT details beyond a halted flag, and the exact SBID
   assignments (not printed in the assembly) remain.
@@ -2035,4 +2051,5 @@ lake build Intel
 87. Stage 87: consolidate the issue #63 response and trusted base.
 88. Stage 88: prove the 8x8x32 DPAS atom's dataflow.
 89. Stage 89: negative tests for the address scale and SEND waits.
-90. Stage 90 (this PR): model per-lane predicates.
+90. Stage 90: model per-lane predicates.
+91. Stage 91 (this PR): execute predicated select per lane.
