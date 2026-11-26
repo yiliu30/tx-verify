@@ -103,7 +103,7 @@ from `Classical.choose` in the racing-store model.
 - SBID assignments are a documented transcription assumption (stage 147),
   because the dumps do not print the field.
 
-## Stage index 137-164
+## Stage index 137-172
 
 | Stage | PR | Result |
 | --- | --- | --- |
@@ -135,6 +135,14 @@ from `Classical.choose` in the racing-store model.
 | 162 | #164 | directory/ownership coherence |
 | 163 | #165 | FMHA tail and partial K |
 | 164 | #166 | general fp16 round-to-nearest-even |
+| 165 | #167 | review stage map refresh |
+| 166 | #168 | fp exception flags |
+| 167 | #169 | relaxed atomics and store buffers |
+| 168 | #170 | write-back caches and request queues |
+| 169 | #171 | SLM banks and swizzling |
+| 170 | #172 | fp16 fused multiply-add |
+| 171 | #173 | sticky per-lane flags |
+| 172 | #174 | directed-rounding FMA |
 
-The stack is intentionally one PR per stage (#64-#166), as requested. The
+The stack is intentionally one PR per stage (#64-#174), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
