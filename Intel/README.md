@@ -2560,6 +2560,18 @@ into an exact fixed-point value, proves the exact values of `1.0`, `1.5`,
 existing atom when every read element is non-NaN, and the concrete all-ones and
 unit-tile theorems check the 32-term atom by computation.
 
+## Stage 149: IEEE fp16 addition rounding
+
+`Intel/IeeeFp16Add.lean` proves a restricted IEEE-754 fp16 addition result.
+`fp16_add_single_rounding` states that an exact-grid sum needs no rounding;
+`fp16_add_halfway_even` and `fp16_add_halfway_even_mantissa` prove the
+tie-to-even rule; and `fp16_add_no_double_rounding` proves that the
+decode/add/encode path performs exactly one rounding. The module also records
+that a general nested-rounding identity is false
+(`double_rounding_counterexample`) and documents the proved class: normalized
+finite operands, a supplied destination exponent, no subnormals, signed zeros,
+NaN payloads, overflow to infinity or FMA. It is not a full IEEE FMA.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2770,4 +2782,5 @@ lake build Intel
 145. Stage 145: global/SLM disjointness and workgroup barriers.
 146. Stage 146: grid-stride indices and store composition.
 147. Stage 147: SBID fields in an encoded SEND descriptor.
-148. Stage 148 (this PR): fp8 E4M3 decode for the FMHA atom.
+148. Stage 148: fp8 E4M3 decode for the FMHA atom.
+149. Stage 149 (this PR): IEEE fp16 addition rounding.
