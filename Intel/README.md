@@ -2527,6 +2527,18 @@ pre-barrier SLM log, `sload_wgBarrier_sstore` reads the stored tile back, and
 the producer/consumer theorems include a negative test showing the barrier is
 load-bearing.
 
+## Stage 146: grid-stride indices and store composition
+
+`Intel/GridStride.lean` isolates the value-level grid-stride loop.
+`strideId start stride k = start + k * stride`, `strideId_guard_true_before`
+and `strideId_guard_false_at_bound` give the two guard sides under the exact
+in-range boundary, and `strideId_pairwise_distinct` proves positive strides
+produce distinct addresses under the no-wrap bound. `gridStore_correct`
+composes `C[id_k] = A[id_k] + B[id_k]` over `n` iterations and keeps every
+other word at its initial value. The module notes the literal "`start < size`
+implies all `k < n` are in range" statement is false and uses the correct
+boundary instead.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2734,4 +2746,5 @@ lake build Intel
 142. Stage 142: FMHA atom value refinement and tile composition.
 143. Stage 143: predicated lanes write nothing.
 144. Stage 144: reaching `ret` with the halt flag.
-145. Stage 145 (this PR): global/SLM disjointness and workgroup barriers.
+145. Stage 145: global/SLM disjointness and workgroup barriers.
+146. Stage 146 (this PR): grid-stride indices and store composition.
