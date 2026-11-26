@@ -2053,6 +2053,22 @@ DPAS operand. `realFmhaDpas_regs` proves the real line decodes to
 packed layout. The operand bases are no longer bare numbers in the packing
 module; they are tied back to the instruction text.
 
+## Stage 102: a packed DPAS known-answer test
+
+`fmhaRealPackedAtom_ones` executes the modelled atom on a concrete register
+file whose packed A and B bytes are all one and whose C region is zero. The
+32-deep fp8 dot yields exactly 32:
+
+```lean
+theorem fmhaRealPackedAtom_ones :
+  fmhaAtom (fmhaRealA fmhaOnesRegs) (fmhaRealB fmhaOnesRegs)
+    (fmhaRealC fmhaOnesRegs) 0 0 0 0 = 32
+```
+
+The proof rewrites with `fmhaRealPackedAtom_correct` and kernel-evaluates the
+32-step accumulation. This is a model-level smoke test for the packing and
+atom, not a hardware conformance run.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2212,4 +2228,5 @@ lake build Intel
 98. Stage 98: masked-move frames and a load-bearing mask test.
 99. Stage 99: packed DPAS operands for the real FMHA atom.
 100. Stage 100: prove the packed DPAS address maps are collision-free.
-101. Stage 101 (this PR): decode the real DPAS register bases.
+101. Stage 101: decode the real DPAS register bases.
+102. Stage 102 (this PR): execute a packed DPAS known-answer test.

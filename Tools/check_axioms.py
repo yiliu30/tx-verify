@@ -285,6 +285,7 @@ THEOREMS = [
     ("Intel.DpasPacking", "IntelGpu.fmhaAAddr_injective16"),
     ("Intel.DpasPacking", "IntelGpu.fmhaCAddr_injective16"),
     ("Intel.DpasPacking", "IntelGpu.fmhaReal_uses_decoded_bases"),
+    ("Intel.DpasPacking", "IntelGpu.fmhaRealPackedAtom_ones"),
     ("Intel.Fp16Ieee", "IntelGpu.vstepIEEE_zero_left"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_fin"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_ne_fin"),
