@@ -2508,6 +2508,14 @@ neutral, and `vaLoop_lane_inactive_mem` proves that a lane whose real P3 guard
 is false runs from PC 0 to the PC 44 exit with memory exactly unchanged. No
 pointer or aliasing hypothesis is needed: the lane never reaches the body.
 
+## Stage 144: reaching `ret`
+
+`Intel/LoopKernelExit.lean` runs the PC 44 exit label and the decoded `ret`.
+`vaLoopCFLane_exit_halted` proves the halt flag, `vaLoop_pc8_exit_halted`
+carries that through the PC 8 path, and `vaLoop_kernel_pc0_effect` combines
+the halt with the stage-140 memory effect: from PC 0, an active lane halts at
+`ret` with `C[id] = A[id] + B[id]`.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2713,4 +2721,5 @@ lake build Intel
 140. Stage 140: the decoded kernel entry from PC 0.
 141. Stage 141: generic execution-mask laws.
 142. Stage 142: FMHA atom value refinement and tile composition.
-143. Stage 143 (this PR): predicated lanes write nothing.
+143. Stage 143: predicated lanes write nothing.
+144. Stage 144 (this PR): reaching `ret` with the halt flag.
