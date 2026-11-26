@@ -98,10 +98,12 @@ def regType : Nat → Option RegType
   | 55 => some .d32
   | _ => none
 
-def isWide (r : Nat) : Bool :=
-  match regType r with
+def isWideOf (typeOf : Nat → Option RegType) (r : Nat) : Bool :=
+  match typeOf r with
   | some t => t.is64
   | none => false
+
+abbrev isWide (r : Nat) : Bool := isWideOf regType r
 
 /-- A register file with 64-bit slots, word-addressed global memory and a halt
 flag. -/
@@ -122,7 +124,10 @@ def aliasBase : Nat → Nat
   | 53 => 52
   | n => n
 
-def readReg (s : RealState) (r e : Nat) : Addr := s.regs (aliasBase r) e
+def readRegWith (alias : Nat → Nat) (s : RealState) (r e : Nat) : Addr :=
+  s.regs (alias r) e
+
+abbrev readReg (s : RealState) (r e : Nat) : Addr := readRegWith aliasBase s r e
 
 /-- Element index selected by a source region at lane `l`. All regions here
 have width 1 and horizontal stride 0, so only the vertical stride decides
@@ -130,8 +135,10 @@ between a broadcast and a dense read. -/
 def srcIndex (g : Grf) (l : Nat) : Nat :=
   g.row * 8 + g.col + if g.vstride = 0 then 0 else l
 
-def readSrc (s : RealState) (g : Grf) (l : Nat) : Addr :=
-  readReg s g.num (srcIndex g l)
+def readSrcWith (alias : Nat → Nat) (s : RealState) (g : Grf) (l : Nat) : Addr :=
+  readRegWith alias s g.num (srcIndex g l)
+
+abbrev readSrc (s : RealState) (g : Grf) (l : Nat) : Addr := readSrcWith aliasBase s g l
 
 def setReg (regs : Nat → Nat → Addr) (r : Nat) (g : Nat → Addr) : Nat → Nat → Addr :=
   fun r' e => if r' = r then g e else regs r' e
@@ -139,17 +146,22 @@ def setReg (regs : Nat → Nat → Addr) (r : Nat) (g : Nat → Addr) : Nat → 
 /-- Write all declared elements of a destination register. This is exact for
 this kernel: every destination's `.decl` element count equals its execution
 size, checked by `realAddOne_dst_counts`. -/
-def writeVec (s : RealState) (r : Nat) (f : Nat → Addr) : RealState :=
-  { s with regs := setReg s.regs (aliasBase r) f }
+def writeVecWith (alias : Nat → Nat) (s : RealState) (r : Nat)
+    (f : Nat → Addr) : RealState :=
+  { s with regs := setReg s.regs (alias r) f }
 
-@[simp] theorem writeVec_same (s : RealState) (r : Nat) (f : Nat → Addr)
-    (e : Nat) : (writeVec s r f).regs (aliasBase r) e = f e := by
-  simp [writeVec, setReg]
+abbrev writeVec (s : RealState) (r : Nat) (f : Nat → Addr) : RealState :=
+  writeVecWith aliasBase s r f
 
-@[simp] theorem writeVec_ne (s : RealState) (r : Nat) (f : Nat → Addr) (r' e : Nat)
-    (h : aliasBase r' ≠ aliasBase r) :
-    (writeVec s r f).regs (aliasBase r') e = s.regs (aliasBase r') e := by
-  simp [writeVec, setReg, h]
+@[simp] theorem writeVecWith_same (alias : Nat → Nat) (s : RealState) (r : Nat)
+    (f : Nat → Addr) (e : Nat) :
+    (writeVecWith alias s r f).regs (alias r) e = f e := by
+  simp [writeVecWith, setReg]
+
+@[simp] theorem writeVecWith_ne (alias : Nat → Nat) (s : RealState) (r : Nat)
+    (f : Nat → Addr) (r' e : Nat) (h : alias r' ≠ alias r) :
+    (writeVecWith alias s r f).regs (alias r') e = s.regs (alias r') e := by
+  simp [writeVecWith, setReg, h]
 
 abbrev low32 (a : Addr) : Word := a.truncate 32
 
@@ -162,18 +174,28 @@ abbrev zext (w : Word) : Addr := w.zeroExtend 64
     low32 (w.zeroExtend 64) = w.zeroExtend 32 := by
   bv_omega
 
-def binOp (dst : Nat) (f32 : Word → Word → Word) (f64 : Addr → Addr → Addr)
-    (x y : Addr) : Addr :=
-  if isWide dst then f64 x y else zext (f32 (low32 x) (low32 y))
+def binOpWide (wide : Bool) (f32 : Word → Word → Word)
+    (f64 : Addr → Addr → Addr) (x y : Addr) : Addr :=
+  if wide then f64 x y else zext (f32 (low32 x) (low32 y))
 
-def add3Op (dst : Nat) (x y z : Addr) : Addr :=
-  if isWide dst then x + y + z else zext (low32 x + low32 y + low32 z)
+abbrev binOp (dst : Nat) (f32 : Word → Word → Word) (f64 : Addr → Addr → Addr)
+    (x y : Addr) : Addr := binOpWide (isWide dst) f32 f64 x y
 
-def shlOp (dst : Nat) (x : Addr) (k : Nat) : Addr :=
-  if isWide dst then x <<< k else zext (low32 x <<< k)
+def add3Wide (wide : Bool) (x y z : Addr) : Addr :=
+  if wide then x + y + z else zext (low32 x + low32 y + low32 z)
 
-def addImmOp (dst : Nat) (x : Addr) (imm : Word) : Addr :=
-  if isWide dst then x + zext imm else zext (low32 x + imm)
+abbrev add3Op (dst : Nat) (x y z : Addr) : Addr := add3Wide (isWide dst) x y z
+
+def shlWide (wide : Bool) (x : Addr) (k : Nat) : Addr :=
+  if wide then x <<< k else zext (low32 x <<< k)
+
+abbrev shlOp (dst : Nat) (x : Addr) (k : Nat) : Addr := shlWide (isWide dst) x k
+
+def addImmWide (wide : Bool) (x : Addr) (imm : Word) : Addr :=
+  if wide then x + zext imm else zext (low32 x + imm)
+
+abbrev addImmOp (dst : Nat) (x : Addr) (imm : Word) : Addr :=
+  addImmWide (isWide dst) x imm
 
 /-- A vector store: word `w` receives the value of some active lane whose
 address is `w`. Distinct addresses make that lane unique, which is what
@@ -207,51 +229,64 @@ theorem storeVec_frame (m : Nat → Word) (n : Nat) (addr : Nat → Addr)
     exact h hex.choose hex.choose_spec.1 hex.choose_spec.2
   rw [dite_eq_right hnot]
 
-def stepReal : RealState → RInstr → RealState
+def stepWith (alias : Nat → Nat) (typeOf : Nat → Option RegType) :
+    RealState → RInstr → RealState
   | s, .prologue => s
   | s, .mul _ dst a b =>
-      writeVec s dst.num (fun l =>
-        binOp dst.num (fun x y => x * y) (fun x y => x * y)
-          (readSrc s a l) (readSrc s b l))
+      writeVecWith alias s dst.num (fun l =>
+        binOpWide (isWideOf typeOf dst.num) (fun x y => x * y) (fun x y => x * y)
+          (readSrcWith alias s a l) (readSrcWith alias s b l))
   | s, .mov _ dst src =>
-      writeVec s dst.num (fun l => readSrc s src l)
+      writeVecWith alias s dst.num (fun l => readSrcWith alias s src l)
   | s, .add3 _ dst a b c =>
-      writeVec s dst.num (fun l =>
-        add3Op dst.num (readSrc s a l) (readSrc s b l) (readSrc s c l))
+      writeVecWith alias s dst.num (fun l =>
+        add3Wide (isWideOf typeOf dst.num) (readSrcWith alias s a l)
+          (readSrcWith alias s b l) (readSrcWith alias s c l))
   | s, .shl _ dst src k =>
-      writeVec s dst.num (fun l => shlOp dst.num (readSrc s src l) k)
+      writeVecWith alias s dst.num (fun l =>
+        shlWide (isWideOf typeOf dst.num) (readSrcWith alias s src l) k)
   | s, .add _ dst a b =>
-      writeVec s dst.num (fun l =>
-        binOp dst.num (fun x y => x + y) (fun x y => x + y)
-          (readSrc s a l) (readSrc s b l))
+      writeVecWith alias s dst.num (fun l =>
+        binOpWide (isWideOf typeOf dst.num) (fun x y => x + y) (fun x y => x + y)
+          (readSrcWith alias s a l) (readSrcWith alias s b l))
   | s, .addImm _ dst src imm _ =>
-      writeVec s dst.num (fun l =>
-        addImmOp dst.num (readSrc s src l) (BitVec.ofNat 32 imm))
+      writeVecWith alias s dst.num (fun l =>
+        addImmWide (isWideOf typeOf dst.num) (readSrcWith alias s src l)
+          (BitVec.ofNat 32 imm))
   | s, .load _ dst _ addrReg =>
-      writeVec s dst (fun l => zext (load32 s.mem (readReg s addrReg l).toNat))
+      writeVecWith alias s dst (fun l =>
+        zext (load32 s.mem (readRegWith alias s addrReg l).toNat))
   | s, .store n addrReg _ src =>
       { s with
-        mem := storeVec s.mem n (fun l => readReg s addrReg l)
-          (fun l => low32 (readReg s src l)) }
+        mem := storeVec s.mem n (fun l => readRegWith alias s addrReg l)
+          (fun l => low32 (readRegWith alias s src l)) }
   | s, .ret _ => { s with halted := true }
   | s, .label _ => s
   | s, .movImm _ dst imm _ =>
-      writeVec s dst.num (fun _ => zext (BitVec.ofNat 32 imm))
+      writeVecWith alias s dst.num (fun _ => zext (BitVec.ofNat 32 imm))
   | s, .or _ dst a b =>
-      writeVec s dst.num (fun l =>
-        binOp dst.num (fun x y => x ||| y) (fun x y => x ||| y)
-          (readSrc s a l) (readSrc s b l))
+      writeVecWith alias s dst.num (fun l =>
+        binOpWide (isWideOf typeOf dst.num) (fun x y => x ||| y) (fun x y => x ||| y)
+          (readSrcWith alias s a l) (readSrcWith alias s b l))
   | s, .cmpLt _ p src imm _ =>
       { s with
         preds := fun p' =>
-          if p' = p then decide (low32 (readSrc s src 0) < BitVec.ofNat 32 imm)
+          if p' = p then
+            decide (low32 (readSrcWith alias s src 0) < BitVec.ofNat 32 imm)
           else s.preds p' }
   | s, .goto _ _ => s
   | s, .gotoIf _ _ _ _ => s
 
-/-- The straight-line fold. It is the semantics used by the add-one proofs;
-control flow is interpreted by `runRealCF`. -/
-def runReal (s : RealState) (is : List RInstr) : RealState := is.foldl stepReal s
+/-- The add-one instance of `stepWith`. -/
+abbrev stepReal : RealState → RInstr → RealState := stepWith aliasBase regType
+
+/-- The straight-line fold. -/
+def runRealWith (step : RealState → RInstr → RealState) (s : RealState)
+    (is : List RInstr) : RealState := is.foldl step s
+
+/-- The add-one instance; control flow is interpreted by `runRealCF`. -/
+abbrev runReal (s : RealState) (is : List RInstr) : RealState :=
+  runRealWith stepReal s is
 
 /-- Find a label's program counter. -/
 def labelIndexGo : List RInstr → String → Nat → Option Nat
@@ -266,29 +301,38 @@ def labelIndex (code : List RInstr) (name : String) : Option Nat :=
 /-- A fuel-based control-flow interpreter. `goto` targets are labels in the
 same list, `gotoIf` reads a uniform predicate, and fuel makes termination
 structural. -/
-def runRealCF (code : List RInstr) (s : RealState) (pc fuel : Nat) : RealState :=
+def runRealCFWith (step : RealState → RInstr → RealState) (code : List RInstr)
+    (s : RealState) (pc fuel : Nat) : RealState :=
   match fuel with
   | 0 => s
   | fuel + 1 =>
       match code[pc]? with
       | none => s
-      | some (.label _) => runRealCF code s (pc + 1) fuel
+      | some (.label _) => runRealCFWith step code s (pc + 1) fuel
       | some (.goto _ l) =>
           match labelIndex code l with
-          | some pc' => runRealCF code s pc' fuel
+          | some pc' => runRealCFWith step code s pc' fuel
           | none => s
       | some (.gotoIf _ p negated l) =>
           let taken := if negated then !(s.preds p) else s.preds p
           if taken then
             match labelIndex code l with
-            | some pc' => runRealCF code s pc' fuel
+            | some pc' => runRealCFWith step code s pc' fuel
             | none => s
-          else runRealCF code s (pc + 1) fuel
-      | some i => runRealCF code (stepReal s i) (pc + 1) fuel
+          else runRealCFWith step code s (pc + 1) fuel
+      | some i => runRealCFWith step code (step s i) (pc + 1) fuel
+
+/-- The add-one instance of the control-flow interpreter. -/
+abbrev runRealCF := runRealCFWith stepReal
+
+theorem runRealWith_append (step : RealState → RInstr → RealState)
+    (s : RealState) (is js : List RInstr) :
+    runRealWith step s (is ++ js) = runRealWith step (runRealWith step s is) js := by
+  simp [runRealWith, List.foldl_append]
 
 theorem runReal_append (s : RealState) (is js : List RInstr) :
-    runReal s (is ++ js) = runReal (runReal s is) js := by
-  simp [runReal, List.foldl_append]
+    runReal s (is ++ js) = runReal (runReal s is) js :=
+  runRealWith_append stepReal s is js
 
 /-- The address computation, as decoded: mul, two moves, add3, shift and add. -/
 def realAddOnePreamble : List RInstr :=
@@ -425,16 +469,17 @@ theorem realAddOne_dst_counts :
   unfold realAddOneInstrs realAddOnePreamble realAddOneTail
   decide
 
-/-- `V0053`, the address register, holds the computed address at every lane. -/
+/-- `V0053`, the address register, holds the computed address at every lane.
+`V0053` aliases `V0052`, so the state projection is at physical register 52. -/
 theorem realAddOne_address_preamble (s : RealState) (base : Addr)
     (localSize r0 : Word) (localId : Nat → BitVec 16) (globalOffset : Word)
     (l : Nat) (h : LaunchPre s base localSize r0 localId globalOffset) :
-    readSrc (runReal s realAddOnePreamble) ⟨53, 0, 0, 1, 1, 0⟩ l =
+    (runReal s realAddOnePreamble).regs 52 l =
       realAddress base (threadId localSize r0 localId globalOffset l) := by
   unfold realAddOnePreamble runReal threadId realAddress
-  simp [stepReal, writeVec, setReg, readReg, readSrc, srcIndex, aliasBase,
-    isWide, regType, RegType.is64, binOp, add3Op, shlOp, h.baseReg,
-    h.localSizeReg, h.r0Reg, h.localIdReg, h.offsetReg]
+  simp [runRealWith, stepWith, writeVecWith, setReg, readRegWith, readSrcWith,
+    srcIndex, aliasBase, isWideOf, regType, RegType.is64, binOpWide, add3Wide,
+    shlWide, h.baseReg, h.localSizeReg, h.r0Reg, h.localIdReg, h.offsetReg]
 
 /-- The preamble only writes registers. -/
 theorem realAddOne_preamble_mem (s : RealState) :
@@ -451,8 +496,9 @@ theorem realAddOne_tail_mem (s : RealState) (base : Addr) (localSize r0 : Word)
         (fun l =>
           laneWord s base (threadId localSize r0 localId globalOffset l) + 1) := by
   unfold realAddOneTail runReal
-  simp [stepReal, writeVec, setReg, readReg, readSrc, srcIndex, aliasBase, isWide,
-    regType, RegType.is64, addImmOp, load32, laneWord]
+  simp [runRealWith, stepWith, writeVecWith, setReg, readRegWith, readSrcWith,
+    srcIndex, aliasBase, isWideOf, regType, RegType.is64, addImmWide, load32,
+    laneWord]
   have hfun : (fun l => s.regs 52 l) =
       (fun l => realAddress base (threadId localSize r0 localId globalOffset l)) :=
     funext haddr
@@ -474,19 +520,18 @@ theorem realAddOne_mem (s : RealState) (base : Addr) (localSize r0 : Word)
   rw [runReal_append]
   have haddr : ∀ l,
       (runReal s realAddOnePreamble).regs 52 l =
-        realAddress base (threadId localSize r0 localId globalOffset l) := by
-    intro l
-    simpa [readSrc, readReg, srcIndex, aliasBase] using
-      realAddOne_address_preamble s base localSize r0 localId globalOffset l h
+        realAddress base (threadId localSize r0 localId globalOffset l) :=
+    fun l => realAddOne_address_preamble s base localSize r0 localId globalOffset l h
   rw [realAddOne_tail_mem (runReal s realAddOnePreamble) base localSize r0 localId
     globalOffset haddr]
-  simp only [laneWord, realAddOne_preamble_mem]
+  simp only [laneWord]
+  rw [realAddOne_preamble_mem]
 
 /-- The kernel halts: `ret` is the last instruction. -/
 theorem realAddOne_halted (s : RealState) :
     (runReal s realAddOneInstrs).halted = true := by
   unfold realAddOneInstrs realAddOnePreamble realAddOneTail runReal
-  simp [stepReal, writeVec]
+  simp [runRealWith, stepWith, writeVecWith]
 
 /-- End to end for the real kernel: each of the 32 lanes computes an aligned
 address, increments the word originally there, and no other word changes.
