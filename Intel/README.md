@@ -1645,6 +1645,31 @@ fair completion, sample-at-issue memory, the register scoreboard as the wait,
 and no token reuse while pending. The assembly text does not print SBIDs, so
 those are assumptions, not facts read from the dump.
 
+## Stage 79: a real DPAS instruction, decoded
+
+The DPAS model's two-atom split (`dpasSlab_two_atoms`) is the 8x16x16
+SYCL-TLA atom. A real compiled FMHA fp8 kernel uses a different shape:
+
+```
+dpas.8x8 (16|M0) r383:f null:f r39:hf8 r335.0:hf8 {Atomic,Fwd,$6.dst}
+```
+
+`Intel/RealDpas.lean` records the instruction with provenance (sha256
+`b0449b8c…85a3`, platform/options redacted) and decodes it:
+
+```lean
+theorem realFmhaDpas_form :
+    parseDpas "dpas.8x8" "(16|M0)" "r383:f" "r39:hf8" "r335.0:hf8" =
+      some ⟨.m8n8, 16, .hf8, .f32⟩
+theorem fmhaDpas_not_tlaAtom : DpasShape.m8n8 ≠ DpasShape.m8n16
+theorem fmhaDpas_depth : DpasType.hf8.k = 32
+```
+
+So the compiled FMHA atom is 8x8x32 with an `f32` accumulator, not the
+model's 8x16x16. The existing `dpasSlab_two_atoms` theorem stays scoped to the
+SYCL-TLA fp16/fp32 configuration; the fp8 FMHA path needs its own 8x8x32 atom.
+That is a mapping result the review asked for, and it is a negative one.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1666,7 +1691,8 @@ those are assumptions, not facts read from the dump.
   domain, values in units of `2 ^ -24` for normals, subnormals and fractions,
   and the glue between that scale and the numeric layer's. NaN *payloads*
   remain unmodeled.
-- Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
+- Instruction-level DPAS: stage 79 decodes a real 8x8x32 fp8 form and shows it
+  is not the model's 8x16x16 atom; the full fp8 dataflow/numerics remains.
 - Strided per-thread staging as SYCL-TLA's copy atoms use it: stage 37 models
   a block distribution (lane `l` owns a contiguous chunk), not the interleaved
   per-thread addressing.
@@ -1772,4 +1798,5 @@ lake build Intel
 75. Stage 75: prove the final iteration and the total `gemmDot 0 64`.
 76. Stage 76: prove the epilogue store at `C`.
 77. Stage 77: the real GEMM's end-to-end output theorem.
-78. Stage 78 (this PR): model SEND/SBID issue, completion, wait and commit.
+78. Stage 78: model SEND/SBID issue, completion, wait and commit.
+79. Stage 79 (this PR): decode a real FMHA DPAS and check the atom mapping.
