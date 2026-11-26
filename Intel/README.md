@@ -1416,6 +1416,25 @@ declared type and element count, so whole-register writes stay exact. The next
 GEMM stage is the loop body: the two address chains, the load/multiply/add and
 the counter/branch, followed by the K-induction and the final store.
 
+## Stage 69: GEMM loop-body indices
+
+`GemmLoopInv` records the loop-head values: `V0058 = i << 6`, `V0057 = j0`,
+`V0061 = k`, `V0062 = sum`, the three pointers, and `globalOffset[0]`.
+`gemmIndexBlock` is the first half of the loop body: the `or`/moves/shifts for
+the A address and the `shl`/`add3` for the B index.
+
+The address step is a bitwise `or` used as an add: `V0063 = V0058 | V0061`.
+`or_shift_six` proves `(i << 6) ||| k = i * 64 + k` for `i, k < 64`, checked
+over `Fin 64` by kernel `decide`; `shl_six` records `k << 6 = k * 64`.
+
+```lean
+theorem gemmIndexA : V0063 = zeroExtend (i * 64 + k)
+theorem gemmIndexB : V0071 = zeroExtend (k * 64 + j0 + globalOffset[0])
+```
+
+Next is the byte-address half: converting `A + 4 * index` to a word index,
+the two loads, and the multiply-add.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1529,5 +1548,6 @@ lake build Intel
     and both `goto` forms.
 67. Stage 67: byte-addressed memory, alignment, aliasing and byte-range race
     freedom.
-68. Stage 68 (this PR): parameterise the semantics and prove the real GEMM's
-    preamble and loop-entry values.
+68. Stage 68: parameterise the semantics and prove the real GEMM's preamble
+    and loop-entry values.
+69. Stage 69 (this PR): prove the loop body's A and B index computations.

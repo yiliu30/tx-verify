@@ -332,6 +332,75 @@ theorem gemmPreamble_entry (s : RealState) (aPtr bPtr cPtr : Addr)
     gemmPreamble_sum s aPtr bPtr cPtr localSizeX localSizeY r0x r0y goX goY
       localIdX localIdY h l⟩
 
+
+/-- Bounded `(i <<< 6) ||| k = i * 64 + k`, checked over `Fin 64`. -/
+theorem or_shift_six_fin : ∀ a b : Fin 64,
+    (BitVec.ofNat 32 a.val <<< 6) ||| BitVec.ofNat 32 b.val =
+      BitVec.ofNat 32 a.val * 64 + BitVec.ofNat 32 b.val := by
+  decide
+
+theorem or_shift_six (i k : Word) (hi : i.toNat < 64) (hk : k.toNat < 64) :
+    (i <<< 6) ||| k = i * 64 + k := by
+  have hi' : i = BitVec.ofNat 32 i.toNat := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ofNat]
+    omega
+  have hk' : k = BitVec.ofNat 32 k.toNat := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ofNat]
+    omega
+  rw [hi', hk']
+  exact or_shift_six_fin ⟨i.toNat, hi⟩ ⟨k.toNat, hk⟩
+
+theorem shl_six (k : Word) : k <<< 6 = k * 64 := by
+  bv_omega
+
+/-- Loop-head values: the row shift, the column base, the counter, the sum,
+the three pointers and the global X offset. -/
+structure GemmLoopInv (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word) : Prop where
+  v58 : ∀ l, s.regs 58 l = zext (i <<< 6)
+  v57 : ∀ l, s.regs 57 l = zext j0
+  v61 : s.regs 61 0 = zext k
+  v62 : ∀ l, s.regs 62 l = zext sum
+  aReg : s.regs 34 0 = aPtr
+  bReg : s.regs 35 0 = bPtr
+  cReg : s.regs 36 0 = cPtr
+  goXReg : s.regs 39 0 = zext goX
+
+/-- The index half of the loop body: `or`, the A byte-address chain, and the
+B index chain. -/
+def gemmIndexBlock : List RInstr :=
+  [ .or 32 ⟨63, 0, 0, 1, 1, 0⟩ ⟨58, 0, 0, 1, 1, 0⟩ ⟨61, 0, 0, 0, 1, 0⟩,
+    .mov 32 ⟨64, 0, 0, 1, 1, 0⟩ ⟨65, 0, 0, 1, 1, 0⟩,
+    .shl 32 ⟨66, 0, 0, 1, 1, 0⟩ ⟨64, 0, 0, 1, 1, 0⟩ 2,
+    .add 32 ⟨67, 0, 0, 1, 1, 0⟩ ⟨66, 0, 0, 1, 1, 0⟩ ⟨59, 0, 0, 0, 1, 0⟩,
+    .shl 1 ⟨70, 0, 0, 1, 1, 0⟩ ⟨61, 0, 0, 0, 1, 0⟩ 6,
+    .add3 32 ⟨71, 0, 0, 1, 1, 0⟩ ⟨70, 0, 0, 0, 1, 0⟩ ⟨57, 0, 0, 1, 1, 0⟩
+      ⟨39, 0, 0, 0, 1, 0⟩ ]
+
+/-- The A index `i * 64 + k`. -/
+theorem gemmIndexA (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word)
+    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
+    (hi : i.toNat < 64) (hk : k.toNat < 64) (l : Nat) :
+    (runGemm s gemmIndexBlock).regs 63 l = zext (i * 64 + k) := by
+  unfold gemmIndexBlock runGemm
+  simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
+    readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
+    binOpWide, add3Wide, shlWide, h.v58, h.v61, or_shift_six i k hi hk]
+
+/-- The B index `k * 64 + j0 + globalOffset[0]`. -/
+theorem gemmIndexB (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word)
+    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
+    (l : Nat) :
+    (runGemm s gemmIndexBlock).regs 71 l = zext (k * 64 + j0 + goX) := by
+  unfold gemmIndexBlock runGemm
+  simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
+    readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
+    binOpWide, add3Wide, shlWide, h.v57, h.v61, h.goXReg, shl_six]
+
 end
 
 end IntelGpu
