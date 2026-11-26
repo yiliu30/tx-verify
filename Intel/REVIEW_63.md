@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (113 jobs) and `Tools/check_axioms.py --all`
-  (1267 theorems, 357 documented exceptions at stage 160).
+  `lake build Intel` (128 jobs) and `Tools/check_axioms.py --all`
+  (1402 theorems, 393 documented exceptions at stage 164).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -88,7 +88,7 @@ from `Classical.choose` in the racing-store model.
   mainloop and a zero-padded tail are modelled (stages 142, 148, 150, 155,
   163); physical tile packing, masked/partial DPAS behavior, the rest of the
   kernel and hardware validation remain;
-- full IEEE semantics: stages 149, 156 and 159 cover exact-grid fp16
+- full IEEE semantics: stages 149, 156, 159 and 164 cover exact-grid fp16
   addition, ties-to-even, signed zeros, subnormal crossings, the overflow
   threshold, NaN/Inf propagation, directed rounding and general per-binade
   RNE; exception flags and a full IEEE FMA remain;
@@ -98,5 +98,38 @@ from `Classical.choose` in the racing-store model.
 - SBID assignments are a documented transcription assumption (stage 147),
   because the dumps do not print the field.
 
-The stack is intentionally one PR per stage (#64-#149), as requested. The
+## Stage index 137-164
+
+| Stage | PR | Result |
+| --- | --- | --- |
+| 137 | #139 | memory effect through the decoded path |
+| 138 | #140 | real P3/P6 guards from the decoded prefix |
+| 139 | #141 | per-location visibility and release/acquire |
+| 140 | #142 | PC 0 preamble and kernel effect from PC 0 |
+| 141 | #143 | generic execution-mask laws |
+| 142 | #144 | FMHA atom value refinement and tile composition |
+| 143 | #145 | predicated lanes write nothing |
+| 144 | #146 | reach `ret` with `halted = true` |
+| 145 | #147 | global/SLM disjointness and workgroup barriers |
+| 146 | #148 | grid-stride indices and store composition |
+| 147 | #149 | SBID fields in an encoded descriptor |
+| 148 | #150 | fp8 E4M3 decode for the FMHA atom |
+| 149 | #151 | restricted IEEE fp16 addition rounding |
+| 150 | #152 | register-level FMHA DPAS execution |
+| 151 | #153 | mask-aware add/load/store for the loop body |
+| 152 | #154 | cross-lane race freedom |
+| 153 | #155 | composed 32-lane workgroup store result |
+| 154 | #156 | write-through cache coherence |
+| 155 | #157 | register-level T-step FMHA mainloop |
+| 156 | #158 | fp16 special values and overflow |
+| 157 | #159 | two-cache coherence traffic |
+| 158 | #160 | decoded PC 36-43 loop-back block |
+| 159 | #161 | directed fp16 rounding |
+| 160 | #162 | dword/qword coalescing adapter |
+| 161 | #163 | n-iteration grid-stride induction |
+| 162 | #164 | directory/ownership coherence |
+| 163 | #165 | FMHA tail and partial K |
+| 164 | #166 | general fp16 round-to-nearest-even |
+
+The stack is intentionally one PR per stage (#64-#166), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
