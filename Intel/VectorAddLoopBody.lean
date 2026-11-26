@@ -180,6 +180,17 @@ theorem realVectorAdd_loop_effect (s : RealState) (aPtr bPtr cPtr : Addr)
     hab hbb hcb hboundC hdistinct
   simpa [vaLoopPreamble_mem s] using hstore
 
+/-- After one body the index is at least `globalSize`, so the continuation
+predicate is false. This range kernel therefore executes at most one body per
+lane. -/
+theorem vaLoopNext_not_lt (id : Addr) (size : Word)
+    (hbound : id.toNat + size.toNat < 2 ^ 64) :
+    ¬ (id + zext size).toNat < size.toNat := by
+  intro h
+  have hz : (zext size).toNat = size.toNat := by bv_omega
+  rw [BitVec.toNat_add, hz, Nat.mod_eq_of_lt hbound] at h
+  omega
+
 end
 
 end IntelGpu

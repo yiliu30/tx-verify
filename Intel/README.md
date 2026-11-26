@@ -2197,6 +2197,14 @@ For this range kernel the index stride is `globalSize`, so after one body
 loop exits. The instruction-level branch/termination proof is the remaining
 step; the per-lane output effect itself is now proved.
 
+## Stage 110: loop termination arithmetic
+
+`vaLoopNext_not_lt` proves that after adding `globalSize` (with no 64-bit
+overflow) the next index cannot satisfy `next < globalSize`. Thus this range
+kernel executes at most one body per lane. The result is the arithmetic side
+of termination; the remaining work is to connect it to the decoded predicated
+branch sequence.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2368,4 +2376,5 @@ lake build Intel
 106. Stage 106: prove the loop body's load/add/store effect.
 107. Stage 107: formalize the 24-lane pack/writeback layout.
 108. Stage 108: prove the loop-carried ID selection law.
-109. Stage 109 (this PR): compose the real index and body into a per-lane effect.
+109. Stage 109: compose the real index and body into a per-lane effect.
+110. Stage 110 (this PR): prove the loop exits after one body.

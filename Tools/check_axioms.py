@@ -314,6 +314,7 @@ THEOREMS = [
     ("Intel.VectorAddLoopBody", "IntelGpu.vaLoopPreamble_frame"),
     ("Intel.VectorAddLoopBody", "IntelGpu.vaLoopPreamble_bodyPre"),
     ("Intel.VectorAddLoopBody", "IntelGpu.realVectorAdd_loop_effect"),
+    ("Intel.VectorAddLoopBody", "IntelGpu.vaLoopNext_not_lt"),
     ("Intel.LoopPack", "IntelGpu.packEven24_value"),
     ("Intel.LoopPack", "IntelGpu.packOdd24_value"),
     ("Intel.LoopPack", "IntelGpu.writeId24_qword"),
