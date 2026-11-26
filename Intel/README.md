@@ -2307,6 +2307,19 @@ theorem vaPackLow_value :
 This proves the real two-instruction sequence produces the low halves used by
 the first guard comparison.
 
+## Stage 121: executing the real high pack
+
+`vaPackHigh_value` is the high-half counterpart:
+
+```lean
+theorem vaPackHigh_value :
+  low32 ((runRealWith stepLoop s vaPackHigh).regs 63 j) =
+    ((ids j) >>> 32).truncate 32   -- for j < 24
+```
+
+Both real M1+M5 packs now execute through the dword-view step and produce the
+register halves consumed by the guard comparisons.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2489,4 +2502,5 @@ lake build Intel
 117. Stage 117: prove the native M1/M5 pack windows.
 118. Stage 118: execute dword-view moves in the loop step.
 119. Stage 119: add masked dword-view move laws.
-120. Stage 120 (this PR): execute the real M1+M5 low pack.
+120. Stage 120: execute the real M1+M5 low pack.
+121. Stage 121 (this PR): execute the real M1+M5 high pack.
