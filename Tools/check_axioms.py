@@ -132,6 +132,9 @@ KNOWN = {
     "IntelGpu.maskedMov_stride2_lane": {"Classical.choice"},
     "IntelGpu.maskedMov_frame": {"Classical.choice"},
     "IntelGpu.maskedMov_other_reg": {"Classical.choice"},
+    # Stage 100 address injectivity: `omega` over the div/mod constraints.
+    "IntelGpu.fmhaAAddr_injective16": {"Classical.choice"},
+    "IntelGpu.fmhaCAddr_injective16": {"Classical.choice"},
     # Stage 93 predicate logic: `stepWith` embeds the store model's choice.
     "IntelGpu.predAnd_lane": {"Classical.choice"},
     "IntelGpu.predAnd_other": {"Classical.choice"},
@@ -276,6 +279,9 @@ THEOREMS = [
     ("Intel.DpasPacking", "IntelGpu.fmhaPackedC_zero"),
     ("Intel.DpasPacking", "IntelGpu.fmhaRealPackedAtom_correct"),
     ("Intel.DpasPacking", "IntelGpu.fmhaRealB_address"),
+    ("Intel.DpasPacking", "IntelGpu.fmhaBAddr_injective"),
+    ("Intel.DpasPacking", "IntelGpu.fmhaAAddr_injective16"),
+    ("Intel.DpasPacking", "IntelGpu.fmhaCAddr_injective16"),
     ("Intel.Fp16Ieee", "IntelGpu.vstepIEEE_zero_left"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_fin"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_ne_fin"),

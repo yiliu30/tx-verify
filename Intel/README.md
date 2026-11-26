@@ -2030,6 +2030,20 @@ The GRF width is parameterised (8 or 16 dwords); the real instance uses 16.
 This models the documented layout, while the compiler's choice of operand
 bases remains transcribed from the dump.
 
+## Stage 100: packed addresses are collision-free
+
+The layout maps are explicit and proved injective over their valid ranges:
+
+```lean
+theorem fmhaBAddr_injective    : distinct (k, n) -> distinct B addresses
+theorem fmhaAAddr_injective16  : k < 32 -> distinct A addresses
+theorem fmhaCAddr_injective16  : n < 8 -> distinct C addresses
+```
+
+Thus two different logical A, B or C elements cannot alias the same register
+byte in the modelled 16-dword layout. This is a property of the layout, not a
+statement about the compiler's chosen operands or values.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2187,4 +2201,5 @@ lake build Intel
 96. Stage 96: execute masked moves with M5 lane offsets.
 97. Stage 97: prove stride-two masked destinations.
 98. Stage 98: masked-move frames and a load-bearing mask test.
-99. Stage 99 (this PR): packed DPAS operands for the real FMHA atom.
+99. Stage 99: packed DPAS operands for the real FMHA atom.
+100. Stage 100 (this PR): prove the packed DPAS address maps are collision-free.
