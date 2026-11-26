@@ -2140,6 +2140,26 @@ proofs use the real pointer/index aliases and the per-lane 64-bit index.
 This is one loop-body memory step, not the whole loop: the qword/dword
 pack/select update of `V0059` remains the next stage.
 
+## Stage 107: the 24-lane pack layout
+
+The native assembly resolves the M5 destination question:
+
+```
+mov (16|M0)  r20.0<1>:d  r15.0<2;1,0>:d
+mov (16|M16) r21.0<1>:d  r17.0<2;1,0>:d
+```
+
+The M5 destination is the relative row window (`r21.0`, dwords 8..23), not a
+channel-shifted out-of-range address. The overlap dwords 8..15 receive the
+same values, so the combined two-move result is `dst[j] = src[2*j]` for
+`j < 24`. The same pattern holds for the odd-dword high half and the final
+writeback into `V0059`.
+
+`Intel/LoopPack.lean` formalizes this as `packEven24`, `packOdd24` and
+`writeId24`, proving the 24-lane values and the qword writeback
+(`writeId24_qword`). This is the pack/writeback layout; composing it with the
+actual `sel`/branch instructions remains.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2162,8 +2182,8 @@ pack/select update of `V0059` remains the next stage.
   assignments (not printed in the assembly) remain.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Bitwise dword/qword register views: stage 105 supplies the storage and
-  round-trip laws, but the loop vector add's pack/select body is not yet
-  executed through them.
+  round-trip laws, stage 107 supplies the 24-lane pack/writeback layout, but
+  the loop vector add's `sel`/branch sequence is not yet executed through them.
 - Atomics and the launch ABI.
 - IEEE-754 value semantics: stages 43-56 cover the bit layout, the value
   domain, values in units of `2 ^ -24` for normals, subnormals and fractions,
@@ -2307,4 +2327,5 @@ lake build Intel
 103. Stage 103: parse destination regions as `<hstride>`.
 104. Stage 104: import the loop vector add's tables and prove its index.
 105. Stage 105: add dword storage and qword-view laws.
-106. Stage 106 (this PR): prove the loop body's load/add/store effect.
+106. Stage 106: prove the loop body's load/add/store effect.
+107. Stage 107 (this PR): formalize the 24-lane pack/writeback layout.
