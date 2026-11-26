@@ -2294,6 +2294,19 @@ register. `stepLoop_movMasked61_unit` and `stepLoop_movMasked74_unit` extend the
 dword-view lane laws to the masked move form used by the M5 pack. These are
 the lemmas needed to compose the actual two-move pack.
 
+## Stage 120: executing the real low pack
+
+`vaPackLow_value` executes the actual M1+M5 low pack through `stepLoop`:
+
+```lean
+theorem vaPackLow_value :
+  low32 ((runRealWith stepLoop s vaPackLow).regs 62 j) =
+    (ids j).truncate 32   -- for j < 24, when V0059 holds ids
+```
+
+This proves the real two-instruction sequence produces the low halves used by
+the first guard comparison.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2475,4 +2488,5 @@ lake build Intel
 116. Stage 116: prove the packed low/high halves of a qword ID array.
 117. Stage 117: prove the native M1/M5 pack windows.
 118. Stage 118: execute dword-view moves in the loop step.
-119. Stage 119 (this PR): add masked dword-view move laws.
+119. Stage 119: add masked dword-view move laws.
+120. Stage 120 (this PR): execute the real M1+M5 low pack.
