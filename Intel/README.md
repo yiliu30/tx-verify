@@ -2516,6 +2516,17 @@ carries that through the PC 8 path, and `vaLoop_kernel_pc0_effect` combines
 the halt with the stage-140 memory effect: from PC 0, an active lane halts at
 `ret` with `C[id] = A[id] + B[id]`.
 
+## Stage 145: global/SLM disjointness and workgroup barriers
+
+`Intel/SlmAliasing.lean` refines the immediate-visibility SLM model with the
+stage-139 visibility model. `MixedState` keeps global and workgroup-private SLM
+in separate address spaces, so `gstore_slm_frame`, `sstore_global_frame`,
+`sload_gstore` and `gload_sstore` give the aliasing frames. A workgroup barrier
+is a full release/acquire fence: `wgBarrier_slmInvariant` publishes every
+pre-barrier SLM log, `sload_wgBarrier_sstore` reads the stored tile back, and
+the producer/consumer theorems include a negative test showing the barrier is
+load-bearing.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2722,4 +2733,5 @@ lake build Intel
 141. Stage 141: generic execution-mask laws.
 142. Stage 142: FMHA atom value refinement and tile composition.
 143. Stage 143: predicated lanes write nothing.
-144. Stage 144 (this PR): reaching `ret` with the halt flag.
+144. Stage 144: reaching `ret` with the halt flag.
+145. Stage 145 (this PR): global/SLM disjointness and workgroup barriers.
