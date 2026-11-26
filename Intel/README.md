@@ -2107,6 +2107,21 @@ register and `V0061` is its dword view. The current `RealState` stores one
 dword/qword views, so the pack/select loop body still needs a dword-level
 register model before its effect can be claimed.
 
+## Stage 105: dword storage and qword views
+
+`Intel/DwordView.lean` supplies the missing storage layer:
+
+```lean
+abbrev DRegs := Nat → Word
+def qwordOf (r : DRegs) (i : Nat) : Addr
+def setQword (r : DRegs) (i : Nat) (v : Addr) : DRegs
+```
+
+It proves dword write/read laws, that `setQword` splits into low and high
+dwords, that the qword round trip is exact (`qwordOf_setQword`), and that
+writing an unrelated dword preserves the qword. This is the foundation needed
+to model `V0061` as a dword view over the qword-per-lane `V0059`.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2128,9 +2143,9 @@ register model before its effect can be claimed.
   message operand layout, EOT details beyond a halted flag, and the exact SBID
   assignments (not printed in the assembly) remain.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
-- Bitwise dword/qword register views (`V0061` over `V0059`); the loop vector
-  add's real tables and index preamble are stage 104, but its pack/select body
-  is not yet executed.
+- Bitwise dword/qword register views: stage 105 supplies the storage and
+  round-trip laws, but the loop vector add's pack/select body is not yet
+  executed through them.
 - Atomics and the launch ABI.
 - IEEE-754 value semantics: stages 43-56 cover the bit layout, the value
   domain, values in units of `2 ^ -24` for normals, subnormals and fractions,
@@ -2272,4 +2287,5 @@ lake build Intel
 101. Stage 101: decode the real DPAS register bases.
 102. Stage 102: execute a packed DPAS known-answer test.
 103. Stage 103: parse destination regions as `<hstride>`.
-104. Stage 104 (this PR): import the loop vector add's tables and prove its index.
+104. Stage 104: import the loop vector add's tables and prove its index.
+105. Stage 105 (this PR): add dword storage and qword-view laws.
