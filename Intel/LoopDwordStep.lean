@@ -99,5 +99,20 @@ theorem stepLoop_movMasked74_unit (s : RealState) (e : Exec) (dst src : Grf)
   simp [stepLoop, hsrc, writeMaskedWith, Grf.dstIndex, Exec.laneIndex, hnm, hdst,
     Nat.add_sub_of_le hle, hactive]
 
+theorem stepLoop_mov_preserves_reg (s : RealState) (e : Exec) (dst src : Grf)
+    (r j : Nat) (h : vaLoopAlias dst.num ≠ vaLoopAlias r) :
+    (stepLoop s (.mov e dst src)).regs (vaLoopAlias r) j = s.regs (vaLoopAlias r) j := by
+  have hr : vaLoopAlias r ≠ vaLoopAlias dst.num := fun hc => h hc.symm
+  by_cases h61 : src.num = 61 <;> by_cases h74 : src.num = 74 <;>
+    simp [stepLoop, h61, h74, writeMaskedWith_other_reg, hr]
+
+theorem stepLoop_movMasked_preserves_reg (s : RealState) (e : Exec) (dst src : Grf)
+    (r j : Nat) (h : vaLoopAlias dst.num ≠ vaLoopAlias r) :
+    (stepLoop s (.movMasked e dst src)).regs (vaLoopAlias r) j =
+      s.regs (vaLoopAlias r) j := by
+  have hr : vaLoopAlias r ≠ vaLoopAlias dst.num := fun hc => h hc.symm
+  by_cases h61 : src.num = 61 <;> by_cases h74 : src.num = 74 <;>
+    simp [stepLoop, h61, h74, writeMaskedWith_other_reg, hr]
+
 end
 end IntelGpu
