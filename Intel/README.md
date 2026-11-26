@@ -2364,6 +2364,12 @@ IDs for lanes 0..23.
 `vaPackIncHigh_value` is the high-half counterpart: the M1+M5 moves from
 `V0074` into `V0076` produce the high dwords of the next IDs for lanes 0..23.
 
+## Stage 127: both increment packs
+
+`vaPackIncBoth_value` composes the increment low/high packs and proves
+`V0075`/`V0076` simultaneously contain the next ID halves. The high pack
+preserves `V0075`, and the low pack preserves the `V0074` source register.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2552,4 +2558,5 @@ lake build Intel
 123. Stage 123: derive P3 from the executed packs.
 124. Stage 124: derive P3 with preserved size dwords.
 125. Stage 125: execute the increment's low pack.
-126. Stage 126 (this PR): execute the increment's high pack.
+126. Stage 126: execute the increment's high pack.
+127. Stage 127 (this PR): compose both increment packs.
