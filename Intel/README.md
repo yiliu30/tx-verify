@@ -2225,6 +2225,22 @@ This is the control-flow piece needed to connect the loop guard and
 termination facts to the decoded `sel`/branch sequence without assuming
 uniformity across all lanes.
 
+## Stage 113: the decoded loop and its real branch sites
+
+`Intel/VectorAddLoopProgram.lean` materializes all 46 decoded statements and
+proves `realVectorAdd_decoded_eq`. It exposes the exact label indices and both
+real predicated branch sites:
+
+```lean
+theorem vaLoop_first_body  : P3 lane = true  -> pc 17 falls through to 18
+theorem vaLoop_first_exit  : P3 lane = false -> pc 17 jumps to 44
+theorem vaLoop_second_select : P6 lane = true  -> pc 35 falls through to 36
+theorem vaLoop_second_exit   : P6 lane = false -> pc 35 jumps to 44
+```
+
+These are the decoded per-lane branch paths. The remaining composition is to
+show the predicates are the proved guard/termination values.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2399,4 +2415,5 @@ lake build Intel
 109. Stage 109: compose the real index and body into a per-lane effect.
 110. Stage 110: prove the loop exits after one body.
 111. Stage 111: connect global-size dwords to the continuation guard.
-112. Stage 112 (this PR): add per-lane control flow and branch lemmas.
+112. Stage 112: add per-lane control flow and branch lemmas.
+113. Stage 113 (this PR): materialize the decoded loop and branch sites.
