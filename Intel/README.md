@@ -101,6 +101,12 @@ on a silent assumption.
    follow the same-sign/opposite-sign rule (stage 44); subnormals are values in
    units of `2 ^ -24` (stage 46) tied to the numeric scale (stage 56).
 
+10. **Transcription fidelity** — `Intel/Examples/RealAddOne.lean` is a hand
+    transcription of a real IGC dump (sha256 `1a4889be…`), not a parsed one.
+    The correspondence is checked by comparing the module against the quoted
+    dump; a parser is what stage 63 starts to build. The dump's platform line
+    and build-option string name a product and are redacted.
+
 Assumption 7 is the one with real numeric content, and it is the one that has
 been reduced furthest: on a shared quantization grid the rounding is the
 identity (stage 34), so exactness holds outright; off the grid the error is
@@ -1180,6 +1186,42 @@ moves.
 
 `#print axioms` on each reports only `[propext]`.
 
+## Stage 62: a real IGC kernel, imported
+
+Issue #63's first P0 item: import unmodified compiler output and record its
+provenance. `Intel/Examples/RealAddOne.lean` is the `_main_0` function IGC
+emitted for a five-line SYCL `parallel_for` add-one, transcribed verbatim with
+execution sizes intact:
+
+```
+mul  (M1_NM, 1) V0044 V0038 V0036     shl (M1, 32) V0051 V0048 0x2:q
+mov  (M1, 32)   V0045 V0046           add (M1, 32) V0052 V0051 V0050
+add3 (M1, 32)   V0047 V0044 V0045 V0037
+lsc_load.ugm (M1, 32) V0054:d32 flat[V0053]:a64
+add  (M1, 32)   V0055 V0054 0x1:w
+lsc_store.ugm (M1, 32) flat[V0053]:a64 V0055:d32
+```
+
+Provenance (compiler version, `zeinfo` format, kernel attributes, dump hash) is
+in the module. The dump's platform line and build-option string name a product
+and are redacted, as the project's own rule requires.
+
+## Stage 62b: the decoder's coverage, as a theorem
+
+`Intel/RealCoverage.lean` answers the review's "reject unsupported instructions
+explicitly" with proofs, not impressions:
+
+```lean
+theorem realAddOne_rejected :
+    rejected realAddOne = ["or", "mul", "mov", "add3", "mov", "shl", "add",
+                           "lsc_load.ugm", "add", "lsc_store.ugm", "ret"]
+theorem realAddOne_unsupported : decodeProgram realAddOne = none
+```
+
+The stage-5 decoder reads **none** of the real kernel: region syntax, arity and
+unknown opcodes all fail closed. That is the gap stages 63+ exist to close, and
+it is now measured.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -1274,4 +1316,5 @@ lake build Intel
 58. Stage 58: what uniform control flow buys.
 59. Stage 59: a SIMD lane dimension.
 60. Stage 60: memory-model laws.
-61. Stage 61 (this PR): NaN payloads.
+61. Stage 61: NaN payloads.
+62. Stage 62 (this PR): a real IGC kernel imported, and its decoder coverage.
