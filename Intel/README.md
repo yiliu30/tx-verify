@@ -1856,6 +1856,25 @@ and to the depth-32 matrix dot (via `dpasSlab_eq_dotMatFrom`). Register packing
 and the operand layout of the real `r39:hf8`/`r335.0:hf8` pair, and the FMHA
 kernel execution, remain open.
 
+## Stage 89: negative tests for scale and wait
+
+Two load-bearing negative results, complementing the decoder rejections:
+
+```lean
+theorem va_scale_load_bearing :
+    ((0 + (zext 1 : Addr)) <<< 2).toNat / 4 = 1 ∧
+    (0 + zext 1 : Addr).toNat / 4 = 0
+theorem wait_issueLoad_stalls  : wait (issueLoad s reg addr) s.next = none
+theorem wait_issueStore_stalls : wait (issueStore s addr val) s.next = none
+theorem commitLoad_pending  : commitLoad s t reg = s   -- when t is pending
+theorem commitStore_pending : commitStore s t addr = s -- when t is pending
+```
+
+The first shows a wrong address calculation (dropping the four-byte scale)
+hits a different word. The SEND lemmas show that waiting or committing before
+completion stalls or writes nothing, so the model cannot silently observe an
+in-flight value.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1997,4 +2016,5 @@ lake build Intel
 85. Stage 85: the real vector add end-to-end.
 86. Stage 86: record and quantify the real DPAS atom shapes.
 87. Stage 87: consolidate the issue #63 response and trusted base.
-88. Stage 88 (this PR): prove the 8x8x32 DPAS atom's dataflow.
+88. Stage 88: prove the 8x8x32 DPAS atom's dataflow.
+89. Stage 89 (this PR): negative tests for the address scale and SEND waits.

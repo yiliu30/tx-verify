@@ -417,4 +417,12 @@ theorem realVectorAdd_effect (s : RealState) (aPtr bPtr cPtr : Addr)
 
 end
 
+
+/-- Negative test: the four-byte scale is load-bearing. With index one, the
+scaled address is word one; the unscaled address would be word zero. -/
+theorem va_scale_load_bearing :
+    (((0 : Addr) + (zext (1 : Word)) <<< 2).toNat / 4 = 1) ∧
+    (((0 : Addr) + zext (1 : Word)).toNat / 4 = 0) := by
+  decide
+
 end IntelGpu

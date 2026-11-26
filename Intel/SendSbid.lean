@@ -190,4 +190,26 @@ theorem addOnePipeline_frame (s : SendState) (addr reg tmp n : Nat)
   unfold addOnePipeline storePipeline issueStore complete commitStore
   simp [loadPipeline, issueLoad, complete, commitLoad, hn]
 
+
+/-- Negative test: a load that has been issued but not completed stalls; a
+naive wait cannot observe the value early. -/
+theorem wait_issueLoad_stalls (s : SendState) (reg addr : Nat) :
+    wait (issueLoad s reg addr) s.next = none := by
+  simp [wait, issueLoad]
+
+theorem wait_issueStore_stalls (s : SendState) (addr : Nat) (val : Word) :
+    wait (issueStore s addr val) s.next = none := by
+  simp [wait, issueStore]
+
+/-- A premature commit writes nothing: the token is still pending. -/
+theorem commitLoad_pending (s : SendState) (t : Token) (reg : Nat)
+    (h : s.status t = .pending) :
+    commitLoad s t reg = s := by
+  simp [commitLoad, h]
+
+theorem commitStore_pending (s : SendState) (t : Token) (addr : Nat)
+    (h : s.status t = .pending) :
+    commitStore s t addr = s := by
+  simp [commitStore, h]
+
 end IntelGpu
