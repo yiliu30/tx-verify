@@ -1944,6 +1944,16 @@ lanes; the six frame/lane theorems are in the axiom audit. The vector-add
 decoder now accepts 33 of 41 instructions. The remaining eight refusals are the
 four register `cmp.lt`s, two `cmp.eq`s and two predicated `goto`s.
 
+## Stage 94: register comparisons
+
+The vector-add loop's comparisons test two GRF regions rather than an
+immediate. `cmpLtReg` and `cmpEqReg` decode and compare the low 32 bits per
+lane, writing the destination predicate only on active lanes. `cmpLtReg_lane`,
+`cmpEqReg_lane` and their predicate/lane frame lemmas are in the audit.
+
+The decoder now accepts 39 of 41 vector-add instructions; only the two
+predicated `goto`s remain.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1957,8 +1967,8 @@ four register `cmp.lt`s, two `cmp.eq`s and two predicated `goto`s.
   interprets this kernel's broadcast and dense GRF regions, not the general
   region algebra; stage 66 models one uniform predicate bit for the GEMM's
   control flow; stages 90-93 add per-lane predicates, predicated `sel` and
-  predicate `and`/`or`; stage 92 decodes M1-M8 masks but does not yet apply
-  their lane offset.
+  predicate `and`/`or` and register comparisons; stage 92 decodes M1-M8 masks
+  but does not yet apply their lane offset.
 - SEND issue/completion/wait and the register scoreboard are stage 78; raw
   message operand layout, EOT details beyond a halted flag, and the exact SBID
   assignments (not printed in the assembly) remain.
@@ -2093,4 +2103,5 @@ lake build Intel
 90. Stage 90: model per-lane predicates.
 91. Stage 91: execute predicated select per lane.
 92. Stage 92: decode M1-M8 execution masks without dropping them.
-93. Stage 93 (this PR): execute predicate `and` and `or` per lane.
+93. Stage 93: execute predicate `and` and `or` per lane.
+94. Stage 94 (this PR): execute register-register `cmp.lt` and `cmp.eq`.

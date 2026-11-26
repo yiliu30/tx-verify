@@ -291,6 +291,18 @@ def stepWith (alias : Nat → Nat) (typeOf : Nat → Option RegType) :
           if p' = p ∧ l < n then
             decide (low32 (readSrcWith alias s src l) < BitVec.ofNat 32 imm)
           else s.preds p' l }
+  | s, .cmpLtReg n p a b =>
+      { s with
+        preds := fun p' l =>
+          if p' = p ∧ l < n then
+            decide (low32 (readSrcWith alias s a l) < low32 (readSrcWith alias s b l))
+          else s.preds p' l }
+  | s, .cmpEqReg n p a b =>
+      { s with
+        preds := fun p' l =>
+          if p' = p ∧ l < n then
+            decide (low32 (readSrcWith alias s a l) = low32 (readSrcWith alias s b l))
+          else s.preds p' l }
   | s, .predAnd n p a b =>
       { s with
         preds := fun p' l =>
@@ -406,6 +418,8 @@ def RInstr.regionsSimple : RInstr → Bool
   | .movImm _ d _ _ => d.dstSimple
   | .or _ d a b => d.dstSimple && a.simple && b.simple
   | .cmpLt _ _ _ _ _ => true
+  | .cmpLtReg _ _ _ _ => true
+  | .cmpEqReg _ _ _ _ => true
   | .predAnd _ _ _ _ => true
   | .predOr _ _ _ _ => true
   | .goto _ _ => true
@@ -489,6 +503,8 @@ def RInstr.dstCountOk : RInstr → Bool
   | .movImm n d _ _ => regElems d.num == n && (regType d.num).isSome
   | .or n d _ _ => regElems d.num == n && (regType d.num).isSome
   | .cmpLt _ _ _ _ _ => true
+  | .cmpLtReg _ _ _ _ => true
+  | .cmpEqReg _ _ _ _ => true
   | .predAnd _ _ _ _ => true
   | .predOr _ _ _ _ => true
   | .goto _ _ => true
@@ -659,6 +675,44 @@ theorem predOr_other (alias : Nat → Nat) (typeOf : Nat → Option RegType)
 theorem predOr_inactive (alias : Nat → Nat) (typeOf : Nat → Option RegType)
     (s : RealState) (e : Exec) (p a b : Nat) (l : Nat) (hl : ¬ l < e.size) :
     (stepWith alias typeOf s (.predOr e p a b)).preds p l = s.preds p l := by
+  simp [stepWith, hl]
+
+/-- Register-register `cmp.lt` compares the low 32 bits on active lanes. -/
+theorem cmpLtReg_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p : Nat) (a b : Grf) (l : Nat) (hl : l < e.size) :
+    (stepWith alias typeOf s (.cmpLtReg e p a b)).preds p l =
+      decide (low32 (readSrcWith alias s a l) < low32 (readSrcWith alias s b l)) := by
+  simp [stepWith, hl]
+
+/-- A different predicate is untouched by register `cmp.lt`. -/
+theorem cmpLtReg_other (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p : Nat) (a b : Grf) (p' l : Nat) (hp : p' ≠ p) :
+    (stepWith alias typeOf s (.cmpLtReg e p a b)).preds p' l = s.preds p' l := by
+  simp [stepWith, hp]
+
+/-- An inactive lane is untouched by register `cmp.lt`. -/
+theorem cmpLtReg_inactive (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p : Nat) (a b : Grf) (l : Nat) (hl : ¬ l < e.size) :
+    (stepWith alias typeOf s (.cmpLtReg e p a b)).preds p l = s.preds p l := by
+  simp [stepWith, hl]
+
+/-- Register-register `cmp.eq` compares the low 32 bits on active lanes. -/
+theorem cmpEqReg_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p : Nat) (a b : Grf) (l : Nat) (hl : l < e.size) :
+    (stepWith alias typeOf s (.cmpEqReg e p a b)).preds p l =
+      decide (low32 (readSrcWith alias s a l) = low32 (readSrcWith alias s b l)) := by
+  simp [stepWith, hl]
+
+/-- A different predicate is untouched by register `cmp.eq`. -/
+theorem cmpEqReg_other (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p : Nat) (a b : Grf) (p' l : Nat) (hp : p' ≠ p) :
+    (stepWith alias typeOf s (.cmpEqReg e p a b)).preds p' l = s.preds p' l := by
+  simp [stepWith, hp]
+
+/-- An inactive lane is untouched by register `cmp.eq`. -/
+theorem cmpEqReg_inactive (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (p : Nat) (a b : Grf) (l : Nat) (hl : ¬ l < e.size) :
+    (stepWith alias typeOf s (.cmpEqReg e p a b)).preds p l = s.preds p l := by
   simp [stepWith, hl]
 
 /-- A predicated select reads `a` on true lanes and `b` on false lanes. -/
