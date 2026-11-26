@@ -2205,6 +2205,15 @@ kernel executes at most one body per lane. The result is the arithmetic side
 of termination; the remaining work is to connect it to the decoded predicated
 branch sequence.
 
+## Stage 111: global-size guard
+
+`VaLoopSizePre` records the two dwords of the 64-bit global size.
+`vaLoopPreamble_size` proves the preamble copies them into `V0049`; the loop
+uses `V0065` as their alias. `vaLoopSize` assembles the 64-bit value,
+`vaLoopGuard` is the continuation predicate, and `vaLoopNext_guard_false`
+proves the guard is false after one stride. This connects the size constant to
+the termination arithmetic; the decoded compare/branch sequence remains.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2377,4 +2386,5 @@ lake build Intel
 107. Stage 107: formalize the 24-lane pack/writeback layout.
 108. Stage 108: prove the loop-carried ID selection law.
 109. Stage 109: compose the real index and body into a per-lane effect.
-110. Stage 110 (this PR): prove the loop exits after one body.
+110. Stage 110: prove the loop exits after one body.
+111. Stage 111 (this PR): connect global-size dwords to the continuation guard.

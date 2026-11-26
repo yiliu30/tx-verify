@@ -191,6 +191,25 @@ theorem vaLoopNext_not_lt (id : Addr) (size : Word)
   rw [BitVec.toNat_add, hz, Nat.mod_eq_of_lt hbound] at h
   omega
 
+/-- The 64-bit size assembled from the two dwords. -/
+def vaLoopSize (lo hi : Word) : Addr :=
+  (lo.zeroExtend 64) ||| ((hi.zeroExtend 64) <<< 32)
+
+/-- The continuation guard used by the first compare. -/
+def vaLoopGuard (id size : Addr) : Bool := decide (id < size)
+
+theorem vaLoopNext_guard_false (id size : Addr)
+    (hbound : id.toNat + size.toNat < 2 ^ 64) :
+    vaLoopGuard (id + size) size = false := by
+  unfold vaLoopGuard
+  have h : ¬ (id + size).toNat < size.toNat := by
+    intro hlt
+    rw [BitVec.toNat_add, Nat.mod_eq_of_lt hbound] at hlt
+    omega
+  by_cases hlt : (id + size) < size
+  · exact (h hlt).elim
+  · simp [hlt]
+
 end
 
 end IntelGpu
