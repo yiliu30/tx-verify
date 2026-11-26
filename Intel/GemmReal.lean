@@ -34,6 +34,8 @@ zeroed counter and sum at the loop head.
 
 namespace IntelGpu
 
+set_option maxHeartbeats 2000000
+
 noncomputable section
 
 /-- The real GEMM's numeric aliases, from the dump's `.decl` lines. -/
@@ -802,11 +804,27 @@ theorem gemmBodyStep_inv (s : RealState) (aPtr bPtr cPtr : Addr)
   · exact hf0.2.2.2.2.1.trans h.cReg
   · exact hf0.2.2.2.2.2.1.trans h.goXReg
 
+/-- The epilogue: C index, byte address, store and return. -/
+def gemmEpilogue : List RInstr :=
+  [ .add3 32 ⟨80, 0, 0, 1, 1, 0⟩ ⟨58, 0, 0, 1, 1, 0⟩ ⟨57, 0, 0, 1, 1, 0⟩
+      ⟨39, 0, 0, 0, 1, 0⟩,
+    .mov 32 ⟨82, 0, 0, 1, 1, 0⟩ ⟨83, 0, 0, 1, 1, 0⟩,
+    .shl 32 ⟨84, 0, 0, 1, 1, 0⟩ ⟨82, 0, 0, 1, 1, 0⟩ 2,
+    .add 32 ⟨85, 0, 0, 1, 1, 0⟩ ⟨84, 0, 0, 1, 1, 0⟩ ⟨81, 0, 0, 0, 1, 0⟩,
+    .store 32 86 .d32 62,
+    .ret 1 ]
+
+/-- The C byte address `V0085`. -/
+theorem gemmEpilogue_address (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX) :
+    (runGemm s gemmEpilogue).regs 85 l =
+      (zext (i * 64 + j0 + goX)) <<< 2 + cPtr := by
+  unfold gemmEpilogue runGemm
+  simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
+    readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
+    binOpWide, add3Wide, shlWide, h.v58, h.v57, h.cReg, h.goXReg, shl_six]
+
 end
 
 end IntelGpu
-
-
-
-
-
