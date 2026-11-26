@@ -355,6 +355,12 @@ theorem or_shift_six (i k : Word) (hi : i.toNat < 64) (hk : k.toNat < 64) :
 theorem shl_six (k : Word) : k <<< 6 = k * 64 := by
   bv_omega
 
+theorem or_shift_six_64 (i k : Word) (hi : i.toNat < 64) (hk : k.toNat < 64) :
+    (zext (i <<< 6)) ||| (zext k) = zext (i * 64 + k) := by
+  show (BitVec.setWidth 64 (i <<< 6)) ||| BitVec.setWidth 64 k =
+    BitVec.setWidth 64 (i * 64 + k)
+  rw [← BitVec.setWidth_or, or_shift_six i k hi hk]
+
 theorem nat_or_shift_six (i k : Word) (hi : i.toNat < 64) (hk : k.toNat < 64) :
     (i.toNat * 64 % 2 ^ 32 ||| k.toNat) = i.toNat * 64 + k.toNat := by
   have h := congrArg BitVec.toNat (or_shift_six i k hi hk)
@@ -371,12 +377,12 @@ theorem nat_or_shift_six_64 (i k : Word) (hi : i.toNat < 64) (hk : k.toNat < 64)
 
 /-- Loop-head values: the row shift, the column base, the counter, the sum,
 the three pointers and the global X offset. -/
-structure GemmLoopInv (s : RealState) (aPtr bPtr cPtr : Addr)
+structure GemmLoopInv (s : RealState) (aPtr bPtr cPtr : Addr) (l : Nat)
     (i j0 k sum goX : Word) : Prop where
-  v58 : ∀ l, s.regs 58 l = zext (i <<< 6)
-  v57 : ∀ l, s.regs 57 l = zext j0
+  v58 : s.regs 58 l = zext (i <<< 6)
+  v57 : s.regs 57 l = zext j0
   v61 : s.regs 61 0 = zext k
-  v62 : ∀ l, s.regs 62 l = zext sum
+  v62 : s.regs 62 l = zext sum
   aReg : s.regs 34 0 = aPtr
   bReg : s.regs 35 0 = bPtr
   cReg : s.regs 36 0 = cPtr
@@ -395,20 +401,19 @@ def gemmIndexBlock : List RInstr :=
 
 /-- The A index `i * 64 + k`. -/
 theorem gemmIndexA (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
-    (hi : i.toNat < 64) (hk : k.toNat < 64) (l : Nat) :
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
+    (hi : i.toNat < 64) (hk : k.toNat < 64) :
     (runGemm s gemmIndexBlock).regs 63 l = zext (i * 64 + k) := by
   unfold gemmIndexBlock runGemm
   simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
     readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
-    binOpWide, add3Wide, shlWide, h.v58, h.v61, or_shift_six i k hi hk]
+    binOpWide, add3Wide, shlWide, h.v58, h.v61, or_shift_six_64 i k hi hk]
 
 /-- The B index `k * 64 + j0 + globalOffset[0]`. -/
 theorem gemmIndexB (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
-    (l : Nat) :
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX) :
     (runGemm s gemmIndexBlock).regs 71 l = zext (k * 64 + j0 + goX) := by
   unfold gemmIndexBlock runGemm
   simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
@@ -444,21 +449,20 @@ def gemmAddressBlock : List RInstr :=
 
 /-- The A byte address `V0067`. -/
 theorem gemmAddressA (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
-    (hi : i.toNat < 64) (hk : k.toNat < 64) (l : Nat) :
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
+    (hi : i.toNat < 64) (hk : k.toNat < 64) :
     (runGemm s gemmAddressBlock).regs 67 l =
       (zext (i * 64 + k)) <<< 2 + aPtr := by
   unfold gemmAddressBlock gemmIndexBlock runGemm
   simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
     readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
-    binOpWide, add3Wide, shlWide, h.v58, h.v61, h.aReg, or_shift_six i k hi hk]
+    binOpWide, add3Wide, shlWide, h.v58, h.v61, h.aReg, or_shift_six_64 i k hi hk]
 
 /-- The B byte address `V0075`. -/
 theorem gemmAddressB (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
-    (l : Nat) :
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX) :
     (runGemm s gemmAddressBlock).regs 75 l =
       (zext (k * 64 + j0 + goX)) <<< 2 + bPtr := by
   unfold gemmAddressBlock gemmIndexBlock runGemm
@@ -488,7 +492,7 @@ def gemmBodyBlock : List RInstr :=
 theorem nat_wordA (aPtr : Addr) (i k : Word) (hi : i.toNat < 64)
     (hk : k.toNat < 64) (ha : aPtr.toNat % 4 = 0)
     (hab : aPtr.toNat + 4 * (i * 64 + k).toNat < 2 ^ 64) :
-    (((i.toNat * 64 + k.toNat) <<< 2 + aPtr.toNat) % 2 ^ 64) / 4 =
+    (((i.toNat * 64 + k.toNat) * 4 + aPtr.toNat) % 2 ^ 64) / 4 =
       aPtr.toNat / 4 + (i.toNat * 64 + k.toNat) % 2 ^ 32 := by
   have hlt : (i.toNat * 64 + k.toNat) % 2 ^ 32 = i.toNat * 64 + k.toNat := by
     apply Nat.mod_eq_of_lt
@@ -504,7 +508,8 @@ theorem nat_wordA (aPtr : Addr) (i k : Word) (hi : i.toNat < 64)
 theorem nat_wordB (bPtr : Addr) (j0 k goX : Word) (hk : k.toNat < 64)
     (hj0 : j0.toNat < 64) (hgoX : goX.toNat < 64) (hb : bPtr.toNat % 4 = 0)
     (hbb : bPtr.toNat + 4 * (k * 64 + j0 + goX).toNat < 2 ^ 64) :
-    (((k.toNat * 64 + j0.toNat + goX.toNat) <<< 2 + bPtr.toNat) % 2 ^ 64) / 4 =
+    ((((k.toNat * 64 + j0.toNat + goX.toNat) % 2 ^ 32) * 4 + bPtr.toNat) %
+        2 ^ 64) / 4 =
       bPtr.toNat / 4 + (k.toNat * 64 + j0.toNat + goX.toNat) % 2 ^ 32 := by
   have hlt : (k.toNat * 64 + j0.toNat + goX.toNat) % 2 ^ 32 =
       k.toNat * 64 + j0.toNat + goX.toNat := by
@@ -541,12 +546,24 @@ theorem gemmWordA (aPtr : Addr) (i k : Word) (hi : i.toNat < 64)
   · rw [hlt, ← htoNat]
     exact hab
 
+theorem nat_wordB_mod (bPtr : Addr) (j0 k goX : Word) (hk : k.toNat < 64)
+    (hj0 : j0.toNat < 64) (hgoX : goX.toNat < 64) (hb : bPtr.toNat % 4 = 0)
+    (hbb : bPtr.toNat + 4 * (k * 64 + j0 + goX).toNat < 2 ^ 64) :
+    ((((k.toNat * 64 + j0.toNat % 2 ^ 64 + goX.toNat) % 2 ^ 32) * 4 + bPtr.toNat) %
+        2 ^ 64) / 4 =
+      bPtr.toNat / 4 + (k.toNat * 64 + j0.toNat + goX.toNat) % 2 ^ 32 := by
+  have hj : j0.toNat % 2 ^ 64 = j0.toNat := Nat.mod_eq_of_lt (by omega)
+  rw [hj]
+  exact nat_wordB bPtr j0 k goX hk hj0 hgoX hb hbb
+
 theorem gemmWordB (bPtr : Addr) (j0 k goX : Word) (hk : k.toNat < 64)
     (hj0 : j0.toNat < 64) (hgoX : goX.toNat < 64) (hb : bPtr.toNat % 4 = 0)
     (hbb : bPtr.toNat + 4 * (k * 64 + j0 + goX).toNat < 2 ^ 64) :
-    ((((k.toNat * 64 + j0.toNat + goX.toNat) % 2 ^ 32 % 2 ^ 64) <<< 2 + bPtr.toNat) %
-        2 ^ 64) / 4 =
+    ((((k.toNat * 64 + j0.toNat % 2 ^ 64 + goX.toNat) % 2 ^ 32 % 2 ^ 64) <<< 2 +
+        bPtr.toNat) % 2 ^ 64) / 4 =
       bPtr.toNat / 4 + (k.toNat * 64 + j0.toNat + goX.toNat) % 2 ^ 32 := by
+  have hj : j0.toNat % 2 ^ 64 = j0.toNat := Nat.mod_eq_of_lt (by omega)
+  rw [hj]
   have hlt : (k.toNat * 64 + j0.toNat + goX.toNat) % 2 ^ 32 =
       k.toNat * 64 + j0.toNat + goX.toNat := by
     apply Nat.mod_eq_of_lt
@@ -565,9 +582,9 @@ theorem gemmWordB (bPtr : Addr) (j0 k goX : Word) (hk : k.toNat < 64)
     exact hbb
 
 theorem gemmLoadA (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
-    (hi : i.toNat < 64) (hk : k.toNat < 64) (l : Nat)
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
+    (hi : i.toNat < 64) (hk : k.toNat < 64)
     (ha : aPtr.toNat % 4 = 0)
     (hab : aPtr.toNat + 4 * (i * 64 + k).toNat < 2 ^ 64) :
     (runGemm s gemmBodyBlock).regs 69 l =
@@ -576,13 +593,13 @@ theorem gemmLoadA (s : RealState) (aPtr bPtr cPtr : Addr)
   simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
     readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
     binOpWide, add3Wide, shlWide, load32, h.v58, h.v61, h.aReg,
-    or_shift_six i k hi hk]
-  rw [gemmWordA aPtr i k hi hk ha hab]
+    nat_or_shift_six_64 i k hi hk, Nat.shiftLeft_eq]
+  rw [nat_wordA aPtr i k hi hk ha hab]
 
 theorem gemmLoadB (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
-    (l : Nat) (hk : k.toNat < 64) (hj0 : j0.toNat < 64) (hgoX : goX.toNat < 64)
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
+    (hk : k.toNat < 64) (hj0 : j0.toNat < 64) (hgoX : goX.toNat < 64)
     (hb : bPtr.toNat % 4 = 0)
     (hbb : bPtr.toNat + 4 * (k * 64 + j0 + goX).toNat < 2 ^ 64) :
     (runGemm s gemmBodyBlock).regs 77 l =
@@ -596,10 +613,10 @@ theorem gemmLoadB (s : RealState) (aPtr bPtr cPtr : Addr)
 
 
 theorem gemmProduct (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
     (hi : i.toNat < 64) (hk : k.toNat < 64) (hj0 : j0.toNat < 64)
-    (hgoX : goX.toNat < 64) (l : Nat)
+    (hgoX : goX.toNat < 64)
     (ha : aPtr.toNat % 4 = 0)
     (hab : aPtr.toNat + 4 * (i * 64 + k).toNat < 2 ^ 64)
     (hb : bPtr.toNat % 4 = 0)
@@ -611,15 +628,15 @@ theorem gemmProduct (s : RealState) (aPtr bPtr cPtr : Addr)
   simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
     readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
     binOpWide, add3Wide, shlWide, load32, h.v58, h.v61, h.v57, h.aReg,
-    h.bReg, h.goXReg, nat_or_shift_six_64 i k hi hk, shl_six]
+    h.bReg, h.goXReg, nat_or_shift_six_64 i k hi hk, shl_six, Nat.shiftLeft_eq]
   rw [nat_wordA aPtr i k hi hk ha hab,
-    gemmWordB bPtr j0 k goX hk hj0 hgoX hb hbb]
+    nat_wordB_mod bPtr j0 k goX hk hj0 hgoX hb hbb]
 
 theorem gemmSum (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
     (hi : i.toNat < 64) (hk : k.toNat < 64) (hj0 : j0.toNat < 64)
-    (hgoX : goX.toNat < 64) (l : Nat)
+    (hgoX : goX.toNat < 64)
     (ha : aPtr.toNat % 4 = 0)
     (hab : aPtr.toNat + 4 * (i * 64 + k).toNat < 2 ^ 64)
     (hb : bPtr.toNat % 4 = 0)
@@ -631,16 +648,16 @@ theorem gemmSum (s : RealState) (aPtr bPtr cPtr : Addr)
   simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
     readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
     binOpWide, add3Wide, shlWide, load32, h.v58, h.v61, h.v57, h.v62,
-    h.aReg, h.bReg, h.goXReg, nat_or_shift_six_64 i k hi hk, shl_six]
+    h.aReg, h.bReg, h.goXReg, nat_or_shift_six_64 i k hi hk, shl_six, Nat.shiftLeft_eq]
   rw [nat_wordA aPtr i k hi hk ha hab,
-    gemmWordB bPtr j0 k goX hk hj0 hgoX hb hbb]
+    nat_wordB_mod bPtr j0 k goX hk hj0 hgoX hb hbb]
 
 /-- One loop-body step: both loaded words, their product, and the new sum. -/
 theorem gemmBody (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
     (hi : i.toNat < 64) (hk : k.toNat < 64) (hj0 : j0.toNat < 64)
-    (hgoX : goX.toNat < 64) (l : Nat)
+    (hgoX : goX.toNat < 64)
     (ha : aPtr.toNat % 4 = 0)
     (hab : aPtr.toNat + 4 * (i * 64 + k).toNat < 2 ^ 64)
     (hb : bPtr.toNat % 4 = 0)
@@ -655,10 +672,10 @@ theorem gemmBody (s : RealState) (aPtr bPtr cPtr : Addr)
     (runGemm s gemmBodyBlock).regs 62 l =
         zext (sum + s.mem (aPtr.toNat / 4 + (i * 64 + k).toNat) *
           s.mem (bPtr.toNat / 4 + (k * 64 + j0 + goX).toNat)) :=
-  ⟨gemmLoadA s aPtr bPtr cPtr i j0 k sum goX h hi hk l ha hab,
-    gemmLoadB s aPtr bPtr cPtr i j0 k sum goX h l hk hj0 hgoX hb hbb,
-    gemmProduct s aPtr bPtr cPtr i j0 k sum goX h hi hk hj0 hgoX l ha hab hb hbb,
-    gemmSum s aPtr bPtr cPtr i j0 k sum goX h hi hk hj0 hgoX l ha hab hb hbb⟩
+  ⟨gemmLoadA s aPtr bPtr cPtr i j0 k sum goX l h hi hk ha hab,
+    gemmLoadB s aPtr bPtr cPtr i j0 k sum goX l h hk hj0 hgoX hb hbb,
+    gemmProduct s aPtr bPtr cPtr i j0 k sum goX l h hi hk hj0 hgoX ha hab hb hbb,
+    gemmSum s aPtr bPtr cPtr i j0 k sum goX l h hi hk hj0 hgoX ha hab hb hbb⟩
 
 
 /-- The loop body plus `cmp.lt` and the counter increment. -/
@@ -685,8 +702,8 @@ theorem gemmBodyBlock_frame (s : RealState) (l w p : Nat) :
 
 
 theorem gemmBodyStep_counter (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX) :
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX) :
     (runGemm s gemmBodyStep).regs 61 0 = zext (k + 1) := by
   unfold gemmBodyStep runGemm
   rw [runRealWith_append]
@@ -695,8 +712,8 @@ theorem gemmBodyStep_counter (s : RealState) (aPtr bPtr cPtr : Addr)
     RegType.is64, binOpWide, add3Wide, shlWide, addImmWide, load32, h.v61]
 
 theorem gemmBodyStep_pred (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX) (hk : k.toNat < 63) :
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX) (hk : k.toNat < 63) :
     (runGemm s gemmBodyStep).preds 1 = true := by
   unfold gemmBodyStep runGemm
   rw [runRealWith_append]
@@ -706,8 +723,8 @@ theorem gemmBodyStep_pred (s : RealState) (aPtr bPtr cPtr : Addr)
   bv_omega
 
 theorem gemmBodyStep_mem (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (_h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX) :
+    (i j0 k sum goX : Word) (l : Nat)
+    (_h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX) :
     (runGemm s gemmBodyStep).mem = s.mem := by
   unfold gemmBodyStep runGemm
   rw [runRealWith_append]
@@ -717,10 +734,10 @@ theorem gemmBodyStep_mem (s : RealState) (aPtr bPtr cPtr : Addr)
 
 
 theorem gemmBodyStep_sum (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
     (hi : i.toNat < 64) (hk : k.toNat < 63) (hj0 : j0.toNat < 64)
-    (hgoX : goX.toNat < 64) (l : Nat)
+    (hgoX : goX.toNat < 64)
     (ha : aPtr.toNat % 4 = 0)
     (hab : aPtr.toNat + 4 * (i * 64 + k).toNat < 2 ^ 64)
     (hb : bPtr.toNat % 4 = 0)
@@ -729,15 +746,16 @@ theorem gemmBodyStep_sum (s : RealState) (aPtr bPtr cPtr : Addr)
       zext (sum + s.mem (aPtr.toNat / 4 + (i * 64 + k).toNat) *
         s.mem (bPtr.toNat / 4 + (k * 64 + j0 + goX).toNat)) := by
   have hk64 : k.toNat < 64 := by omega
+  have hj64 : j0.toNat % 2 ^ 64 = j0.toNat := Nat.mod_eq_of_lt (by omega)
   unfold gemmBodyStep runGemm
   rw [runRealWith_append]
   simp [runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
     readRegWith, readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType,
     RegType.is64, binOpWide, add3Wide, shlWide, addImmWide, load32,
     h.v58, h.v61, h.v57, h.v62, h.aReg, h.bReg, h.goXReg,
-    nat_or_shift_six_64 i k hi hk64, shl_six]
+    nat_or_shift_six_64 i k hi hk64, shl_six, hj64, Nat.shiftLeft_eq]
   rw [nat_wordA aPtr i k hi hk64 ha hab,
-    gemmWordB bPtr j0 k goX hk64 hj0 hgoX hb hbb]
+    nat_wordB bPtr j0 k goX hk64 hj0 hgoX hb hbb]
 
 theorem gemmBodyStep_frame (s : RealState) (l w : Nat) :
     (runGemm s gemmBodyStep).regs 58 l = s.regs 58 l ∧
@@ -757,30 +775,27 @@ theorem gemmBodyStep_frame (s : RealState) (l w : Nat) :
 /-- One real loop iteration: the invariant advances to `k + 1`, the sum gains
 `mem A * mem B`, and `P1 = k < 63` is true. -/
 theorem gemmBodyStep_inv (s : RealState) (aPtr bPtr cPtr : Addr)
-    (i j0 k sum goX : Word)
-    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
+    (i j0 k sum goX : Word) (l : Nat)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
     (hi : i.toNat < 64) (hk : k.toNat < 63) (hj0 : j0.toNat < 64)
     (hgoX : goX.toNat < 64)
     (ha : aPtr.toNat % 4 = 0)
     (hab : aPtr.toNat + 4 * (i * 64 + k).toNat < 2 ^ 64)
     (hb : bPtr.toNat % 4 = 0)
     (hbb : bPtr.toNat + 4 * (k * 64 + j0 + goX).toNat < 2 ^ 64) :
-    GemmLoopInv (runGemm s gemmBodyStep) aPtr bPtr cPtr i j0 (k + 1)
+    GemmLoopInv (runGemm s gemmBodyStep) aPtr bPtr cPtr l i j0 (k + 1)
         (sum + s.mem (aPtr.toNat / 4 + (i * 64 + k).toNat) *
           s.mem (bPtr.toNat / 4 + (k * 64 + j0 + goX).toNat)) goX ∧
     (runGemm s gemmBodyStep).preds 1 = true ∧
     (runGemm s gemmBodyStep).mem = s.mem := by
   have hf0 := gemmBodyStep_frame s 0 0
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
-    gemmBodyStep_pred s aPtr bPtr cPtr i j0 k sum goX h hk,
-    gemmBodyStep_mem s aPtr bPtr cPtr i j0 k sum goX h⟩
-  · intro l'
-    exact (gemmBodyStep_frame s l' 0).1.trans (h.v58 l')
-  · intro l'
-    exact (gemmBodyStep_frame s l' 0).2.1.trans (h.v57 l')
-  · exact gemmBodyStep_counter s aPtr bPtr cPtr i j0 k sum goX h
-  · intro l'
-    exact gemmBodyStep_sum s aPtr bPtr cPtr i j0 k sum goX h hi hk hj0 hgoX l'
+    gemmBodyStep_pred s aPtr bPtr cPtr i j0 k sum goX l h hk,
+    gemmBodyStep_mem s aPtr bPtr cPtr i j0 k sum goX l h⟩
+  · exact (gemmBodyStep_frame s l 0).1.trans h.v58
+  · exact (gemmBodyStep_frame s l 0).2.1.trans h.v57
+  · exact gemmBodyStep_counter s aPtr bPtr cPtr i j0 k sum goX l h
+  · exact gemmBodyStep_sum s aPtr bPtr cPtr i j0 k sum goX l h hi hk hj0 hgoX
       ha hab hb hbb
   · exact hf0.2.2.1.trans h.aReg
   · exact hf0.2.2.2.1.trans h.bReg
