@@ -18,7 +18,7 @@ fork.
 | P1 DPAS refinement | 49, 50, 79 (#81), 86 (#88), 99-101, 142 | decoded `dpas.8x8`; `fmhaFp8Atom` 8x8x32 vs `tlaXeF16Atom` 8x16x16; atom counts 1 vs 2; packed A/B/C layouts, collision-free addresses and decoded register bases; value equality with one depth-32 slab, K=16 split and 2x1/2x2 tile composition | addressed for the coded 8x8x32 layout |
 | P1 numerical semantics | 27-31, 43-56, 61, 80 (#82) | fixed-point bounds, NaN payload propagation, `vstepIEEE` with `0 * inf = NaN` | partial: not a full IEEE FMA |
 | P1 hardware conformance | 81 (#83) | GPU vs `gemmDot`: `C00=-2 C11=-5 C6363=4 checksum=4294967290 bad=0`; add-one and vector-add runs | addressed at source level; the GEMM dump was compiled with a different compiler minor version |
-| P2 complex kernels | 79 (#81), 82-85 (#84-#87), 99-102 | real FMHA DPAS decoded, packed and smoke-tested; real straight-line vector add end-to-end | open: full FMHA/SageAttention execution and low-precision paths |
+| P2 complex kernels | 79 (#81), 82-85 (#84-#87), 99-102, 148 | real FMHA DPAS decoded, packed and smoke-tested; real straight-line vector add end-to-end; E4M3 decode and an fp8 atom value path | open: full FMHA/SageAttention execution; the fp8 element path is value-level |
 
 ## Acceptance criteria
 
@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (77 jobs) and `Tools/check_axioms.py --all`
-  (722 theorems, 230 documented exceptions at stage 147).
+  `lake build Intel` (112 jobs) and `Tools/check_axioms.py --all`
+  (745 theorems, 230 documented exceptions at stage 148).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -72,15 +72,17 @@ from `Classical.choose` in the racing-store model.
 
 ## Remaining work
 
-- masked/predicated loop vector add: the predicate logic, both predicated
-  `goto`s and the false-lane memory frame are stages 130-143; applying
-  `(M5, 16)` execution masks to the loop kernel and the grid-stride loop remain;
-- FMHA/SageAttention execution and low-precision paths;
-- 8x8x32 DPAS operand packing is modelled; hardware validation of the layout
-  and the rest of the FMHA execution path remain;
-- full IEEE semantics and a hardware memory model with visibility and
-  synchronization;
-- exact SBID assignments from the binary encoding.
+- masked/predicated loop vector add: predicate logic, both predicated `goto`s,
+  the false-lane memory frame and generic mask laws are stages 130-146;
+  applying `(M5, 16)` execution masks to the decoded loop kernel remains;
+- FMHA/SageAttention execution: the 8x8x32 DPAS value path and the fp8 E4M3
+  element path are modelled (stages 142, 148); the register-level execution
+  and hardware validation of the layout remain;
+- full IEEE semantics: the class model has NaN/inf propagation and
+  round-to-nearest-even bounds, but not a full IEEE FMA;
+- caches: the visibility model is cacheless, with fences as full barriers;
+- SBID assignments are a documented transcription assumption (stage 147),
+  because the dumps do not print the field.
 
-The stack is intentionally one PR per stage (#64-#99), as requested. The
+The stack is intentionally one PR per stage (#64-#149), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
