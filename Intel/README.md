@@ -2823,6 +2823,18 @@ iteration folds. Concrete overflow/inexact and invalid examples are included;
 `lastWrite_loses_earlier_inexact` shows a non-sticky state loses a flag.
 Trap/mask behavior, trap delivery and physical flag registers are not modeled.
 
+## Stage 172: directed-rounding FMA
+
+`Intel/IeeeFp16FmaDirected.lean` adds round-down, round-up and round-toward-
+zero to the fused multiply-add. It proves the directed bounds and fixed
+points, brackets stage 170's RNE result between down and up, gives
+tie-to-even down/up bit examples and the exact overflow table per direction
+(toward zero saturates at signed 65504; up-positive/down-negative go to
+infinity above 65504; the other directions saturate). Product-zero reduces to
+stage 159's directed add. `fmaDirected_up_ne_split` shows directed FMA is not
+directed-product-then-directed-add. Traps, FTZ/DAZ, tininess-before-rounding
+and hardware timing are not modeled.
+
 ## Stage 165: review stage map
 
 `Intel/REVIEW_63.md` now carries a single stage index for stages 137--164
@@ -3062,4 +3074,5 @@ lake build Intel
 168. Stage 168: write-back caches and request queues.
 169. Stage 169: SLM banks and swizzling.
 170. Stage 170: fp16 fused multiply-add.
-171. Stage 171 (this PR): sticky per-lane flags.
+171. Stage 171: sticky per-lane flags.
+172. Stage 172 (this PR): directed-rounding FMA.
