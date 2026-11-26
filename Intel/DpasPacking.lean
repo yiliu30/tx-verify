@@ -133,4 +133,11 @@ theorem fmhaCAddr_injective16 (base m1 n1 m2 n2 : Nat)
   have hlin : m1 * 8 + n1 = m2 * 8 + n2 := by omega
   omega
 
+/-- The packed layout uses exactly the bases decoded from the real line. -/
+theorem fmhaReal_uses_decoded_bases (regs : Nat → Nat → Word) :
+    fmhaRealA regs = fmhaPackedA regs 39 16 ∧
+    fmhaRealB regs = fmhaPackedB regs 335 0 ∧
+    fmhaRealC regs = fmhaPackedC regs 383 16 :=
+  ⟨rfl, rfl, rfl⟩
+
 end IntelGpu

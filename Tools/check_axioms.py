@@ -108,6 +108,7 @@ KNOWN = {
     "IntelGpu.realGemm_output": {"Classical.choice"},
     "IntelGpu.realFmhaDpas_form": {"Classical.choice"},
     "IntelGpu.realFmhaDpas_atom": {"Classical.choice"},
+    "IntelGpu.realFmhaDpas_regs": {"Classical.choice"},
     # Stage 82 vector-add coverage: `decodeReal` walks `String` operands.
     "IntelGpu.realVectorAdd_accepted": {"Classical.choice"},
     "IntelGpu.realVectorAdd_rejectedOps": {"Classical.choice"},
@@ -274,6 +275,7 @@ THEOREMS = [
     ("Intel.RealDpas", "IntelGpu.realFmhaDpas_form"),
     ("Intel.RealDpas", "IntelGpu.fmhaDpas_not_tlaAtom"),
     ("Intel.RealDpas", "IntelGpu.fmhaDpas_shape_and_depth"),
+    ("Intel.RealDpas", "IntelGpu.realFmhaDpas_regs"),
     ("Intel.DpasPacking", "IntelGpu.fmhaPackedA_zero"),
     ("Intel.DpasPacking", "IntelGpu.fmhaPackedB_zero"),
     ("Intel.DpasPacking", "IntelGpu.fmhaPackedC_zero"),
@@ -282,6 +284,7 @@ THEOREMS = [
     ("Intel.DpasPacking", "IntelGpu.fmhaBAddr_injective"),
     ("Intel.DpasPacking", "IntelGpu.fmhaAAddr_injective16"),
     ("Intel.DpasPacking", "IntelGpu.fmhaCAddr_injective16"),
+    ("Intel.DpasPacking", "IntelGpu.fmhaReal_uses_decoded_bases"),
     ("Intel.Fp16Ieee", "IntelGpu.vstepIEEE_zero_left"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_fin"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_ne_fin"),
