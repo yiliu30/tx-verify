@@ -2160,6 +2160,23 @@ writeback into `V0059`.
 (`writeId24_qword`). This is the pack/writeback layout; composing it with the
 actual `sel`/branch instructions remains.
 
+## Stage 108: loop-carried ID selection
+
+The continuation decision is now expressed as a per-lane selection:
+
+```lean
+def selectId (old new : Nat → Addr) (takeNew : Nat → Bool) : Nat → Addr :=
+  fun l => if takeNew l then new l else old l
+
+theorem writeId24_selected_qword :
+  qwordOf (writeId24 r (low of selected) (high of selected)) l =
+    selectId old new takeNew l
+```
+
+The low/high pack and writeback reconstruct the selected 64-bit index exactly
+for every active lane. This isolates the data-update law from the remaining
+instruction-level `sel` and branch composition.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2328,4 +2345,5 @@ lake build Intel
 104. Stage 104: import the loop vector add's tables and prove its index.
 105. Stage 105: add dword storage and qword-view laws.
 106. Stage 106: prove the loop body's load/add/store effect.
-107. Stage 107 (this PR): formalize the 24-lane pack/writeback layout.
+107. Stage 107: formalize the 24-lane pack/writeback layout.
+108. Stage 108 (this PR): prove the loop-carried ID selection law.
