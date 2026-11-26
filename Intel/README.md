@@ -2616,6 +2616,18 @@ instantiates the result to the 32 `vaLoopId` lanes. This is the observable
 workgroup memory once race freedom (stage 152) is known, not a new concurrent
 semantics.
 
+## Stage 154: write-through cache coherence
+
+`Intel/CacheCoherence.lean` adds one workgroup cache over the visibility model.
+`CacheState` pairs the shared `VisState` with per-location cache lines;
+`load` hits the cache or fills from global, `store` is write-through,
+`invalidate` drops lines, and `flush`/release fences publish pending writes.
+`load_store_same`, `invalidate_load_global` and `flush_publishes` are the core
+laws; `cache_message_passing` proves the producer/consumer pattern with
+invalidate, and the negative test shows a stale line is observable without it.
+The docstring lists the assumptions: write-through, no write-allocate, one
+cache per workgroup, no coherence traffic, full-barrier fences.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2831,4 +2843,5 @@ lake build Intel
 150. Stage 150: register-level FMHA DPAS execution.
 151. Stage 151: mask-aware execution for the loop body.
 152. Stage 152: cross-lane race freedom.
-153. Stage 153 (this PR): composing the 32 lane stores.
+153. Stage 153: composing the 32 lane stores.
+154. Stage 154 (this PR): write-through cache coherence.
