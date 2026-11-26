@@ -118,6 +118,13 @@ KNOWN = {
     "IntelGpu.realVectorAddFlat_decodes": {"Classical.choice"},
     "IntelGpu.realVectorAddFlat_decoded_length": {"Classical.choice"},
     "IntelGpu.vaPreamble_id": {"Classical.choice"},
+    "IntelGpu.vaPreamble_pointers": {"Classical.choice"},
+    "IntelGpu.vaPreamble_mem": {"Classical.choice"},
+    "IntelGpu.realVectorAddFlat_decoded_eq": {"Classical.choice"},
+    "IntelGpu.vaLoadA": {"Classical.choice"},
+    "IntelGpu.vaLoadB": {"Classical.choice"},
+    "IntelGpu.vaAdd": {"Classical.choice"},
+    "IntelGpu.vaTail_halted": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -224,6 +231,10 @@ THEOREMS = [
     ("Intel.RealVectorAddCoverage", "IntelGpu.masked_mov_rejected"),
     ("Intel.VectorAdd", "IntelGpu.realVectorAddFlat_decoded_length"),
     ("Intel.VectorAdd", "IntelGpu.vaPreamble_id"),
+    ("Intel.VectorAdd", "IntelGpu.vaLoadA"),
+    ("Intel.VectorAdd", "IntelGpu.vaLoadB"),
+    ("Intel.VectorAdd", "IntelGpu.vaAdd"),
+    ("Intel.VectorAdd", "IntelGpu.vaTail_halted"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
