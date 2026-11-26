@@ -1305,6 +1305,35 @@ Still trusted: that the hardware implements these instructions as modelled.
 The alias table, types and element counts are transcribed from the dump, and
 the assembly-to-program correspondence is `realAddOne_decoded_eq`.
 
+## Stage 65: a real GEMM, imported
+
+`Intel/Examples/RealGemm.lean` is the `_main_0` body IGC emitted for a
+64x64x64 `int` GEMM, one work-item per output, generated directly from the
+dump by `Tools/parse_igc.py`. Provenance is in the module: oneAPI 2026.1 IGC,
+`zeinfo` 1.71, `SimdSize=32`, `PerThreadInputSize=128`, and the sha256 of the
+unredacted dump `70d71a09…5368`; the platform line and build-option string are
+redacted. The parser now keeps an execution size such as `(M1_NM, 1)` as one
+operand, keeps a predicated `(!P1) goto` as one opcode, and skips directives and
+`FILE`/`LOC` markers, so the statement list is machine-generated rather than
+hand-transcribed.
+
+`Intel/RealGemmCoverage.lean` measures the decoder against it:
+
+```lean
+theorem realGemm_accepted : acceptedReal realGemm = [27 opcodes]
+theorem realGemm_rejectedOps :
+    rejectedOps realGemm = ["mov", "mov", "or", "cmp.lt", "(!P1) goto", "goto"]
+theorem realGemm_rejectedLabels :
+    rejectedLabels realGemm = ["_main_0", "_0_004", "_0_006", "_0_005"]
+theorem realGemm_not_decoded : decodeRealProgram realGemm = none
+```
+
+So the stage-63 decoder already reads 27 of the 33 instructions: the index
+arithmetic, both `lsc_load.ugm`, the multiply-add, the store and `ret`. What it
+refuses is exactly the control-flow shell: the two `mov 0x0:d` initialisers,
+the loop `or`, `cmp.lt`, `goto`, the predicated exit, and labels. Those are the
+next stage, not a surprise.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one subset, and general register aliasing
@@ -1406,5 +1435,7 @@ lake build Intel
 62. Stage 62: a real IGC kernel imported, and its decoder coverage.
 63. Stage 63: a region-aware decoder for the real kernel, failing closed on
     everything else.
-64. Stage 64 (this PR): execute the decoded kernel, with aliases, the address
-    chain, and the per-lane load/add/store effect.
+64. Stage 64: execute the decoded kernel, with aliases, the address chain, and
+    the per-lane load/add/store effect.
+65. Stage 65 (this PR): import a real 64x64x64 integer GEMM and measure the
+    decoder's coverage of its control-flow shell.

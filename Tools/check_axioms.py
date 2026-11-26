@@ -54,6 +54,11 @@ KNOWN = {
     # The address proof and the decode bridge inherit the same model.
     "IntelGpu.realAddOne_address_preamble": {"Classical.choice"},
     "IntelGpu.realAddOne_decoded_eq": {"Classical.choice"},
+    # Stage 65 GEMM coverage: `decodeReal` walks `String` operands.
+    "IntelGpu.realGemm_accepted": {"Classical.choice"},
+    "IntelGpu.realGemm_rejectedOps": {"Classical.choice"},
+    "IntelGpu.realGemm_rejectedLabels": {"Classical.choice"},
+    "IntelGpu.realGemm_not_decoded": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -114,6 +119,8 @@ THEOREMS = [
     ("Intel.RealSemantics", "IntelGpu.realAddOne_decoded_eq"),
     ("Intel.RealSemantics", "IntelGpu.realAddOne_address_preamble"),
     ("Intel.RealSemantics", "IntelGpu.realAddOne_effect"),
+    ("Intel.RealGemmCoverage", "IntelGpu.realGemm_accepted"),
+    ("Intel.RealGemmCoverage", "IntelGpu.realGemm_not_decoded"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
