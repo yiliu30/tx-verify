@@ -293,6 +293,7 @@ def RInstr.gemmDstOk : RInstr → Bool
   | .prologue => true
   | .mul n d _ _ => gemmRegElems d.num == n && (gemmRegType d.num).isSome
   | .mov n d _ => gemmRegElems d.num == n && (gemmRegType d.num).isSome
+  | .movMasked n d _ => gemmRegElems d.num == n && (gemmRegType d.num).isSome
   | .add3 n d _ _ _ => gemmRegElems d.num == n && (gemmRegType d.num).isSome
   | .shl n d _ _ => gemmRegElems d.num == n && (gemmRegType d.num).isSome
   | .add n d _ _ => gemmRegElems d.num == n && (gemmRegType d.num).isSome
