@@ -1255,12 +1255,64 @@ reduce in the kernel. The program-level proofs `unfold` the two decoder
 definitions and then `decide`; the audit records the `Classical.choice`
 dependency inherited from `String.toList`, as for the stage-5 decoder.
 
+## Stage 64: executing the real kernel
+
+`Intel/RealSemantics.lean` runs the decoded program. The dump's `.decl` table
+answered the one question the listing left open: `V0053` is not an independent
+register, it is `alias=<V0052, 0>`, the unsigned 64-bit view of the computed
+address. The model therefore carries the dump's numeric aliases:
+
+```
+V0046 -> V0039     V0049 -> V0047     V0050 -> V0034     V0053 -> V0052
+```
+
+(`V0033` and `V0036` alias `%r0`; the kernel only reads them, so they are
+independent inputs here.)
+
+Registers are 64-bit element slots. The destination's declared type chooses a
+32-bit operation with zero-extension (`d32`) or a full 64-bit operation (`q64`);
+the types and element counts come from the dump's `.decl` lines. Source regions
+are interpreted exactly as far as this kernel needs: `(0,0)<0;1,0>` broadcasts
+element 0 and `(0,0)<1>`/`(0,0)<1;1,0>` is dense, lane `l` reading element `l`.
+Two `decide` theorems pin the assumptions: every destination is `(0,0)`, width
+1, horizontal stride 0 (`realAddOne_regions_simple`), and every destination
+register's element count equals the execution size (`realAddOne_dst_counts`).
+
+The `or` prologue writes `%cr0`, which no later instruction reads, and is a
+no-op in the model. The address chain is proved end to end (the model is total,
+so the identity is stated for every lane index; the effect theorem restricts to
+the 32-lane launch):
+
+```lean
+theorem realAddOne_address_preamble :
+    readSrc (runReal s realAddOnePreamble) ⟨53,0,0,1,1,0⟩ l =
+      realAddress base (threadId localSize r0 localId globalOffset l)
+
+realAddress base id = (zeroExtend id) <<< 2 + base
+threadId ... l    = localSize * r0 + localId l + globalOffset
+```
+
+This is `%12 = (%9 << 2) + %10` from the dump's source IR, with `%8` computed in
+32-bit arithmetic as the IGC `d32` sequence does. The memory half is
+`realAddOne_effect`: the kernel halts, each of the 32 lanes gets an aligned
+address, the word originally at each lane's address is incremented, and every
+other word is unchanged. Distinct word addresses are the race-freedom
+hypothesis. When addresses alias, `storeVec` uses `Classical.choose` to pick a
+lane; that is why the stage-64 theorems carry the documented
+`Classical.choice` exception.
+
+Still trusted: that the hardware implements these instructions as modelled.
+The alias table, types and element counts are transcribed from the dump, and
+the assembly-to-program correspondence is `realAddOne_decoded_eq`.
+
 ## Not modeled yet
 
-- IGC text parsing beyond the add-one subset, and register aliases
-  (`r7:4`, `r12:2`); stage 63 parses the real kernel's operand forms only.
+- IGC text parsing beyond the add-one subset, and general register aliasing
+  (`r7:4`, `r12:2`); stages 63-64 cover the real kernel's operand forms and its
+  four numeric aliases only.
 - The compiler-generated prolog and global-id / address computation.
-- SIMD masks, GRF regions, predicates, and scoreboards.
+- SIMD masks, predicates, and scoreboards. Stage 64 interprets this kernel's
+  broadcast and dense GRF regions, not the general region algebra.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
@@ -1352,5 +1404,7 @@ lake build Intel
 60. Stage 60: memory-model laws.
 61. Stage 61: NaN payloads.
 62. Stage 62: a real IGC kernel imported, and its decoder coverage.
-63. Stage 63 (this PR): a region-aware decoder for the real kernel, failing
-    closed on everything else.
+63. Stage 63: a region-aware decoder for the real kernel, failing closed on
+    everything else.
+64. Stage 64 (this PR): execute the decoded kernel, with aliases, the address
+    chain, and the per-lane load/add/store effect.
