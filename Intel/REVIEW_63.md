@@ -18,7 +18,7 @@ fork.
 | P1 DPAS refinement | 49, 50, 79 (#81), 86 (#88), 99-101, 142, 150 | decoded `dpas.8x8`; `fmhaFp8Atom` 8x8x32 vs `tlaXeF16Atom` 8x16x16; atom counts 1 vs 2; packed A/B/C layouts, collision-free addresses and decoded register bases; value equality with one depth-32 slab, K=16 split, 2x1/2x2 tile composition and register-level execution at the decoded bases | addressed for the coded 8x8x32 layout; physical tile packing remains a model assumption |
 | P1 numerical semantics | 27-31, 43-56, 61, 80 (#82), 149, 156, 159 | fixed-point bounds, NaN payload propagation, `vstepIEEE` with `0 * inf = NaN`; exact-grid fp16 addition, ties-to-even and a single-rounding encode/decode path; total fp16 decode, signed zeros, subnormal crossings, the overflow threshold, NaN/Inf propagation and directed rounding with an exact overflow table | partial: not a full IEEE FMA; general per-binade RNE, exception flags and fused multiply-add remain outside the proved class |
 | P1 hardware conformance | 81 (#83) | GPU vs `gemmDot`: `C00=-2 C11=-5 C6363=4 checksum=4294967290 bad=0`; add-one and vector-add runs | addressed at source level; the GEMM dump was compiled with a different compiler minor version |
-| P2 complex kernels | 79 (#81), 82-85 (#84-#87), 99-102, 148, 150, 155 | real FMHA DPAS decoded, packed and smoke-tested; real straight-line vector add end-to-end; E4M3 decode and an fp8 atom value path | open: full FMHA/SageAttention execution; the decoded atom and a T-step register-level mainloop are modelled, but physical packing, tail/partial K and the rest of the kernel remain |
+| P2 complex kernels | 79 (#81), 82-85 (#84-#87), 99-102, 148, 150, 155, 163 | real FMHA DPAS decoded, packed and smoke-tested; real straight-line vector add end-to-end; E4M3 decode and an fp8 atom value path | open: full FMHA/SageAttention execution; the decoded atom, a T-step register-level mainloop and a zero-padded tail are modelled, but physical packing, masked/partial DPAS behavior and the rest of the kernel remain |
 
 ## Acceptance criteria
 
@@ -85,8 +85,9 @@ from `Classical.choose` in the racing-store model.
   store; a multi-iteration induction and the all-32-lane extension remain;
 - FMHA/SageAttention execution: the 8x8x32 DPAS value path, the fp8 E4M3
   element path, one register-level DPAS step and a T-step register-level
-  mainloop are modelled (stages 142, 148, 150, 155); physical tile packing,
-  tail/partial K, the rest of the kernel and hardware validation remain;
+  mainloop and a zero-padded tail are modelled (stages 142, 148, 150, 155,
+  163); physical tile packing, masked/partial DPAS behavior, the rest of the
+  kernel and hardware validation remain;
 - full IEEE semantics: stages 149, 156 and 159 cover exact-grid fp16
   addition, ties-to-even, signed zeros, subnormal crossings, the overflow
   threshold, NaN/Inf propagation and directed rounding; general per-binade
