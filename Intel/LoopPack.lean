@@ -46,6 +46,26 @@ theorem packOdd24_value (r : DRegs) (srcBase dstBase j : Nat) (hj : j < 24) :
     packOdd24 r srcBase dstBase (dstBase + j) = r (srcBase + 2 * j + 1) := by
   simp [packOdd24, hj]
 
+/-- The dword view of a qword-per-lane ID array. -/
+def idDwords (ids : Nat → Addr) : DRegs :=
+  fun d =>
+    if d % 2 = 0 then (ids (d / 2)).truncate 32
+    else ((ids (d / 2)) >>> 32).truncate 32
+
+theorem packLow_dword (ids : Nat → Addr) (j : Nat) (hj : j < 24) :
+    packEven24 (idDwords ids) 0 0 j = (ids j).truncate 32 := by
+  rw [show j = 0 + j by omega, packEven24_value _ 0 0 j hj]
+  have h2 : (2 * j) % 2 = 0 := by omega
+  have hd : (2 * j) / 2 = j := by omega
+  simp [idDwords, h2, hd]
+
+theorem packHigh_dword (ids : Nat → Addr) (j : Nat) (hj : j < 24) :
+    packOdd24 (idDwords ids) 0 0 j = ((ids j) >>> 32).truncate 32 := by
+  rw [show j = 0 + j by omega, packOdd24_value _ 0 0 j hj]
+  have h2 : (2 * j + 1) % 2 = 1 := by omega
+  have hd : (2 * j + 1) / 2 = j := by omega
+  simp [idDwords, h2, hd]
+
 /-- Write 24 lanes of low/high dwords into the qword-per-lane destination. -/
 def writeId24 (r : DRegs) (low high : Nat → Word) : DRegs :=
   fun d =>
