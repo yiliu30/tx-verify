@@ -2915,4 +2915,5 @@ lake build Intel
 158. Stage 158: the decoded loop-back block.
 159. Stage 159: directed fp16 rounding.
 160. Stage 160: dword/qword coalescing adapter.
-161. Stage 161 (this PR): n-iteration grid-stride induction.
+161. Stage 161: n-iteration grid-stride induction.
+162. Stage 162 (this PR): directory/ownership coherence.
