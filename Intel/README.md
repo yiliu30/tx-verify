@@ -2417,6 +2417,12 @@ active lane.
 increment packs plus second guard and that running it sets `P6` to the proved
 next-ID guard.
 
+## Stage 134: executing the decoded body slice
+
+`Intel/LoopBodyExec.lean` proves PC 21..24 is exactly `vaLoopBody` and that
+`stepLoop` agrees with `stepVAL` there, transferring the proved
+`C[index] = A[index] + B[index]` effect to the actual decoded slice.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2612,4 +2618,5 @@ lake build Intel
 130. Stage 130: compose the decoded P3/P6 branches.
 131. Stage 131: prove the increment add.
 132. Stage 132: execute the decoded P3 prefix.
-133. Stage 133 (this PR): execute the decoded P6 prefix.
+133. Stage 133: execute the decoded P6 prefix.
+134. Stage 134 (this PR): execute the decoded body slice.
