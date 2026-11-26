@@ -660,7 +660,138 @@ theorem gemmBody (s : RealState) (aPtr bPtr cPtr : Addr)
     gemmProduct s aPtr bPtr cPtr i j0 k sum goX h hi hk hj0 hgoX l ha hab hb hbb,
     gemmSum s aPtr bPtr cPtr i j0 k sum goX h hi hk hj0 hgoX l ha hab hb hbb⟩
 
+
+/-- The loop body plus `cmp.lt` and the counter increment. -/
+def gemmBodyStep : List RInstr :=
+  gemmBodyBlock ++
+    [ .cmpLt 32 1 ⟨79, 0, 0, 0, 1, 0⟩ 63 .ud,
+      .addImm 1 ⟨61, 0, 0, 1, 1, 0⟩ ⟨61, 0, 0, 0, 1, 0⟩ 1 .w16 ]
+
+/-- The body block leaves the loop invariants untouched. -/
+theorem gemmBodyBlock_frame (s : RealState) (l w p : Nat) :
+    (runGemm s gemmBodyBlock).regs 58 l = s.regs 58 l ∧
+    (runGemm s gemmBodyBlock).regs 57 l = s.regs 57 l ∧
+    (runGemm s gemmBodyBlock).regs 61 l = s.regs 61 l ∧
+    (runGemm s gemmBodyBlock).regs 34 l = s.regs 34 l ∧
+    (runGemm s gemmBodyBlock).regs 35 l = s.regs 35 l ∧
+    (runGemm s gemmBodyBlock).regs 36 l = s.regs 36 l ∧
+    (runGemm s gemmBodyBlock).regs 39 l = s.regs 39 l ∧
+    (runGemm s gemmBodyBlock).preds p = s.preds p ∧
+    (runGemm s gemmBodyBlock).mem w = s.mem w := by
+  unfold gemmBodyBlock runGemm
+  simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
+    readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
+    binOpWide, add3Wide, shlWide, load32]
+
+
+theorem gemmBodyStep_counter (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word)
+    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX) :
+    (runGemm s gemmBodyStep).regs 61 0 = zext (k + 1) := by
+  unfold gemmBodyStep runGemm
+  rw [runRealWith_append]
+  simp [runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
+    readRegWith, readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType,
+    RegType.is64, binOpWide, add3Wide, shlWide, addImmWide, load32, h.v61]
+
+theorem gemmBodyStep_pred (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word)
+    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX) (hk : k.toNat < 63) :
+    (runGemm s gemmBodyStep).preds 1 = true := by
+  unfold gemmBodyStep runGemm
+  rw [runRealWith_append]
+  simp [runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
+    readRegWith, readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType,
+    RegType.is64, binOpWide, add3Wide, shlWide, addImmWide, load32, h.v61]
+  bv_omega
+
+theorem gemmBodyStep_mem (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word)
+    (_h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX) :
+    (runGemm s gemmBodyStep).mem = s.mem := by
+  unfold gemmBodyStep runGemm
+  rw [runRealWith_append]
+  simp [runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
+    readRegWith, readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType,
+    RegType.is64, binOpWide, add3Wide, shlWide, addImmWide, load32]
+
+
+theorem gemmBodyStep_sum (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word)
+    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
+    (hi : i.toNat < 64) (hk : k.toNat < 63) (hj0 : j0.toNat < 64)
+    (hgoX : goX.toNat < 64) (l : Nat)
+    (ha : aPtr.toNat % 4 = 0)
+    (hab : aPtr.toNat + 4 * (i * 64 + k).toNat < 2 ^ 64)
+    (hb : bPtr.toNat % 4 = 0)
+    (hbb : bPtr.toNat + 4 * (k * 64 + j0 + goX).toNat < 2 ^ 64) :
+    (runGemm s gemmBodyStep).regs 62 l =
+      zext (sum + s.mem (aPtr.toNat / 4 + (i * 64 + k).toNat) *
+        s.mem (bPtr.toNat / 4 + (k * 64 + j0 + goX).toNat)) := by
+  have hk64 : k.toNat < 64 := by omega
+  unfold gemmBodyStep runGemm
+  rw [runRealWith_append]
+  simp [runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
+    readRegWith, readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType,
+    RegType.is64, binOpWide, add3Wide, shlWide, addImmWide, load32,
+    h.v58, h.v61, h.v57, h.v62, h.aReg, h.bReg, h.goXReg,
+    nat_or_shift_six_64 i k hi hk64, shl_six]
+  rw [nat_wordA aPtr i k hi hk64 ha hab,
+    gemmWordB bPtr j0 k goX hk64 hj0 hgoX hb hbb]
+
+theorem gemmBodyStep_frame (s : RealState) (l w : Nat) :
+    (runGemm s gemmBodyStep).regs 58 l = s.regs 58 l ∧
+    (runGemm s gemmBodyStep).regs 57 l = s.regs 57 l ∧
+    (runGemm s gemmBodyStep).regs 34 l = s.regs 34 l ∧
+    (runGemm s gemmBodyStep).regs 35 l = s.regs 35 l ∧
+    (runGemm s gemmBodyStep).regs 36 l = s.regs 36 l ∧
+    (runGemm s gemmBodyStep).regs 39 l = s.regs 39 l ∧
+    (runGemm s gemmBodyStep).mem w = s.mem w := by
+  unfold gemmBodyStep runGemm
+  rw [runRealWith_append]
+  simp [runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
+    readRegWith, readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType,
+    RegType.is64, binOpWide, add3Wide, shlWide, addImmWide, load32]
+
+
+/-- One real loop iteration: the invariant advances to `k + 1`, the sum gains
+`mem A * mem B`, and `P1 = k < 63` is true. -/
+theorem gemmBodyStep_inv (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word)
+    (h : GemmLoopInv s aPtr bPtr cPtr i j0 k sum goX)
+    (hi : i.toNat < 64) (hk : k.toNat < 63) (hj0 : j0.toNat < 64)
+    (hgoX : goX.toNat < 64)
+    (ha : aPtr.toNat % 4 = 0)
+    (hab : aPtr.toNat + 4 * (i * 64 + k).toNat < 2 ^ 64)
+    (hb : bPtr.toNat % 4 = 0)
+    (hbb : bPtr.toNat + 4 * (k * 64 + j0 + goX).toNat < 2 ^ 64) :
+    GemmLoopInv (runGemm s gemmBodyStep) aPtr bPtr cPtr i j0 (k + 1)
+        (sum + s.mem (aPtr.toNat / 4 + (i * 64 + k).toNat) *
+          s.mem (bPtr.toNat / 4 + (k * 64 + j0 + goX).toNat)) goX ∧
+    (runGemm s gemmBodyStep).preds 1 = true ∧
+    (runGemm s gemmBodyStep).mem = s.mem := by
+  have hf0 := gemmBodyStep_frame s 0 0
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    gemmBodyStep_pred s aPtr bPtr cPtr i j0 k sum goX h hk,
+    gemmBodyStep_mem s aPtr bPtr cPtr i j0 k sum goX h⟩
+  · intro l'
+    exact (gemmBodyStep_frame s l' 0).1.trans (h.v58 l')
+  · intro l'
+    exact (gemmBodyStep_frame s l' 0).2.1.trans (h.v57 l')
+  · exact gemmBodyStep_counter s aPtr bPtr cPtr i j0 k sum goX h
+  · intro l'
+    exact gemmBodyStep_sum s aPtr bPtr cPtr i j0 k sum goX h hi hk hj0 hgoX l'
+      ha hab hb hbb
+  · exact hf0.2.2.1.trans h.aReg
+  · exact hf0.2.2.2.1.trans h.bReg
+  · exact hf0.2.2.2.2.1.trans h.cReg
+  · exact hf0.2.2.2.2.2.1.trans h.goXReg
+
 end
 
 end IntelGpu
+
+
+
+
 

@@ -1460,6 +1460,29 @@ sum'    = sum + loadA * loadB
 The remaining loop proof is the `cmp.lt`/`goto` control flow, the counter
 increment, the K-induction and the epilogue store.
 
+## Stage 71: one real loop iteration
+
+`gemmBodyStep` is the complete executed iteration: the body block, `cmp.lt`
+against 63, and the counter increment. `gemmBodyStep_inv` is the inductive
+step:
+
+```lean
+theorem gemmBodyStep_inv :
+    GemmLoopInv (runGemm s gemmBodyStep) ... (k + 1)
+      (sum + memA * memB) ∧
+    (runGemm s gemmBodyStep).preds 1 = true ∧
+    (runGemm s gemmBodyStep).mem = s.mem
+```
+
+The supporting lemmas isolate the tail: `gemmBodyStep_counter` gives
+`V0061 = k + 1`, `gemmBodyStep_pred` gives `P1 = (k < 63)`, `gemmBodyStep_sum`
+gives the new `V0062`, and `gemmBodyStep_frame` shows the row shift, column
+base, pointers and memory are untouched.
+
+What remains is the K-induction over repeated steps, the final body at
+`k = 63` (where the predicate is false and the counter is not incremented),
+and the epilogue store to `C`.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1576,5 +1599,7 @@ lake build Intel
 68. Stage 68: parameterise the semantics and prove the real GEMM's preamble
     and loop-entry values.
 69. Stage 69: prove the loop body's A and B index computations.
-70. Stage 70 (this PR): prove the byte addresses, both loads, the multiply and
-    the accumulation.
+70. Stage 70: prove the byte addresses, both loads, the multiply and the
+    accumulation.
+71. Stage 71 (this PR): prove one full loop iteration and its inductive
+    invariant.
