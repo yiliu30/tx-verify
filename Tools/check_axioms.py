@@ -113,6 +113,11 @@ KNOWN = {
     "IntelGpu.realVectorAdd_rejectedLabels": {"Classical.choice"},
     "IntelGpu.masked_mov_rejected": {"Classical.choice"},
     "IntelGpu.realVectorAdd_not_decoded": {"Classical.choice"},
+    # Stage 83 vector-add decode/preamble: `String.toList` and `stepWith`.
+    "IntelGpu.realVectorAddFlat_preamble_prefix": {"Classical.choice"},
+    "IntelGpu.realVectorAddFlat_decodes": {"Classical.choice"},
+    "IntelGpu.realVectorAddFlat_decoded_length": {"Classical.choice"},
+    "IntelGpu.vaPreamble_id": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -217,6 +222,8 @@ THEOREMS = [
     ("Intel.RealVectorAddCoverage", "IntelGpu.realVectorAdd_rejectedOps"),
     ("Intel.RealVectorAddCoverage", "IntelGpu.realVectorAdd_not_decoded"),
     ("Intel.RealVectorAddCoverage", "IntelGpu.masked_mov_rejected"),
+    ("Intel.VectorAdd", "IntelGpu.realVectorAddFlat_decoded_length"),
+    ("Intel.VectorAdd", "IntelGpu.vaPreamble_id"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")

@@ -1741,6 +1741,38 @@ kernel printed `bad=0 sum=4294967289`.
 Next: predicate/mask/`sel` semantics and scaled memory operands, then the
 vector-add effect theorem.
 
+## Stage 83: scaled memory and a straight-line vector add
+
+The straight-line `nd_range` vector add introduces a scaled global operand:
+
+```
+lsc_load.ugm  V0057:d32  flat(V0056)[0x4*V0055]:a32u
+lsc_store.ugm flat(V0061)[0x4*V0055]:a32u  V0060:d32
+```
+
+`loadScaled` / `storeScaled` now decode this form: a scalar base register plus
+a per-lane 32-bit index at byte scale four. The semantics computes
+`base + (index <<< 2)` and reads the base at element zero (`readScalarWith`).
+
+`Intel/Examples/RealVectorAddFlat.lean` is generated from the real dump
+(oneAPI DPC++ 2026.2.0, `zeinfo` 1.74, `SimdSize=32`,
+`PerThreadInputSize=64`, sha256 `d05c6952…30d4`, platform/options redacted).
+`Intel/VectorAdd.lean` adds the `.decl` tables and proves the index:
+
+```lean
+vaId = localSize * r0 + zeroExtend(localId) + globalOffset
+theorem vaPreamble_id : V0055 = zeroExtend (vaId ...)
+theorem realVectorAddFlat_decoded_length : ... = some 10
+```
+
+The whole straight-line kernel decodes, including the scaled loads and store.
+The loop vector-add's coverage moves from 18/41 to 21/41; the remaining 20
+refusals are the masked moves, predicate `cmp`/`and`/`or`, `sel` and the
+predicated `goto`s. The hardware run of the `nd_range` source is `bad=0`.
+
+Next: the load/add/store effect for this kernel, giving
+`c[id] = a[id] + b[id]` per lane.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1875,5 +1907,7 @@ lake build Intel
 79. Stage 79: decode a real FMHA DPAS and check the atom mapping.
 80. Stage 80: refine the value step with `0 * inf = NaN`.
 81. Stage 81: differential hardware conformance for the real GEMM.
-82. Stage 82 (this PR): import a real SIMD vector add and measure the decoder
-    gap, with a fail-closed mask check.
+82. Stage 82: import a real SIMD vector add and measure the decoder gap, with
+    a fail-closed mask check.
+83. Stage 83 (this PR): decode scaled memory and prove the vector-add index
+    preamble.

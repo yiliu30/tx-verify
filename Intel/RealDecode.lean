@@ -86,6 +86,11 @@ inductive RInstr where
   | goto (exec : Nat) (label : String)
   /-- A predicated `goto`; `negated` records the `(!P1)` spelling. -/
   | gotoIf (exec : Nat) (pred : Nat) (negated : Bool) (label : String)
+  /-- A scaled global load `flat(base)[4*index]`: scalar base plus a per-lane
+  32-bit index, byte scale four. -/
+  | loadScaled (exec : Nat) (dst : Nat) (w : Width) (base idx : Nat)
+  /-- A scaled global store `flat(base)[4*index]`. -/
+  | storeScaled (exec : Nat) (base idx : Nat) (w : Width) (src : Nat)
   deriving Repr, DecidableEq
 
 /-- Every decimal run in a list, in order. Structural on the fuel; each step
@@ -208,6 +213,13 @@ def parsePlainReg (s : String) : Option Nat :=
 /-- A memory operand `flat[V0053]:a64`: a register number, no region. -/
 def parseMem (s : String) : Option Nat := parsePlainReg s
 
+/-- A scaled memory operand `flat(V0056)[0x4*V0055]:a32u`: base register and
+index register. Only the four-byte scale is accepted. -/
+def parseScaledMem (s : String) : Option (Nat × Nat) :=
+  match numRuns (operandCore s) with
+  | [b, 0, 4, i] => some (b, i)
+  | _ => none
+
 /-- A predicate operand `P1`. -/
 def parsePred (s : String) : Option Nat :=
   match s.toList with
@@ -254,13 +266,25 @@ def decodeReal : Stmt → Option RInstr
                   | _, _ => none
           | _, _, _ => none
       | "lsc_load.ugm", [e, d, a] =>
-          match parseExec e, parsePlainReg d, parseWidth d, parseMem a with
-          | some n, some x, some wd, some y => some (.load n x wd y)
-          | _, _, _, _ => none
+          match parseExec e, parsePlainReg d, parseWidth d with
+          | some n, some x, some wd =>
+              match parseMem a with
+              | some y => some (.load n x wd y)
+              | none =>
+                  match parseScaledMem a with
+                  | some (b, i) => some (.loadScaled n x wd b i)
+                  | none => none
+          | _, _, _ => none
       | "lsc_store.ugm", [e, a, s] =>
-          match parseExec e, parseMem a, parsePlainReg s, parseWidth s with
-          | some n, some x, some y, some wd => some (.store n x wd y)
-          | _, _, _, _ => none
+          match parseExec e, parsePlainReg s, parseWidth s with
+          | some n, some y, some wd =>
+              match parseMem a with
+              | some x => some (.store n x wd y)
+              | none =>
+                  match parseScaledMem a with
+                  | some (b, i) => some (.storeScaled n b i wd y)
+                  | none => none
+          | _, _, _ => none
       | "or", ["(M1_NM, 1)", "%cr0(0,0)<1>", "%cr0(0,0)<0;1,0>", "0x400004c0:ud"] =>
           some .prologue
       | "or", [e, d, a, b] =>
