@@ -10,8 +10,8 @@ public import Intel.Examples.RealAddOne
 # Decoding the real kernel
 
 Stage 62 showed that the stage-5 decoder reads none of a real IGC dump. This
-module adds a decoder for *exactly* the forms that kernel uses, and fails closed
-on everything else:
+module adds a decoder for the forms used by the real add-one kernel and by the
+GEMM's control-flow shell, and fails closed on everything else:
 
 - `Grf`: a GRF operand as its numeric fields — register number, region row and
   column offsets, vertical stride, region width, horizontal stride. A region
@@ -22,7 +22,10 @@ on everything else:
 - `RInstr`: the decoded instruction, with execution size kept. `lsc_load.ugm`
   and `lsc_store.ugm` name their payload register without a region, so those
   operands are bare register numbers.
-- `decodeReal` / `decodeRealProgram`: the decoder, `Option`-valued.
+- `decodeReal` / `decodeRealProgram`: the decoder, `Option`-valued. Besides
+  arithmetic, loads and stores it reads labels, `mov` with an immediate source,
+  the three-operand `or`, `cmp.lt` into a predicate, `goto` and the predicated
+  `(!P1) goto`. `parseWidth` accepts IGC's `:d` dword suffix as `d32`.
 
 Parsing works on `List Char` with structural recursion rather than
 `String.splitOn`, so the `decide` proofs below reduce in the kernel.
@@ -71,6 +74,18 @@ inductive RInstr where
   | ret (exec : Nat)
   /-- The `%cr0` prologue, matched exactly. -/
   | prologue
+  /-- A label. -/
+  | label (name : String)
+  /-- `mov dst imm:w`, the loop's zero initialisers. -/
+  | movImm (exec : Nat) (dst : Grf) (imm : Nat) (w : Width)
+  /-- Three-operand bitwise `or` (`dst = a ||| b`). -/
+  | or (exec : Nat) (dst a b : Grf)
+  /-- `cmp.lt` into a predicate register. -/
+  | cmpLt (exec : Nat) (pred : Nat) (src : Grf) (imm : Nat) (w : Width)
+  /-- An unconditional `goto`. -/
+  | goto (exec : Nat) (label : String)
+  /-- A predicated `goto`; `negated` records the `(!P1)` spelling. -/
+  | gotoIf (exec : Nat) (pred : Nat) (negated : Bool) (label : String)
   deriving Repr, DecidableEq
 
 /-- Every decimal run in a list, in order. Structural on the fuel; each step
@@ -105,6 +120,7 @@ def afterColon : List Char → Option (List Char)
 /-- The typed suffix, read literally: exactly the characters after the colon. -/
 def parseWidth (s : String) : Option Width :=
   match afterColon s.toList with
+  | some ['d'] => some .d32
   | some ['d', '3', '2'] => some .d32
   | some ['a', '6', '4'] => some .a64
   | some ['u', 'd'] => some .ud
@@ -184,8 +200,17 @@ def parsePlainReg (s : String) : Option Nat :=
 /-- A memory operand `flat[V0053]:a64`: a register number, no region. -/
 def parseMem (s : String) : Option Nat := parsePlainReg s
 
+/-- A predicate operand `P1`. -/
+def parsePred (s : String) : Option Nat :=
+  match s.toList with
+  | 'P' :: rest =>
+      match numRuns (String.ofList rest) with
+      | [n] => some n
+      | _ => none
+  | _ => none
+
 def decodeReal : Stmt → Option RInstr
-  | .label _ => none
+  | .label name => some (.label name)
   | .instruction op operands =>
       match op, operands with
       | "mul", [e, d, a, b] =>
@@ -193,9 +218,15 @@ def decodeReal : Stmt → Option RInstr
           | some n, some x, some y, some z => some (.mul n x y z)
           | _, _, _, _ => none
       | "mov", [e, d, s] =>
-          match parseExec e, parseGrf d, parseGrf s with
-          | some n, some x, some y => some (.mov n x y)
-          | _, _, _ => none
+          match parseExec e, parseGrf d with
+          | some n, some x =>
+              match parseGrf s with
+              | some y => some (.mov n x y)
+              | none =>
+                  match parseLit s, parseWidth s with
+                  | some v, some wd => some (.movImm n x v wd)
+                  | _, _ => none
+          | _, _ => none
       | "add3", [e, d, a, b, c] =>
           match parseExec e, parseGrf d, parseGrf a, parseGrf b, parseGrf c with
           | some n, some w, some x, some y, some z => some (.add3 n w x y z)
@@ -224,6 +255,22 @@ def decodeReal : Stmt → Option RInstr
           | _, _, _, _ => none
       | "or", ["(M1_NM, 1)", "%cr0(0,0)<1>", "%cr0(0,0)<0;1,0>", "0x400004c0:ud"] =>
           some .prologue
+      | "or", [e, d, a, b] =>
+          match parseExec e, parseGrf d, parseGrf a, parseGrf b with
+          | some n, some x, some y, some z => some (.or n x y z)
+          | _, _, _, _ => none
+      | "cmp.lt", [e, p, a, b] =>
+          match parseExec e, parsePred p, parseGrf a, parseLit b, parseWidth b with
+          | some n, some q, some x, some v, some wd => some (.cmpLt n q x v wd)
+          | _, _, _, _, _ => none
+      | "goto", [e, l] =>
+          match parseExec e with
+          | some n => some (.goto n l)
+          | none => none
+      | "(!P1) goto", [e, l] =>
+          match parseExec e with
+          | some n => some (.gotoIf n 1 true l)
+          | none => none
       | "ret", [e] =>
           match parseExec e with
           | some n => some (.ret n)

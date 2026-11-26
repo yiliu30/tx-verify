@@ -1334,14 +1334,43 @@ refuses is exactly the control-flow shell: the two `mov 0x0:d` initialisers,
 the loop `or`, `cmp.lt`, `goto`, the predicated exit, and labels. Those are the
 next stage, not a surprise.
 
+## Stage 66: the GEMM's control-flow shell
+
+Stage 65 left six instructions and every label undecoded. This stage closes
+that list:
+
+- `RInstr` gains `label`, `movImm`, `or`, `cmpLt`, `goto` and `gotoIf`.
+- `parseWidth` accepts IGC's `:d` dword suffix, which the two `mov 0x0:d`
+  zero-initialisers use.
+- `RealState` gains a uniform predicate file; `cmp.lt` writes lane 0's
+  comparison. `runRealCF` is a fuel-based interpreter for labels, `goto` and
+  the predicated `(!P1) goto`, so branch targets are resolved rather than
+  dropped. The add-one proofs still use the straight-line `runReal`.
+
+The coverage module now proves closure:
+
+```lean
+theorem realGemm_accepted : acceptedReal realGemm = [33 opcodes]
+theorem realGemm_rejectedOps : rejectedOps realGemm = []
+theorem realGemm_rejectedLabels : rejectedLabels realGemm = []
+theorem realGemm_decodes : (decodeRealProgram realGemm).isSome = true
+theorem realGemm_decoded_length : ... = some 37
+```
+
+The four branch targets also resolve in the decoded list:
+`_main_0` at 0, `_0_004` at 11, `_0_006` at 27 and `_0_005` at 30. What remains
+is the functional loop proof: stage 67 connects this decoded loop to the
+existing `sum += A[i*K+k] * B[k*N+j]` memory-loop invariant.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one subset, and general register aliasing
   (`r7:4`, `r12:2`); stages 63-64 cover the real kernel's operand forms and its
   four numeric aliases only.
 - The compiler-generated prolog and global-id / address computation.
-- SIMD masks, predicates, and scoreboards. Stage 64 interprets this kernel's
-  broadcast and dense GRF regions, not the general region algebra.
+- SIMD masks and scoreboards. Stage 64 interprets this kernel's broadcast and
+  dense GRF regions, not the general region algebra; stage 66 models one
+  uniform predicate bit for the GEMM's control flow.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
@@ -1437,5 +1466,7 @@ lake build Intel
     everything else.
 64. Stage 64: execute the decoded kernel, with aliases, the address chain, and
     the per-lane load/add/store effect.
-65. Stage 65 (this PR): import a real 64x64x64 integer GEMM and measure the
-    decoder's coverage of its control-flow shell.
+65. Stage 65: import a real 64x64x64 integer GEMM and measure the decoder's
+    coverage of its control-flow shell.
+66. Stage 66 (this PR): decode the control-flow shell and interpret labels,
+    predicates and both `goto` forms.

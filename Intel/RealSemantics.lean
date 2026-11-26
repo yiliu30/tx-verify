@@ -37,6 +37,14 @@ Aliases are the dump's: `V0053` aliases `V0052` (the computed address),
 `V0033` and `V0036` alias `%r0`, which the kernel only reads, so they stay
 independent inputs here.
 
+## Predicates and control flow
+
+`RealState.preds` is a uniform predicate file: `cmp.lt` writes lane 0's
+comparison and `gotoIf` reads it. `runRealCF` interprets labels, `goto` and
+`gotoIf` with fuel, so a branch target outside the program stops the run. The
+add-one proofs keep using the straight-line `runReal`; label resolution for the
+real GEMM is proved in `Intel.RealGemmCoverage`.
+
 ## What is proved
 
 - `realAddOne_decoded_eq`: the decoder's output is the instruction list below.
@@ -99,6 +107,9 @@ def isWide (r : Nat) : Bool :=
 flag. -/
 structure RealState where
   regs : Nat → Nat → Addr
+  /-- Uniform predicate registers, one bit per predicate. `cmp.lt` is read at
+  lane 0; the GEMM's control flow is uniform. -/
+  preds : Nat → Bool
   mem : Nat → Word
   halted : Bool
 
@@ -223,8 +234,57 @@ def stepReal : RealState → RInstr → RealState
         mem := storeVec s.mem n (fun l => readReg s addrReg l)
           (fun l => low32 (readReg s src l)) }
   | s, .ret _ => { s with halted := true }
+  | s, .label _ => s
+  | s, .movImm _ dst imm _ =>
+      writeVec s dst.num (fun _ => zext (BitVec.ofNat 32 imm))
+  | s, .or _ dst a b =>
+      writeVec s dst.num (fun l =>
+        binOp dst.num (fun x y => x ||| y) (fun x y => x ||| y)
+          (readSrc s a l) (readSrc s b l))
+  | s, .cmpLt _ p src imm _ =>
+      { s with
+        preds := fun p' =>
+          if p' = p then decide (low32 (readSrc s src 0) < BitVec.ofNat 32 imm)
+          else s.preds p' }
+  | s, .goto _ _ => s
+  | s, .gotoIf _ _ _ _ => s
 
+/-- The straight-line fold. It is the semantics used by the add-one proofs;
+control flow is interpreted by `runRealCF`. -/
 def runReal (s : RealState) (is : List RInstr) : RealState := is.foldl stepReal s
+
+/-- Find a label's program counter. -/
+def labelIndexGo : List RInstr → String → Nat → Option Nat
+  | [], _, _ => none
+  | .label n :: rest, name, i =>
+      if n = name then some i else labelIndexGo rest name (i + 1)
+  | _ :: rest, name, i => labelIndexGo rest name (i + 1)
+
+def labelIndex (code : List RInstr) (name : String) : Option Nat :=
+  labelIndexGo code name 0
+
+/-- A fuel-based control-flow interpreter. `goto` targets are labels in the
+same list, `gotoIf` reads a uniform predicate, and fuel makes termination
+structural. -/
+def runRealCF (code : List RInstr) (s : RealState) (pc fuel : Nat) : RealState :=
+  match fuel with
+  | 0 => s
+  | fuel + 1 =>
+      match code[pc]? with
+      | none => s
+      | some (.label _) => runRealCF code s (pc + 1) fuel
+      | some (.goto _ l) =>
+          match labelIndex code l with
+          | some pc' => runRealCF code s pc' fuel
+          | none => s
+      | some (.gotoIf _ p negated l) =>
+          let taken := if negated then !(s.preds p) else s.preds p
+          if taken then
+            match labelIndex code l with
+            | some pc' => runRealCF code s pc' fuel
+            | none => s
+          else runRealCF code s (pc + 1) fuel
+      | some i => runRealCF code (stepReal s i) (pc + 1) fuel
 
 theorem runReal_append (s : RealState) (is js : List RInstr) :
     runReal s (is ++ js) = runReal (runReal s is) js := by
@@ -273,6 +333,12 @@ def RInstr.regionsSimple : RInstr → Bool
   | .load _ _ _ _ => true
   | .store _ _ _ _ => true
   | .ret _ => true
+  | .label _ => true
+  | .movImm _ d _ _ => d.dstSimple
+  | .or _ d a b => d.dstSimple && a.simple && b.simple
+  | .cmpLt _ _ _ _ _ => true
+  | .goto _ _ => true
+  | .gotoIf _ _ _ _ => true
 
 /-- The region interpretation used by `stepReal` is exactly what this kernel
 prints: dense destinations at `(0,0)`, width 1, horizontal stride 0. -/
@@ -345,6 +411,12 @@ def RInstr.dstCountOk : RInstr → Bool
   | .load n d _ _ => regElems d == n && (regType d).isSome
   | .store _ _ _ _ => true
   | .ret _ => true
+  | .label _ => true
+  | .movImm n d _ _ => regElems d.num == n && (regType d.num).isSome
+  | .or n d _ _ => regElems d.num == n && (regType d.num).isSome
+  | .cmpLt _ _ _ _ _ => true
+  | .goto _ _ => true
+  | .gotoIf _ _ _ _ => true
 
 /-- Every destination has a declared type and exactly as many elements as the
 execution size writes, so writing the whole register is exact. -/
