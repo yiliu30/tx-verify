@@ -46,6 +46,67 @@ theorem packOdd24_value (r : DRegs) (srcBase dstBase j : Nat) (hj : j < 24) :
     packOdd24 r srcBase dstBase (dstBase + j) = r (srcBase + 2 * j + 1) := by
   simp [packOdd24, hj]
 
+/-- The native M1 window: destination dwords 0..15 from source 0,2,...,30. -/
+def m1Pack (r : DRegs) (srcBase dstBase : Nat) : DRegs :=
+  fun d =>
+    if dstBase ≤ d ∧ d < dstBase + 16 then r (srcBase + 2 * (d - dstBase))
+    else r d
+
+/-- The native M5 window: destination dwords 8..23 from source 16,18,...,46. -/
+def m5Pack (src dst : DRegs) (srcBase dstBase : Nat) : DRegs :=
+  fun d =>
+    if dstBase + 8 ≤ d ∧ d < dstBase + 24 then src (srcBase + 2 * (d - dstBase))
+    else dst d
+
+/-- The even M1+M5 pair has the 24-lane pack semantics; the overlap is
+idempotent. -/
+theorem m5_m1_even (r : DRegs) (srcBase dstBase j : Nat) (hj : j < 24) :
+    m5Pack r (m1Pack r srcBase dstBase) srcBase dstBase (dstBase + j) =
+      r (srcBase + 2 * j) := by
+  by_cases h1 : j < 8
+  · have hnot : ¬ (dstBase + 8 ≤ dstBase + j) := by omega
+    have hsub : dstBase + j - dstBase = j := by omega
+    have h16 : dstBase + j < dstBase + 16 := by omega
+    simp [m5Pack, m1Pack, hnot, h16, hsub]
+  · by_cases h2 : j < 16
+    · have hlow : dstBase + 8 ≤ dstBase + j := by omega
+      have hhigh : dstBase + j < dstBase + 24 := by omega
+      have hsub : dstBase + j - dstBase = j := by omega
+      simp [m5Pack, hlow, hhigh, hsub]
+    · have hlow : dstBase + 8 ≤ dstBase + j := by omega
+      have hhigh : dstBase + j < dstBase + 24 := by omega
+      have hsub : dstBase + j - dstBase = j := by omega
+      simp [m5Pack, hlow, hhigh, hsub]
+
+/-- The odd M1+M5 pair for the high dwords. -/
+def m1PackOdd (r : DRegs) (srcBase dstBase : Nat) : DRegs :=
+  fun d =>
+    if dstBase ≤ d ∧ d < dstBase + 16 then r (srcBase + 2 * (d - dstBase) + 1)
+    else r d
+
+def m5PackOdd (src dst : DRegs) (srcBase dstBase : Nat) : DRegs :=
+  fun d =>
+    if dstBase + 8 ≤ d ∧ d < dstBase + 24 then src (srcBase + 2 * (d - dstBase) + 1)
+    else dst d
+
+theorem m5_m1_odd (r : DRegs) (srcBase dstBase j : Nat) (hj : j < 24) :
+    m5PackOdd r (m1PackOdd r srcBase dstBase) srcBase dstBase (dstBase + j) =
+      r (srcBase + 2 * j + 1) := by
+  by_cases h1 : j < 8
+  · have hnot : ¬ (dstBase + 8 ≤ dstBase + j) := by omega
+    have hsub : dstBase + j - dstBase = j := by omega
+    have h16 : dstBase + j < dstBase + 16 := by omega
+    simp [m5PackOdd, m1PackOdd, hnot, h16, hsub]
+  · by_cases h2 : j < 16
+    · have hlow : dstBase + 8 ≤ dstBase + j := by omega
+      have hhigh : dstBase + j < dstBase + 24 := by omega
+      have hsub : dstBase + j - dstBase = j := by omega
+      simp [m5PackOdd, hlow, hhigh, hsub]
+    · have hlow : dstBase + 8 ≤ dstBase + j := by omega
+      have hhigh : dstBase + j < dstBase + 24 := by omega
+      have hsub : dstBase + j - dstBase = j := by omega
+      simp [m5PackOdd, hlow, hhigh, hsub]
+
 /-- The dword view of a qword-per-lane ID array. -/
 def idDwords (ids : Nat → Addr) : DRegs :=
   fun d =>

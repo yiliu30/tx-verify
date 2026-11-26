@@ -2271,6 +2271,13 @@ in `V0075`/`V0076`. Both real guard blocks are therefore covered.
 high dwords of each qword. This connects the pack layout to the register-halves
 premises used by the guard predicates.
 
+## Stage 117: the native M1/M5 windows
+
+`m1Pack` and `m5Pack` encode the two native move windows. `m5_m1_even` and
+`m5_m1_odd` prove the M5 row-1 move overwrites the overlap with identical
+values, so the pair is exactly the 24-lane even/odd pack. This closes the
+move-window dataflow at the dword-model level.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2449,4 +2456,5 @@ lake build Intel
 113. Stage 113: materialize the decoded loop and branch sites.
 114. Stage 114: prove the first guard predicate from packed halves.
 115. Stage 115: prove the second guard predicate.
-116. Stage 116 (this PR): prove the packed low/high halves of a qword ID array.
+116. Stage 116: prove the packed low/high halves of a qword ID array.
+117. Stage 117 (this PR): prove the native M1/M5 pack windows.
