@@ -2763,6 +2763,18 @@ underflow (tiny sums are exact on the `2^-24` grid); a finer-grid witness
 exercises the rule. Hardware traps, sticky lane state and FTZ/DAZ are not
 modeled.
 
+## Stage 167: relaxed atomics and store buffers
+
+`Intel/RelaxedAtomics.lean` models `relaxed`, `release`, `acquire`, `acqRel`
+and `seqCst` over a per-location store buffer. `later_store_observed_earlier_
+pending` and `relaxed_message_passing_stale` show the relaxed reordering gap;
+`releaseAcquire_message_passing` and `releaseAcquire_no_stale` prove the
+release/acquire invariant; `seqCstProgram_eq_releaseAcquireProgram` and
+`seqCst_outcomes_subset_releaseAcquire` state the seq_cst relation. Fences
+drain the buffer (`sbReleaseFence_published`, `sbReleaseFence_idem`), and
+visibility is monotone. Assumptions: per-location FIFO, cacheless global
+memory, no store-to-load forwarding, fences as full barriers.
+
 ## Stage 165: review stage map
 
 `Intel/REVIEW_63.md` now carries a single stage index for stages 137--164
@@ -2997,4 +3009,5 @@ lake build Intel
 163. Stage 163: FMHA tail and partial K.
 164. Stage 164: general fp16 round-to-nearest-even.
 165. Stage 165: refresh the review stage map.
-166. Stage 166 (this PR): fp exception flags.
+166. Stage 166: fp exception flags.
+167. Stage 167 (this PR): relaxed atomics and store buffers.
