@@ -2800,6 +2800,18 @@ and `naiveColumn_transactionCount` are the negative baseline. Assumptions: 32
 banks, one request per lane group, no dual-porting, bank-width or arbitration
 effects.
 
+## Stage 170: fp16 fused multiply-add
+
+`Intel/IeeeFp16Fma.lean` models a fused multiply-add. `productScaled_spec`
+gives the exact signed product at `2^-48`; `fmaScaled` adds the third operand
+before any rounding; `fmaDestExp`/`fmaDestQuantum` select the destination
+binade. `fmaScaled_eq_rne` proves one round-to-nearest-even at that quantum
+with ties-to-even, and `fma_fin` covers finite operands below
+`4095 * 2^52`. `fma_double_rounding_counterexample` shows product-first
+rounding differs from the fused result. `fmaFlags_*` covers NaN quieting,
+`0 * inf` invalid, infinity, overflow and inexact. Traps, sticky lane state,
+FTZ/DAZ, directed rounding and hardware FMA timing are not modeled.
+
 ## Stage 165: review stage map
 
 `Intel/REVIEW_63.md` now carries a single stage index for stages 137--164
@@ -3037,4 +3049,5 @@ lake build Intel
 166. Stage 166: fp exception flags.
 167. Stage 167: relaxed atomics and store buffers.
 168. Stage 168: write-back caches and request queues.
-169. Stage 169 (this PR): SLM banks and swizzling.
+169. Stage 169: SLM banks and swizzling.
+170. Stage 170 (this PR): fp16 fused multiply-add.
