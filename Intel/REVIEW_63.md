@@ -15,7 +15,7 @@ fork.
 | P0 GRF and SIMD | 64 (#66), 66 (#68), 68 (#70), 83 (#85), 90-98 | regions, aliases, execution sizes in `Grf`/`gemmAlias`; per-lane predicates, predicated `sel`, predicate `and`/`or`, register comparisons, both predicated gotos; M1-M8 masks, all six masked moves, frame laws and a wrong-mask negative test | partial: masked moves execute with lane offsets, but other instructions do not yet; `gotoIf` is still uniform lane 0 and the loop effect is open |
 | P0 SEND and SBID | 78 (#80) | `issueLoad`/`issueStore`/`wait`/`commitLoad`, `loadPipeline_value`, `storePipeline_value`, `addOnePipeline_value` | mechanism modeled; exact SBIDs are not printed and remain assumptions |
 | P1 memory and concurrency | 60, 64 (#66), 67 (#69) | word/byte memory, alignment, `load32LE_store32LE_*`, `realAddOne_byteRangesDisjoint`, per-lane stores and frames | partial: no caches, visibility, synchronization or SLM aliasing |
-| P1 DPAS refinement | 49, 50, 79 (#81), 86 (#88) | decoded `dpas.8x8`; `fmhaFp8Atom` 8x8x32 vs `tlaXeF16Atom` 8x16x16; atom counts 1 vs 2 | partial: operand packing/dataflow of the 8x8x32 atom not modeled |
+| P1 DPAS refinement | 49, 50, 79 (#81), 86 (#88), 99 | decoded `dpas.8x8`; `fmhaFp8Atom` 8x8x32 vs `tlaXeF16Atom` 8x16x16; atom counts 1 vs 2; packed A/B/C layouts and `fmhaRealPackedAtom_correct` | addressed for the coded 8x8x32 layout; compiler operand bases remain transcribed |
 | P1 numerical semantics | 27-31, 43-56, 61, 80 (#82) | fixed-point bounds, NaN payload propagation, `vstepIEEE` with `0 * inf = NaN` | partial: not a full IEEE FMA |
 | P1 hardware conformance | 81 (#83) | GPU vs `gemmDot`: `C00=-2 C11=-5 C6363=4 checksum=4294967290 bad=0`; add-one and vector-add runs | addressed at source level; the GEMM dump was compiled with a different compiler minor version |
 | P2 complex kernels | 79 (#81), 82-85 (#84-#87) | real FMHA DPAS decoded; real straight-line vector add end-to-end | open: FMHA/SageAttention execution and low-precision paths |
@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (76 jobs) and `Tools/check_axioms.py --all`
-  (367 theorems, 89 documented exceptions at stage 86).
+  `lake build Intel` (77 jobs) and `Tools/check_axioms.py --all`
+  (404 theorems, 112 documented exceptions at stage 99).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -51,8 +51,8 @@ Parser/decoder scope:
 
 - operands are parsed with structural `List Char` helpers; unsupported forms
   return `none`;
-- M1-M8 and `_NM` masks are decoded into `Exec`; the execution model does not
-  yet apply the mask offset;
+- M1-M8 and `_NM` masks are decoded into `Exec`; masked moves apply their
+  offsets, other instructions do not yet;
 - the scaled memory decoder accepts only the `0x4*index` form.
 
 Model assumptions:
@@ -75,10 +75,11 @@ from `Classical.choose` in the racing-store model.
 - masked/predicated loop vector add: apply `(M5, 16)` execution masks,
   `cmp`/`and`/`or` predicate logic, predicated `goto`, and the grid-stride loop;
 - FMHA/SageAttention execution and low-precision paths;
-- 8x8x32 DPAS operand packing and dataflow;
+- 8x8x32 DPAS operand packing is modelled; hardware validation of the layout
+  and the rest of the FMHA execution path remain;
 - full IEEE semantics and a hardware memory model with visibility and
   synchronization;
 - exact SBID assignments from the binary encoding.
 
-The stack is intentionally one PR per stage (#64-#88), as requested. The
+The stack is intentionally one PR per stage (#64-#99), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
