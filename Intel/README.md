@@ -2000,6 +2000,21 @@ this layout; the stage supplies the checked lane law. Masked execution is now
 covered for all six real M5 moves. General mask application outside moves and
 the loop effect remain open.
 
+## Stage 98: masked-move frames and a negative mask test
+
+The masked-move laws now compose:
+
+```lean
+theorem maskedMov_frame     : preds, mem and halted are unchanged
+theorem maskedMov_other_reg : every other register is unchanged
+theorem mask_offset_load_bearing :
+  lane 0 is inactive under M5, lane 16 is active, but lane 16 is inactive if
+  the same instruction is read as M1
+```
+
+The last theorem is the negative test for stage 92: a decoder that dropped the
+mask would still pass syntax checks but would activate the wrong lane set.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2014,8 +2029,9 @@ the loop effect remain open.
   region algebra; stage 66 models one uniform predicate bit for the GEMM's
   control flow; stages 90-93 add per-lane predicates, predicated `sel` and
   predicate `and`/`or`, register comparisons and predicated gotos; stages 92
-  and 96-97 decode masks and apply them to all six real masked moves, but not
-  yet to every instruction. `gotoIf` remains a uniform lane-0 branch.
+  and 96-98 decode masks, apply them to all six real masked moves, and prove
+  their frame laws, but not yet to every instruction. `gotoIf` remains a
+  uniform lane-0 branch.
 - SEND issue/completion/wait and the register scoreboard are stage 78; raw
   message operand layout, EOT details beyond a halted flag, and the exact SBID
   assignments (not printed in the assembly) remain.
@@ -2154,4 +2170,5 @@ lake build Intel
 94. Stage 94: execute register-register `cmp.lt` and `cmp.eq`.
 95. Stage 95: decode predicated gotos and close vector-add coverage.
 96. Stage 96: execute masked moves with M5 lane offsets.
-97. Stage 97 (this PR): prove stride-two masked destinations.
+97. Stage 97: prove stride-two masked destinations.
+98. Stage 98 (this PR): masked-move frames and a load-bearing mask test.

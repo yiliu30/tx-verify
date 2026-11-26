@@ -806,4 +806,29 @@ theorem maskedMov_stride2_lane (alias : Nat → Nat) (typeOf : Nat → Option Re
   simp [stepWith, writeMaskedWith, Grf.dstIndex, Exec.laneIndex, hnm, hdst,
     Nat.add_sub_of_le hle, hactive, hmod, hdiv]
 
+/-- A masked move writes only its destination register; predicates, memory and
+the halt flag are untouched. -/
+theorem maskedMov_frame (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (dst src : Grf) :
+    (stepWith alias typeOf s (.movMasked e dst src)).preds = s.preds ∧
+    (stepWith alias typeOf s (.movMasked e dst src)).mem = s.mem ∧
+    (stepWith alias typeOf s (.movMasked e dst src)).halted = s.halted := by
+  simp [stepWith, writeMaskedWith]
+
+/-- A masked move leaves every other register's elements untouched. -/
+theorem maskedMov_other_reg (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (dst src : Grf) (r j : Nat)
+    (h : alias r ≠ alias dst.num) :
+    (stepWith alias typeOf s (.movMasked e dst src)).regs (alias r) j =
+      s.regs (alias r) j := by
+  simp [stepWith, writeMaskedWith, h]
+
+/-- The M5 channel offset is load-bearing: lane 0 is inactive, lane 16 is
+active, and treating the instruction as M1 would disable lane 16. -/
+theorem mask_offset_load_bearing :
+    Exec.laneActive ⟨16, 16, false⟩ 0 = false ∧
+    Exec.laneActive ⟨16, 16, false⟩ 16 = true ∧
+    Exec.laneActive ⟨16, 0, false⟩ 16 = false := by
+  decide
+
 end IntelGpu
