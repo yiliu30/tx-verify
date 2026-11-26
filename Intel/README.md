@@ -2278,6 +2278,15 @@ premises used by the guard predicates.
 values, so the pair is exactly the 24-lane even/odd pack. This closes the
 move-window dataflow at the dword-model level.
 
+## Stage 118: the loop's dword-view step
+
+`stepLoop` gives `mov`/`movMasked` the correct dword view for the two packed
+source registers `V0061` and `V0074`; other instructions delegate to the
+unified `stepVAL`. `stepLoop_mov61_unit` and `stepLoop_mov74_unit` prove the
+active-lane destination value for both dword-view sources.
+
+This bridges the dword-pack model to an executable step over the real program.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2457,4 +2466,5 @@ lake build Intel
 114. Stage 114: prove the first guard predicate from packed halves.
 115. Stage 115: prove the second guard predicate.
 116. Stage 116: prove the packed low/high halves of a qword ID array.
-117. Stage 117 (this PR): prove the native M1/M5 pack windows.
+117. Stage 117: prove the native M1/M5 pack windows.
+118. Stage 118 (this PR): execute dword-view moves in the loop step.
