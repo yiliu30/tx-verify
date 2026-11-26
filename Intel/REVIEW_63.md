@@ -34,7 +34,7 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (77 jobs) and `Tools/check_axioms.py --all`
-  (648 theorems, 228 documented exceptions at stage 142).
+  (650 theorems, 229 documented exceptions at stage 143).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -72,8 +72,9 @@ from `Classical.choose` in the racing-store model.
 
 ## Remaining work
 
-- masked/predicated loop vector add: apply `(M5, 16)` execution masks,
-  `cmp`/`and`/`or` predicate logic, predicated `goto`, and the grid-stride loop;
+- masked/predicated loop vector add: the predicate logic, both predicated
+  `goto`s and the false-lane memory frame are stages 130-143; applying
+  `(M5, 16)` execution masks to the loop kernel and the grid-stride loop remain;
 - FMHA/SageAttention execution and low-precision paths;
 - 8x8x32 DPAS operand packing is modelled; hardware validation of the layout
   and the rest of the FMHA execution path remain;

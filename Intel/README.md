@@ -2500,6 +2500,14 @@ lemmas show that atoms over disjoint 8x8 accumulator blocks compose into the
 pointwise sum of their depth-32 deltas. The fp8 element encoding remains the
 assumption recorded in `Intel.RealDpas`.
 
+## Stage 143: predicated lanes write nothing
+
+`Intel/LoopKernelInactive.lean` covers the false side of the decoded `gotoIf`
+at PC 17. `vaLoopP3Prefix_mem` shows the pack/guard prefix is memory-only
+neutral, and `vaLoop_lane_inactive_mem` proves that a lane whose real P3 guard
+is false runs from PC 0 to the PC 44 exit with memory exactly unchanged. No
+pointer or aliasing hypothesis is needed: the lane never reaches the body.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2704,4 +2712,5 @@ lake build Intel
 139. Stage 139: per-location visibility and release/acquire.
 140. Stage 140: the decoded kernel entry from PC 0.
 141. Stage 141: generic execution-mask laws.
-142. Stage 142 (this PR): FMHA atom value refinement and tile composition.
+142. Stage 142: FMHA atom value refinement and tile composition.
+143. Stage 143 (this PR): predicated lanes write nothing.
