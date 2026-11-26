@@ -2390,6 +2390,15 @@ theorem vaLoopP6_packed_full :
 Both continuation predicates are now derived from the actual executed packs
 and launch size facts.
 
+## Stage 130: decoded branch composition
+
+`Intel/LoopControl.lean` composes the decoded branch sites with the proved
+guard values:
+
+- `vaLoopP3_branch_exit` / `_fallthrough` at PC 17;
+- `vaLoopP6_branch_exit` / `_fallthrough` at PC 35;
+- `vaLoop_branch_paths` packages both decisions.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2581,4 +2590,5 @@ lake build Intel
 126. Stage 126: execute the increment's high pack.
 127. Stage 127: compose both increment packs.
 128. Stage 128: prove increment packs preserve the size dwords.
-129. Stage 129 (this PR): derive full P6 from executed increment packs.
+129. Stage 129: derive full P6 from executed increment packs.
+130. Stage 130 (this PR): compose the decoded P3/P6 branches.
