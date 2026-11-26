@@ -2775,6 +2775,18 @@ drain the buffer (`sbReleaseFence_published`, `sbReleaseFence_idem`), and
 visibility is monotone. Assumptions: per-location FIFO, cacheless global
 memory, no store-to-load forwarding, fences as full barriers.
 
+## Stage 168: write-back caches and request queues
+
+`Intel/CacheWriteBack.lean` adds dirty lines, eviction and FIFO request queues.
+`writeBack` marks a line dirty, `evict`/`flushLine`/`flushAll` publish it, and
+`queue_drain_preserves` proves that draining a queue equals the direct
+sequential execution. `WBCoherent` (clean lines equal global, dirty lines are
+owned) is preserved by every operation; `dirty_only_divergence` isolates the
+divergence. The negative tests show that dropping a dirty line loses the write
+and that a flush ignoring dirty lines leaves global stale. Assumptions:
+write-back, write-allocate, one line per address, synchronous eviction; no
+directory traffic, bank conflicts or hardware aliasing in this module.
+
 ## Stage 165: review stage map
 
 `Intel/REVIEW_63.md` now carries a single stage index for stages 137--164
@@ -3010,4 +3022,5 @@ lake build Intel
 164. Stage 164: general fp16 round-to-nearest-even.
 165. Stage 165: refresh the review stage map.
 166. Stage 166: fp exception flags.
-167. Stage 167 (this PR): relaxed atomics and store buffers.
+167. Stage 167: relaxed atomics and store buffers.
+168. Stage 168 (this PR): write-back caches and request queues.
