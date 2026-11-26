@@ -18,7 +18,7 @@ fork.
 | P1 DPAS refinement | 49, 50, 79 (#81), 86 (#88), 99-101, 142, 150 | decoded `dpas.8x8`; `fmhaFp8Atom` 8x8x32 vs `tlaXeF16Atom` 8x16x16; atom counts 1 vs 2; packed A/B/C layouts, collision-free addresses and decoded register bases; value equality with one depth-32 slab, K=16 split, 2x1/2x2 tile composition and register-level execution at the decoded bases | addressed for the coded 8x8x32 layout; physical tile packing remains a model assumption |
 | P1 numerical semantics | 27-31, 43-56, 61, 80 (#82), 149 | fixed-point bounds, NaN payload propagation, `vstepIEEE` with `0 * inf = NaN`; exact-grid fp16 addition, ties-to-even and a single-rounding encode/decode path | partial: not a full IEEE FMA; subnormals, NaN payloads and overflow to infinity remain outside the proved addition class |
 | P1 hardware conformance | 81 (#83) | GPU vs `gemmDot`: `C00=-2 C11=-5 C6363=4 checksum=4294967290 bad=0`; add-one and vector-add runs | addressed at source level; the GEMM dump was compiled with a different compiler minor version |
-| P2 complex kernels | 79 (#81), 82-85 (#84-#87), 99-102, 148, 150 | real FMHA DPAS decoded, packed and smoke-tested; real straight-line vector add end-to-end; E4M3 decode and an fp8 atom value path | open: full FMHA/SageAttention execution; the decoded atom now has register-level execution, but the physical packing and the rest of the mainloop remain |
+| P2 complex kernels | 79 (#81), 82-85 (#84-#87), 99-102, 148, 150, 155 | real FMHA DPAS decoded, packed and smoke-tested; real straight-line vector add end-to-end; E4M3 decode and an fp8 atom value path | open: full FMHA/SageAttention execution; the decoded atom and a T-step register-level mainloop are modelled, but physical packing, tail/partial K and the rest of the kernel remain |
 
 ## Acceptance criteria
 
@@ -34,7 +34,7 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (113 jobs) and `Tools/check_axioms.py --all`
-  (914 theorems, 268 documented exceptions at stage 154).
+  (944 theorems, 268 documented exceptions at stage 155).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -76,9 +76,9 @@ from `Classical.choose` in the racing-store model.
   the false-lane memory frame and generic mask laws are stages 130-146;
   applying `(M5, 16)` execution masks to the decoded loop kernel remains;
 - FMHA/SageAttention execution: the 8x8x32 DPAS value path, the fp8 E4M3
-  element path and one register-level DPAS step are modelled (stages 142,
-  148, 150); the physical tile packing, the rest of the mainloop and hardware
-  validation remain;
+  element path, one register-level DPAS step and a T-step register-level
+  mainloop are modelled (stages 142, 148, 150, 155); physical tile packing,
+  tail/partial K, the rest of the kernel and hardware validation remain;
 - full IEEE semantics: the class model has NaN/inf propagation and
   round-to-nearest-even bounds; stage 149 adds exact-grid fp16 addition and
   ties-to-even, but not a full IEEE FMA, subnormals, NaN payloads or overflow;
