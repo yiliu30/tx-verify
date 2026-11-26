@@ -129,6 +129,7 @@ KNOWN = {
     "IntelGpu.sel_lane": {"Classical.choice"},
     # Stage 96 masked move: `stepWith` embeds the store model's choice.
     "IntelGpu.maskedMov_unit_lane": {"Classical.choice"},
+    "IntelGpu.maskedMov_stride2_lane": {"Classical.choice"},
     # Stage 93 predicate logic: `stepWith` embeds the store model's choice.
     "IntelGpu.predAnd_lane": {"Classical.choice"},
     "IntelGpu.predAnd_other": {"Classical.choice"},
@@ -252,6 +253,7 @@ THEOREMS = [
     ("Intel.RealSemantics", "IntelGpu.cmpEqReg_other"),
     ("Intel.RealSemantics", "IntelGpu.cmpEqReg_inactive"),
     ("Intel.RealSemantics", "IntelGpu.maskedMov_unit_lane"),
+    ("Intel.RealSemantics", "IntelGpu.maskedMov_stride2_lane"),
     ("Intel.GemmRealLoop", "IntelGpu.gemmEpilogue_mem"),
     ("Intel.GemmRealLoop", "IntelGpu.gemmEpilogue_store"),
     ("Intel.GemmRealLoop", "IntelGpu.gemmEpilogue_store_mem"),
