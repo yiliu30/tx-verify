@@ -78,6 +78,14 @@ KNOWN = {
     # Stage 69 GEMM loop indices: `stepWith` embeds the store model's choice.
     "IntelGpu.gemmIndexA": {"Classical.choice"},
     "IntelGpu.gemmIndexB": {"Classical.choice"},
+    # Stage 70 GEMM loop body: the same `stepWith`/store-model path.
+    "IntelGpu.gemmAddressA": {"Classical.choice"},
+    "IntelGpu.gemmAddressB": {"Classical.choice"},
+    "IntelGpu.gemmLoadA": {"Classical.choice"},
+    "IntelGpu.gemmLoadB": {"Classical.choice"},
+    "IntelGpu.gemmProduct": {"Classical.choice"},
+    "IntelGpu.gemmSum": {"Classical.choice"},
+    "IntelGpu.gemmBody": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -150,6 +158,11 @@ THEOREMS = [
     ("Intel.GemmReal", "IntelGpu.gemmPreamble_entry"),
     ("Intel.GemmReal", "IntelGpu.gemmIndexA"),
     ("Intel.GemmReal", "IntelGpu.gemmIndexB"),
+    ("Intel.GemmReal", "IntelGpu.gemmAddressA"),
+    ("Intel.GemmReal", "IntelGpu.gemmAddressB"),
+    ("Intel.GemmReal", "IntelGpu.gemmLoadA"),
+    ("Intel.GemmReal", "IntelGpu.gemmLoadB"),
+    ("Intel.GemmReal", "IntelGpu.gemmBody"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")

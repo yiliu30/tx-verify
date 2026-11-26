@@ -1435,6 +1435,31 @@ theorem gemmIndexB : V0071 = zeroExtend (k * 64 + j0 + globalOffset[0])
 Next is the byte-address half: converting `A + 4 * index` to a word index,
 the two loads, and the multiply-add.
 
+## Stage 70: GEMM loop-body loads and accumulation
+
+`gemmAddressBlock` extends the index block with the B move/shift/add, and the
+byte addresses are proved:
+
+```lean
+theorem gemmAddressA : V0067 = (zeroExtend (i * 64 + k)) <<< 2 + aPtr
+theorem gemmAddressB : V0075 = (zeroExtend (k * 64 + j0 + goX)) <<< 2 + bPtr
+```
+
+`wordOf_ptr_add_shift` (and its `Nat` form) converts an aligned pointer plus a
+four-byte index to a word index. `gemmBodyBlock` is the complete memory half:
+both address chains, `lsc_load` for A and B, the multiply and the accumulate.
+`gemmBody` states all four results:
+
+```lean
+loadA   = mem (aPtr / 4 + i*64 + k)
+loadB   = mem (bPtr / 4 + k*64 + j0 + goX)
+product = loadA * loadB
+sum'    = sum + loadA * loadB
+```
+
+The remaining loop proof is the `cmp.lt`/`goto` control flow, the counter
+increment, the K-induction and the epilogue store.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1550,4 +1575,6 @@ lake build Intel
     freedom.
 68. Stage 68: parameterise the semantics and prove the real GEMM's preamble
     and loop-entry values.
-69. Stage 69 (this PR): prove the loop body's A and B index computations.
+69. Stage 69: prove the loop body's A and B index computations.
+70. Stage 70 (this PR): prove the byte addresses, both loads, the multiply and
+    the accumulation.
