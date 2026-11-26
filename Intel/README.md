@@ -2639,6 +2639,19 @@ specializations match the two-atom and K=16-half decompositions, and the pair
 theorems show disjoint C blocks compose. The logical packing is the same model
 assumption as stage 150; tail/partial K and hardware layout remain open.
 
+## Stage 156: fp16 special values and overflow
+
+`Intel/IeeeFp16Special.lean` extends stage 149 to the special-value cases.
+`decodeFull` covers all 65536 words (finite subnormals at `2^-24`, distinct
+signed zeros, tagged NaN/Inf), and `decodeFull_of_decode` agrees with the
+normalized decoder. The module proves signed-zero rules, exact subnormal and
+subnormal-to-normal crossings, ties-to-even bit examples, the exact overflow
+threshold `65520`, NaN/Inf propagation with a documented left-NaN payload
+convention, and counterexamples showing flush-to-zero and verbatim sNaN
+preservation are not IEEE behavior. It is still not a full IEEE FMA: general
+round-to-nearest for every binade, exception flags and fused multiply-add
+remain outside it.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2856,4 +2869,5 @@ lake build Intel
 152. Stage 152: cross-lane race freedom.
 153. Stage 153: composing the 32 lane stores.
 154. Stage 154: write-through cache coherence.
-155. Stage 155 (this PR): register-level FMHA mainloop.
+155. Stage 155: register-level FMHA mainloop.
+156. Stage 156 (this PR): fp16 special values and overflow.
