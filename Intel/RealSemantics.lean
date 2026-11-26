@@ -200,6 +200,11 @@ def writeMaskedWith (alias : Nat → Nat) (s : RealState) (dst : Grf) (e : Exec)
         else s.regs r j
       else s.regs r j }
 
+theorem writeMaskedWith_other_reg (alias : Nat → Nat) (s : RealState) (dst : Grf)
+    (e : Exec) (f : Nat → Addr) (r j : Nat) (h : alias r ≠ alias dst.num) :
+    (writeMaskedWith alias s dst e f).regs (alias r) j = s.regs (alias r) j := by
+  simp [writeMaskedWith, h]
+
 @[simp] theorem writeVecWith_same (alias : Nat → Nat) (s : RealState) (r : Nat)
     (f : Nat → Addr) (e : Nat) :
     (writeVecWith alias s r f).regs (alias r) e = f e := by

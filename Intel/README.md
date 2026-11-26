@@ -2287,6 +2287,13 @@ active-lane destination value for both dword-view sources.
 
 This bridges the dword-pack model to an executable step over the real program.
 
+## Stage 119: masked dword-view moves
+
+`writeMaskedWith_other_reg` proves a masked write cannot disturb another
+register. `stepLoop_movMasked61_unit` and `stepLoop_movMasked74_unit` extend the
+dword-view lane laws to the masked move form used by the M5 pack. These are
+the lemmas needed to compose the actual two-move pack.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2467,4 +2474,5 @@ lake build Intel
 115. Stage 115: prove the second guard predicate.
 116. Stage 116: prove the packed low/high halves of a qword ID array.
 117. Stage 117: prove the native M1/M5 pack windows.
-118. Stage 118 (this PR): execute dword-view moves in the loop step.
+118. Stage 118: execute dword-view moves in the loop step.
+119. Stage 119 (this PR): add masked dword-view move laws.
