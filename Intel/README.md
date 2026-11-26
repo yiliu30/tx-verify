@@ -2177,6 +2177,26 @@ The low/high pack and writeback reconstruct the selected 64-bit index exactly
 for every active lane. This isolates the data-update law from the remaining
 instruction-level `sel` and branch composition.
 
+## Stage 109: end-to-end loop-body effect
+
+The real index preamble and the real load/add/store body are composed:
+
+```lean
+theorem realVectorAdd_loop_effect :
+  (runVAL (runVAL s vaLoopPreamble) vaLoopBody).mem
+    (cPtr / 4 + id l) = s.mem (aPtr / 4 + id l) + s.mem (bPtr / 4 + id l)
+```
+
+for an active lane `l < 24`, where `id l` is the exact 64-bit index computed by
+the preamble. `vaLoopPreamble_frame` records that the preamble preserves the
+three pointers and memory, and `vaLoopPreamble_bodyPre` builds the body
+precondition.
+
+For this range kernel the index stride is `globalSize`, so after one body
+`id + globalSize ≥ globalSize`; the next continuation test is false and the
+loop exits. The instruction-level branch/termination proof is the remaining
+step; the per-lane output effect itself is now proved.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2201,6 +2221,7 @@ instruction-level `sel` and branch composition.
 - Bitwise dword/qword register views: stage 105 supplies the storage and
   round-trip laws, stage 107 supplies the 24-lane pack/writeback layout, but
   the loop vector add's `sel`/branch sequence is not yet executed through them.
+  Stage 109 proves the per-lane body output effect.
 - Atomics and the launch ABI.
 - IEEE-754 value semantics: stages 43-56 cover the bit layout, the value
   domain, values in units of `2 ^ -24` for normals, subnormals and fractions,
@@ -2346,4 +2367,5 @@ lake build Intel
 105. Stage 105: add dword storage and qword-view laws.
 106. Stage 106: prove the loop body's load/add/store effect.
 107. Stage 107: formalize the 24-lane pack/writeback layout.
-108. Stage 108 (this PR): prove the loop-carried ID selection law.
+108. Stage 108: prove the loop-carried ID selection law.
+109. Stage 109 (this PR): compose the real index and body into a per-lane effect.
