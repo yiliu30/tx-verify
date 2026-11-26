@@ -418,18 +418,18 @@ theorem runReal_append (s : RealState) (is js : List RInstr) :
 /-- The address computation, as decoded: mul, two moves, add3, shift and add. -/
 def realAddOnePreamble : List RInstr :=
   [ .prologue,
-    .mul (Exec.nm 1) ⟨44, 0, 0, 1, 1, 0⟩ ⟨38, 0, 0, 0, 1, 0⟩ ⟨36, 0, 1, 0, 1, 0⟩,
-    .mov 32 ⟨45, 0, 0, 1, 1, 0⟩ ⟨46, 0, 0, 1, 1, 0⟩,
-    .add3 32 ⟨47, 0, 0, 1, 1, 0⟩ ⟨44, 0, 0, 0, 1, 0⟩ ⟨45, 0, 0, 1, 1, 0⟩
+    .mul (Exec.nm 1) ⟨44, 0, 0, 1, 1, 1⟩ ⟨38, 0, 0, 0, 1, 0⟩ ⟨36, 0, 1, 0, 1, 0⟩,
+    .mov 32 ⟨45, 0, 0, 1, 1, 1⟩ ⟨46, 0, 0, 1, 1, 0⟩,
+    .add3 32 ⟨47, 0, 0, 1, 1, 1⟩ ⟨44, 0, 0, 0, 1, 0⟩ ⟨45, 0, 0, 1, 1, 0⟩
       ⟨37, 0, 0, 0, 1, 0⟩,
-    .mov 32 ⟨48, 0, 0, 1, 1, 0⟩ ⟨49, 0, 0, 1, 1, 0⟩,
-    .shl 32 ⟨51, 0, 0, 1, 1, 0⟩ ⟨48, 0, 0, 1, 1, 0⟩ 2,
-    .add 32 ⟨52, 0, 0, 1, 1, 0⟩ ⟨51, 0, 0, 1, 1, 0⟩ ⟨50, 0, 0, 0, 1, 0⟩ ]
+    .mov 32 ⟨48, 0, 0, 1, 1, 1⟩ ⟨49, 0, 0, 1, 1, 0⟩,
+    .shl 32 ⟨51, 0, 0, 1, 1, 1⟩ ⟨48, 0, 0, 1, 1, 0⟩ 2,
+    .add 32 ⟨52, 0, 0, 1, 1, 1⟩ ⟨51, 0, 0, 1, 1, 0⟩ ⟨50, 0, 0, 0, 1, 0⟩ ]
 
 /-- The memory half: load through `V0053`, add one, store, return. -/
 def realAddOneTail : List RInstr :=
   [ .load 32 54 .d32 53,
-    .addImm 32 ⟨55, 0, 0, 1, 1, 0⟩ ⟨54, 0, 0, 1, 1, 0⟩ 1 .w16,
+    .addImm 32 ⟨55, 0, 0, 1, 1, 1⟩ ⟨54, 0, 0, 1, 1, 0⟩ 1 .w16,
     .store 32 53 .d32 55,
     .ret 1 ]
 
@@ -445,7 +445,7 @@ theorem realAddOne_decoded_eq :
 def Grf.simple (g : Grf) : Bool := g.width == 1 && g.hstride == 0
 
 def Grf.dstSimple (g : Grf) : Bool :=
-  g.row == 0 && g.col == 0 && g.simple
+  g.row == 0 && g.col == 0 && g.width == 1 && g.hstride == 1
 
 def RInstr.regionsSimple : RInstr → Bool
   | .prologue => true

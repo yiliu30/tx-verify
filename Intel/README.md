@@ -2069,6 +2069,23 @@ The proof rewrites with `fmhaRealPackedAtom_correct` and kernel-evaluates the
 32-step accumulation. This is a model-level smoke test for the packing and
 atom, not a hardware conformance run.
 
+## Stage 103: destination regions use `<hstride>`
+
+The parser had been reading every one-field region as the source shorthand
+`<vstride;1,0>`. For a destination, the field is a horizontal stride:
+
+```
+mov (M5, 16) V0081(2,0)<2> V0082(1,0)<1;1,0>
+```
+
+must decode to destination `row = 2, vstride = 1, hstride = 2`, not
+`vstride = 2, hstride = 0`. `parseDstGrf` now handles destinations separately;
+`masked_stride2_decodes` pins the real form, and all explicit instruction lists
+were updated. `Grf.dstSimple` now means a unit-stride destination.
+
+This was a real correctness bug: the old decoded M5 stride-two moves would
+have fallen through the masked-write helper without writing their destination.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2229,4 +2246,5 @@ lake build Intel
 99. Stage 99: packed DPAS operands for the real FMHA atom.
 100. Stage 100: prove the packed DPAS address maps are collision-free.
 101. Stage 101: decode the real DPAS register bases.
-102. Stage 102 (this PR): execute a packed DPAS known-answer test.
+102. Stage 102: execute a packed DPAS known-answer test.
+103. Stage 103 (this PR): parse destination regions as `<hstride>`.

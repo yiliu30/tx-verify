@@ -104,9 +104,9 @@ def runVA (s : RealState) (is : List RInstr) : RealState := runRealWith stepVA s
 def vaPreamble : List RInstr :=
   [ .label "_main_0",
     .prologue,
-    .mul (Exec.nm 1) ⟨52, 0, 0, 1, 1, 0⟩ ⟨40, 0, 0, 0, 1, 0⟩ ⟨38, 0, 1, 0, 1, 0⟩,
-    .mov 32 ⟨53, 0, 0, 1, 1, 0⟩ ⟨54, 0, 0, 1, 1, 0⟩,
-    .add3 32 ⟨55, 0, 0, 1, 1, 0⟩ ⟨52, 0, 0, 0, 1, 0⟩ ⟨53, 0, 0, 1, 1, 0⟩
+    .mul (Exec.nm 1) ⟨52, 0, 0, 1, 1, 1⟩ ⟨40, 0, 0, 0, 1, 0⟩ ⟨38, 0, 1, 0, 1, 0⟩,
+    .mov 32 ⟨53, 0, 0, 1, 1, 1⟩ ⟨54, 0, 0, 1, 1, 0⟩,
+    .add3 32 ⟨55, 0, 0, 1, 1, 1⟩ ⟨52, 0, 0, 0, 1, 0⟩ ⟨53, 0, 0, 1, 1, 0⟩
       ⟨39, 0, 0, 0, 1, 0⟩ ]
 
 theorem realVectorAddFlat_preamble_prefix :
@@ -196,7 +196,7 @@ theorem vaWordNat (base idx : Nat) (hbase : base % 4 = 0)
 def vaTail : List RInstr :=
   [ .loadScaled 32 57 .d32 56 55,
     .loadScaled 32 59 .d32 58 55,
-    .add 32 ⟨60, 0, 0, 1, 1, 0⟩ ⟨57, 0, 0, 1, 1, 0⟩ ⟨59, 0, 0, 1, 1, 0⟩,
+    .add 32 ⟨60, 0, 0, 1, 1, 1⟩ ⟨57, 0, 0, 1, 1, 0⟩ ⟨59, 0, 0, 1, 1, 0⟩,
     .storeScaled 32 61 55 .d32 60,
     .ret 1 ]
 
