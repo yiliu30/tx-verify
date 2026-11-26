@@ -1617,19 +1617,49 @@ So one real, unmodified IGC `_main_0` integer GEMM is now decoded, executed,
 and proved to write `C[i*64+j] = sum_k A[i*64+k] * B[k*64+j]`, under the
 stated alignment, bounds and per-lane (race-freedom) hypotheses.
 
+## Stage 78: SEND, SBID and the register scoreboard
+
+`Intel/SendSbid.lean` models the SEND mechanism behind `lsc_load.ugm` and
+`lsc_store.ugm`:
+
+- `issueLoad` / `issueStore` assign a fresh token (an SBID), mark it pending,
+  and capture the load's memory value or the store's value.
+- `complete` marks a token done; `wait` succeeds only on a done token.
+- `commitLoad` writes a completed load's captured value to its destination
+  register; `commitStore` writes a completed store's value to memory.
+- `loadPipeline`, `storePipeline` and `addOnePipeline` are the load-add-store
+  shape of the real add-one kernel.
+
+The proved part of the contract:
+
+```lean
+theorem wait_pending : ... -> wait s t = none
+theorem wait_done    : ... -> wait s t = some s
+theorem loadPipeline_value  : (loadPipeline s reg addr).regs reg = s.mem addr
+theorem storePipeline_value : (storePipeline s addr val).mem addr = val
+theorem addOnePipeline_value : (addOnePipeline s addr reg tmp).mem addr = s.mem addr + 1
+```
+
+`SendAssumptions` and the module header name the modelled-but-not-printed part:
+fair completion, sample-at-issue memory, the register scoreboard as the wait,
+and no token reuse while pending. The assembly text does not print SBIDs, so
+those are assumptions, not facts read from the dump.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
   register aliasing (`r7:4`, `r12:2`); stages 63-66 cover those two dumps'
   operand forms and numeric aliases only.
-- The GEMM's loop-body address chains and functional loop proof; its global-id
-  preamble is stage 68, and the add-one chain is stage 64.
+- GEMM shapes and launches beyond the 64x64x64 integer instance; that
+  instance's indices, loop, epilogue and output are stages 68-77.
 - Cross-workgroup visibility, synchronization, caches and SLM aliasing; stage
   67 refines aligned accesses to bytes and proves byte-range disjointness.
 - SIMD masks and scoreboards. Stage 64 interprets this kernel's broadcast and
   dense GRF regions, not the general region algebra; stage 66 models one
   uniform predicate bit for the GEMM's control flow.
-- SEND/EOT details beyond a halted flag.
+- SEND issue/completion/wait and the register scoreboard are stage 78; raw
+  message operand layout, EOT details beyond a halted flag, and the exact SBID
+  assignments (not printed in the assembly) remain.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
 - IEEE-754 value semantics: stages 43-56 cover the bit layout, the value
@@ -1741,4 +1771,5 @@ lake build Intel
 74. Stage 74: prove the K-induction over repeated loop steps.
 75. Stage 75: prove the final iteration and the total `gemmDot 0 64`.
 76. Stage 76: prove the epilogue store at `C`.
-77. Stage 77 (this PR): the real GEMM's end-to-end output theorem.
+77. Stage 77: the real GEMM's end-to-end output theorem.
+78. Stage 78 (this PR): model SEND/SBID issue, completion, wait and commit.

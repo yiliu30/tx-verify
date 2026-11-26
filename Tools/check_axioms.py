@@ -195,6 +195,10 @@ THEOREMS = [
     ("Intel.GemmRealLoop", "IntelGpu.gemmEpilogue_store_mem"),
     ("Intel.GemmRealLoop", "IntelGpu.nat_wordC"),
     ("Intel.GemmRealLoop", "IntelGpu.realGemm_output"),
+    ("Intel.SendSbid", "IntelGpu.wait_pending"),
+    ("Intel.SendSbid", "IntelGpu.loadPipeline_value"),
+    ("Intel.SendSbid", "IntelGpu.storePipeline_value"),
+    ("Intel.SendSbid", "IntelGpu.addOnePipeline_value"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
