@@ -2448,6 +2448,17 @@ the decoded body store to the full path. `vaLoop_lane_body_exit_mem` and
 `vaLoop_lane_body_exit_with_guard_mem` state the resulting
 `C[id] = A[id] + B[id]` effect on the PC 44 target state.
 
+## Stage 138: deriving the path guards from the decoded prefix
+
+`Intel/LoopGuardPath.lean` removes the abstract `P3`/`P6` hypotheses from the
+stage-137 path. `vaLoopCFP3` executes the nine decoded instructions at PC 8--16
+and lands at PC 17. `vaLoopP3Prefix_preserves_reg` and
+`vaLoopBodySlice_preserves_reg` are the prefix/body frames, `vaLoopPreP6_regs72`
+computes the pre-guard index as `V59 + V37`, and `vaLoopPreP6_preserves49`
+keeps the bound registers intact. `vaLoop_lane_body_exit_pc8_mem` then starts
+at PC 8 and needs only the real P3 guard, the range bound, and the body's
+memory-safety hypotheses.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2647,4 +2658,5 @@ lake build Intel
 134. Stage 134: execute the decoded body slice.
 135. Stage 135: execute the decoded entry slice.
 136. Stage 136: compose the per-lane decoded control path.
-137. Stage 137 (this PR): prove the per-lane memory effect on the decoded path.
+137. Stage 137: prove the per-lane memory effect on the decoded path.
+138. Stage 138 (this PR): derive the path guards from the decoded prefix.
