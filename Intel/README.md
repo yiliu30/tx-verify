@@ -2320,6 +2320,19 @@ theorem vaPackHigh_value :
 Both real M1+M5 packs now execute through the dword-view step and produce the
 register halves consumed by the guard comparisons.
 
+## Stage 122: both packs in one state
+
+`vaPackBoth_value` composes the low and high packs:
+
+```lean
+theorem vaPackBoth_value :
+  low32 result.regs 62 j = (ids j).truncate 32 ∧
+  low32 result.regs 63 j = ((ids j) >>> 32).truncate 32
+```
+
+The proof also shows the high pack preserves `V0062` and the low pack
+preserves `V0059`, so both halves remain valid after sequential execution.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2503,4 +2516,5 @@ lake build Intel
 118. Stage 118: execute dword-view moves in the loop step.
 119. Stage 119: add masked dword-view move laws.
 120. Stage 120: execute the real M1+M5 low pack.
-121. Stage 121 (this PR): execute the real M1+M5 high pack.
+121. Stage 121: execute the real M1+M5 high pack.
+122. Stage 122 (this PR): compose both packs into one state.
