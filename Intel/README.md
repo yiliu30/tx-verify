@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 202: mainloop DPAS phase
+
+`Intel/TlaMainloopDpas.lean` extracts the 32 DPAS instructions of the mainloop
+block with their program counters, proves the sequence is exactly
+`realTlaGemmDpas`, and instantiates the 32-step slab sum on the mainloop phase
+(`mainloopDpasRun_acc0_sum`, `mainloopDpasRun_acc1_sum`). `mainloopDpasRun` is
+the loop-carried accumulator update that the remaining mainloop instructions
+have to preserve.
+
 ## Stage 201: mainloop operand-window loads
 
 `Intel/TlaBlock2dPlain.lean` decodes the 27 unprefixed `load_block2d.ugm.*`
@@ -3369,4 +3378,5 @@ lake build Intel
 198. Stage 198: mainloop block census.
 199. Stage 199: block2d address operands.
 200. Stage 200: block2d address semantics.
-201. Stage 201 (this PR): mainloop operand-window loads.
+201. Stage 201: mainloop operand-window loads.
+202. Stage 202 (this PR): mainloop DPAS phase.
