@@ -63,9 +63,11 @@ The same binary was verified at four problem sizes with `--verify=1`:
 | 512 | 256 | 32 | Passed | 0.104 TFlop/s |
 | 128 | 128 | 64 | Passed | 0.019 TFlop/s |
 
-The `256x256x32` entry is the dispatch whose assembly is imported as
-`RealTlaGemm`; the other sizes exercise the same binary with different loop
-bounds.
+All four sizes dispatch to the same kernel entry: re-dumping each size
+produces `OCL_asm3007175a26f3a66d_1_simd16_entry_0001.asm` with the imported
+sha256 `698d4a3001744180b3f687f4efdf43dc54aa3e0fcdc4b2b60a9c47557e373c12`, so
+the `RealTlaGemm` program is the kernel behind every run in the matrix (the
+sizes differ only in the launch geometry and loop bounds).
 
 ## Assembly provenance re-check
 
