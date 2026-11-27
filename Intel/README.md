@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 179: BF16 values in the DPAS slab
+
+`Intel/Bf16Dpas.lean` embeds a decoded BF16 value into the `Word` model via
+`Fixed.signed` on the `2^-7` grid and defines `tlaSlabBf16`, the BF16
+instantiation of the DPAS slab. Exact examples check `1.0 * 1.0`,
+`1.0 * 2.0` and an initial accumulator over depth 16. The embedding is
+modulo `2^32` and is the same algebraic word model as the rest of the DPAS
+development, not a floating-point rounding model.
+
 ## Stage 178: BF16 source decode
 
 `Intel/Bf16Decode.lean` grounds the SYCL-TLA DPAS `:bf` sources in the same
@@ -3144,4 +3153,5 @@ lake build Intel
 175. Stage 175: total decoder for the SYCL-TLA dump.
 176. Stage 176: register-level execution of the SYCL-TLA DPAS chain.
 177. Stage 177: composing two SYCL-TLA DPAS steps.
-178. Stage 178 (this PR): BF16 source decode.
+178. Stage 178: BF16 source decode.
+179. Stage 179 (this PR): BF16 values in the DPAS slab.
