@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 222: gated conditional comparisons
+
+`TlaCmp.step` now consults the recorded condition: a conditional comparison
+(`(W&fN.M)`) leaves the state unchanged when the guard flag is clear and
+writes its result only when the guard is set. `Intel/TlaCmpGate.lean` proves
+the PC-1408 instance (`f0.0` guard, result `r1.11 == 0`), that every
+conditional comparison has a guard (`realTlaGemmCmp_conditional_flags`), and
+that the loop comparison stays unconditional (`loopCmp_unconditional`).
+
 ## Stage 221: bit-field and message execution
 
 `Intel/TlaBfnExec.lean` gives the `bfn` forms their execution semantics:
@@ -3572,4 +3581,5 @@ lake build Intel
 218. Stage 218: plain instruction forms.
 219. Stage 219: conditional comparisons.
 220. Stage 220: bit-field/message forms; full coverage.
-221. Stage 221 (this PR): bit-field and message execution.
+221. Stage 221: bit-field and message execution.
+222. Stage 222 (this PR): gated conditional comparisons.
