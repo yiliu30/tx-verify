@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 221: bit-field and message execution
+
+`Intel/TlaBfnExec.lean` gives the `bfn` forms their execution semantics:
+`TlaBfn.step` writes `(s0 &&& s1) ||| s2` or `s0 ||| s1 ||| s2` into the
+masked destination and frames other registers (the PC-72 instance is proved).
+The `send.gtwy` forms are modelled as an append-only message log: the final
+send at PC 2246 is the EOT marker, and the two sends have `eot` values
+`[false, true]`.
+
 ## Stage 220: bit-field and message forms; full coverage
 
 `Intel/TlaBfnSend.lean` decodes the last six unmodeled statements: four `bfn`
@@ -3562,4 +3571,5 @@ lake build Intel
 217. Stage 217: prologue and epilogue census.
 218. Stage 218: plain instruction forms.
 219. Stage 219: conditional comparisons.
-220. Stage 220 (this PR): bit-field/message forms; full coverage.
+220. Stage 220: bit-field/message forms; full coverage.
+221. Stage 221 (this PR): bit-field and message execution.
