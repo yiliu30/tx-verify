@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 207: loop iteration
+
+`Intel/TlaLoopIterate.lean` iterates the tail. `wordAddN w n` is the `n`-fold
+successor of a word, and `tlaTailLoop n` runs `n` tail steps.
+`tlaTailLoop_continue` proves that when the first `n` exit tests succeed both
+counters advance by `n` and the bound register is unchanged;
+`tlaTailLoop_exit` proves that `n` continuing passes followed by a failing
+test end the loop with `r1.11` advanced by `n+1` and `r1.14` by `n`.
+
 ## Stage 206: loop tail
 
 `Intel/TlaLoopTail.lean` composes the measured tail instructions into
@@ -3418,4 +3427,5 @@ lake build Intel
 203. Stage 203: mainloop schedule.
 204. Stage 204: loop-tail counters.
 205. Stage 205: loop-exit comparison.
-206. Stage 206 (this PR): loop tail.
+206. Stage 206: loop tail.
+207. Stage 207 (this PR): loop iteration.
