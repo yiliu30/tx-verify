@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 223: unified instruction dispatcher
+
+`Intel/TlaDispatch.lean` classifies every decoded instruction into one of the
+modelled classes and executes it over `TlaFullMachine` (scalar state, tile
+memory, binding table and message log). Each class has a projection theorem
+(`tlaStep?_dpas` through `tlaStep?_label`), `realTlaGemm_classified` proves
+every statement is classified, and `realTlaGemm_classify_residue` shows that
+the only instructions without an execution are the 14 `mach`/`macl` forms.
+
 ## Stage 222: gated conditional comparisons
 
 `TlaCmp.step` now consults the recorded condition: a conditional comparison
@@ -3582,4 +3591,5 @@ lake build Intel
 219. Stage 219: conditional comparisons.
 220. Stage 220: bit-field/message forms; full coverage.
 221. Stage 221: bit-field and message execution.
-222. Stage 222 (this PR): gated conditional comparisons.
+222. Stage 222: gated conditional comparisons.
+223. Stage 223 (this PR): unified instruction dispatcher.
