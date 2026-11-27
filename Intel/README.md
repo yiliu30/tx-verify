@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 217: prologue and epilogue census
+
+`Intel/TlaRegions.lean` records the two regions outside the verified mainloop.
+The prologue `[0, 959)` has 959 statements (49 moves, 46 ALU, 193 + 4
+block2d, 84 `sync.nop`, 6 jumps, 9 labels, 568 other) and the epilogue
+`[1404, 2252)` has 848 (176 moves, 55 ALU, 70 + 16 block2d, 57 `sync.nop`,
+50 jumps, 74 labels, 350 other); neither contains DPAS. Together with the
+445-instruction block they account for all 2252 statements.
+
 ## Stage 216: A/B operand windows
 
 `Intel/TlaOperandWindow.lean` introduces the flat register view
@@ -3521,4 +3530,5 @@ lake build Intel
 213. Stage 213: mainloop load/store phase.
 214. Stage 214: full mainloop iteration.
 215. Stage 215: full mainloop loop.
-216. Stage 216 (this PR): A/B operand windows.
+216. Stage 216: A/B operand windows.
+217. Stage 217 (this PR): prologue and epilogue census.
