@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 239: refined instruction classification
+
+`Intel/TlaKindRefined.lean` gives a classifier with one constructor per
+dispatcher class, including `cmp`, `bfn`, `send` and `sync.allrd`. The three
+regions re-census with no `other` left: the block is 32 DPAS, 152 mov, 10 ALU,
+137 block2d, 2 cmp, 2 bfn, 1 send, 102 `sync.nop`, 1 `sync.bar`, 2 jumps and
+4 labels; the prologue and epilogue are classified likewise, and
+`kindR_no_other` proves that every one of the 2252 statements is classified.
+
 ## Stage 238: DPAS accumulator with FP32-quantum rounding
 
 `Intel/DpasF32Acc.lean` rounds every partial sum to the FP32 quantum of its
@@ -3744,4 +3753,5 @@ lake build Intel
 235. Stage 235: SYCL-TLA conformance matrix.
 236. Stage 236: rounding-aware DPAS accumulation.
 237. Stage 237: FP32 exponent-relative rounding.
-238. Stage 238 (this PR): DPAS accumulator with FP32-quantum rounding.
+238. Stage 238: DPAS accumulator with FP32-quantum rounding.
+239. Stage 239 (this PR): refined instruction classification.
