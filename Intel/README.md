@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 228: barrier placement
+
+`Intel/TlaBarrier.lean` proves that no predicated block2d operation of the
+block follows the `sync.bar` at PC 1396 (the last one is the store at PC
+1395), fixes the accumulator-store and barrier PCs, and instantiates the SLM
+barrier model (stage 139) at the accumulator store address `0xF900`: with the
+barrier the consumer sees the stored tile, without it the stale value. This is
+the schedule fact behind "the accumulator stores are visible to the next
+iteration".
+
 ## Stage 227: aliasing laws
 
 `Intel/TlaAliasing.lean` records the alias behaviour of the TLA memory and
@@ -3632,4 +3642,5 @@ lake build Intel
 224. Stage 224: 64-bit multiply high/low.
 225. Stage 225: trusted-base consolidation.
 226. Stage 226: mainloop loads feed the DPAS operands.
-227. Stage 227 (this PR): aliasing laws.
+227. Stage 227: aliasing laws.
+228. Stage 228 (this PR): barrier placement.
