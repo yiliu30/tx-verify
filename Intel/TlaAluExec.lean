@@ -42,7 +42,10 @@ def tlaAluStep? (rf : RegFile) (a : TlaAlu) : Option RegFile :=
               some (writeTlaMasked rf d a.exec
                 (fun i => f i * g i + readTlaSrc rf s3 i))
           | none => none
-      | _ => none
+      | .mach => some (writeTlaMasked rf d a.exec
+          (fun i => BitVec.ofNat 32 ((f i).toNat * (g i).toNat >>> 32)))
+      | .macl => some (writeTlaMasked rf d a.exec
+          (fun i => BitVec.ofNat 32 ((f i).toNat * (g i).toNat)))
   | _ => none
 
 theorem tlaAluStep?_and (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
@@ -85,8 +88,17 @@ theorem tlaAluStep?_asr (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
       some (writeTlaMasked rf d e
         (fun i => (readTlaSrc rf s1 i).sshiftRight (readTlaSrc rf s2 i).toNat)) := rfl
 
-theorem tlaAluStep?_mach_none (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
-    tlaAluStep? rf ⟨.mach, e, .r d, s1, s2, none⟩ = none := rfl
+theorem tlaAluStep?_mach (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
+    tlaAluStep? rf ⟨.mach, e, .r d, s1, s2, none⟩ =
+      some (writeTlaMasked rf d e
+        (fun i => BitVec.ofNat 32
+          ((readTlaSrc rf s1 i).toNat * (readTlaSrc rf s2 i).toNat >>> 32))) := rfl
+
+theorem tlaAluStep?_macl (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
+    tlaAluStep? rf ⟨.macl, e, .r d, s1, s2, none⟩ =
+      some (writeTlaMasked rf d e
+        (fun i => BitVec.ofNat 32
+          ((readTlaSrc rf s1 i).toNat * (readTlaSrc rf s2 i).toNat))) := rfl
 
 /-- An active unit-stride write returns the source value. -/
 theorem writeTlaMasked_self_active (rf : RegFile) (g : Grf) (e : Exec)
@@ -149,10 +161,10 @@ theorem prologue_mad_value (rf : RegFile) :
     simp [readTlaSrc, srcIndex]
 
 set_option maxRecDepth 100000 in
-/-- 54 of the 109 ALU instructions are in the executed subset. -/
+/-- 68 of the 109 ALU instructions are in the executed subset. -/
 theorem tlaAlu_modeled_count :
     (realTlaGemmAlu.filter
-      (fun a => (tlaAluStep? (fun _ _ => 0) a).isSome)).length = 54 := by
+      (fun a => (tlaAluStep? (fun _ _ => 0) a).isSome)).length = 68 := by
   decide
 
 end IntelGpu

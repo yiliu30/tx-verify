@@ -55,8 +55,8 @@ def tlaAluFun : TlaAluOp → (Nat → Word) → (Nat → Word) → (Nat → Word
   | .shr, f, g, _ => some (fun i => f i >>> (g i).toNat)
   | .asr, f, g, _ => some (fun i => (f i).sshiftRight (g i).toNat)
   | .mad, f, g, h => some (fun i => f i * g i + h i)
-  | .mach, _, _, _ => none
-  | .macl, _, _, _ => none
+  | .mach, f, g, _ => some (fun i => BitVec.ofNat 32 ((f i).toNat * (g i).toNat >>> 32))
+  | .macl, f, g, _ => some (fun i => BitVec.ofNat 32 ((f i).toNat * (g i).toNat))
 
 def tlaAluStateStep? (st : TlaState) (a : TlaAlu) : Option TlaState :=
   let f := readTlaSrcState st a.src1

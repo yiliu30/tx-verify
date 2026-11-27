@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 224: 64-bit multiply high/low
+
+`tlaAluFun` and `tlaAluStep?` now execute `mach`/`macl` as the high and low
+32 bits of the unsigned 64-bit product of the two sources. This covers the 14
+`mach`/`macl` forms used in the prologue and epilogue address computations
+(the ALU executed subset grows from 54 to 68 forms), and removes the last
+residue of the unified dispatcher: every one of the 2252 statements now has a
+dispatcher step.
+
 ## Stage 223: unified instruction dispatcher
 
 `Intel/TlaDispatch.lean` classifies every decoded instruction into one of the
@@ -3121,7 +3130,7 @@ worked examples are `mul acc0, r1.13, r1.20`,
 `Intel/TlaAluExec.lean` now also executes the register-destination `mul`, `or`,
 `shl`, `shr` and `asr` forms, with written-form lemmas for each.
 `tlaAluStep?_mach_none` records that the multiply-high forms remain
-unmodelled. The executed subset covers 54 of the 109 ALU instructions
+unmodelled. The executed subset covers 68 of the 109 ALU instructions
 (`tlaAlu_modeled_count`, stated on a dummy register file because `isSome` is
 independent of the register contents).
 
@@ -3592,4 +3601,5 @@ lake build Intel
 220. Stage 220: bit-field/message forms; full coverage.
 221. Stage 221: bit-field and message execution.
 222. Stage 222: gated conditional comparisons.
-223. Stage 223 (this PR): unified instruction dispatcher.
+223. Stage 223: unified instruction dispatcher.
+224. Stage 224 (this PR): 64-bit multiply high/low.
