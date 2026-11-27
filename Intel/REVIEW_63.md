@@ -9,7 +9,7 @@ fork.
 
 | Review item | Stages (PRs) | Evidence | Status |
 | --- | --- | --- | --- |
-| P0 real assembly import | 62 (#64), 65 (#67), 82 (#84), 83 (#85), 174 | four real dumps (add-one, integer GEMM, loop vector add, straight-line vector add) with sha256 provenance and generated statement lists; the FMHA DPAS line in 79 (#81); the raw SYCL-TLA 256x256x32 BF16 GEMM dump with 2252 statements and 32 DPAS | addressed for these kernels; the SYCL-TLA dump is imported but not yet decoded |
+| P0 real assembly import | 62 (#64), 65 (#67), 82 (#84), 83 (#85), 174 | four real dumps (add-one, integer GEMM, loop vector add, straight-line vector add) with sha256 provenance and generated statement lists; the FMHA DPAS line in 79 (#81); the raw SYCL-TLA 256x256x32 BF16 GEMM dump with 2252 statements and 32 DPAS; a total decoder for that dump (stage 175) | addressed for these kernels; the SYCL-TLA dump is imported and total-decoded, but not yet connected to execution semantics |
 | P0 reject unsupported explicitly | 62b (#64), 63 (#65), 82 (#84), 92 | `rejected`, `realGemm_rejectedOps`, `realVectorAdd_rejectedOps`, the fail-closed `parseExec` mask check, `masked_mov_decodes` and `parseExec_rejects_M9` | addressed; all dumps are all-or-nothing |
 | P0 unified semantics | 63-67 (#65-#69), 68-77 (#70-#79), 83-85 (#85-#87), 104-113 | one `RInstr`/`stepWith` model; `realAddOne_effect`, `realGemm_output`, `realVectorAdd_effect`; loop vector-add tables, index, body effect, per-lane CF and decoded branch sites | addressed for the modeled slots; predicate-value composition remains |
 | P0 GRF and SIMD | 64 (#66), 66 (#68), 68 (#70), 83 (#85), 90-98, 103, 105, 107, 112, 141, 151 | regions, aliases, execution sizes in `Grf`/`gemmAlias`; per-lane predicates, predicated `sel`, predicate `and`/`or`, register comparisons, both predicated gotos; M1-M8 masks, all six masked moves, frame laws, a wrong-mask negative test, correct destination `<hstride>` parsing, dword/qword view laws, the 24-lane pack layout and a per-lane CF interpreter; generic active-window, operand-index, write-coverage and commutation laws; mask-aware add/load/store execution for the loop body with full-mask agreement and frame laws | addressed for the modeled loop body; general instruction-level mask dispatch outside these classes remains |
@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (137 jobs) and `Tools/check_axioms.py --all`
-  (1756 theorems, 400 documented exceptions at stage 174).
+  `lake build Intel` (138 jobs) and `Tools/check_axioms.py --all`
+  (1761 theorems, 405 documented exceptions at stage 175).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -145,6 +145,7 @@ from `Classical.choose` in the racing-store model.
 | 172 | #174 | directed-rounding FMA |
 | 173 | #175 | review stage map refresh |
 | 174 | #176 | real SYCL-TLA GEMM import |
+| 175 | #177 | total decoder for the SYCL-TLA dump |
 
-The stack is intentionally one PR per stage (#64-#176), as requested. The
+The stack is intentionally one PR per stage (#64-#177), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
