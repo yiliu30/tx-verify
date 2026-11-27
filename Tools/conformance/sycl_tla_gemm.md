@@ -52,6 +52,21 @@ model rather than a BF16 numeric model, so this run validates the hardware
 kernel bit-exactly against a same-device reference; it does not compare
 hardware numbers to the Lean slab values.
 
+## Problem-size matrix
+
+The same binary was verified at four problem sizes with `--verify=1`:
+
+| M | N | K | Disposition | Performance |
+| --- | --- | --- | --- | --- |
+| 256 | 256 | 32 | Passed | 0.042 TFlop/s |
+| 256 | 256 | 64 | Passed | 0.254 TFlop/s |
+| 512 | 256 | 32 | Passed | 0.104 TFlop/s |
+| 128 | 128 | 64 | Passed | 0.019 TFlop/s |
+
+The `256x256x32` entry is the dispatch whose assembly is imported as
+`RealTlaGemm`; the other sizes exercise the same binary with different loop
+bounds.
+
 ## Assembly provenance re-check
 
 The same binary was re-dumped after the verification run, with the same

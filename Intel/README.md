@@ -2841,6 +2841,13 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 235: SYCL-TLA conformance matrix
+
+`Tools/conformance/sycl_tla_gemm.md` now records four bit-exact hardware runs
+of the same binary: `256x256x32` (the imported dispatch), `256x256x64`,
+`512x256x32` and `128x128x64` all report `Disposition: Passed` against the
+CUTLASS device reference. No Lean declarations change.
+
 ## Stage 234: the DPAS slab as an exact integer dot product
 
 `Intel/DpasNumeric.lean` proves that below `2 ^ 32` the Word-valued slab is
@@ -3707,4 +3714,5 @@ lake build Intel
 231. Stage 231: SYCL-TLA GEMM hardware conformance.
 232. Stage 232: assembly provenance re-check.
 233. Stage 233: trap halting semantics.
-234. Stage 234 (this PR): DPAS slab exact-integer meaning.
+234. Stage 234: DPAS slab exact-integer meaning.
+235. Stage 235 (this PR): SYCL-TLA conformance matrix.
