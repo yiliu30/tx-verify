@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 186: executing the predicated moves
+
+`Intel/TlaMovExec.lean` executes a decoded move on the register file.
+`writeTlaMasked` writes the active destination elements (unit and stride-two
+regions), `readTlaSrc` reads a GRF region or embeds a signed immediate, and
+`null` is a no-op. `tlaMovStep_frame` shows only the destination register
+changes. The prologue move is proved to zero `r127` for 16 elements, and the
+id move to copy `r1` into `r2` for 8 elements.
+
 ## Stage 185: decoding the predicated moves
 
 `Intel/TlaMovDecode.lean` gives the 377 `(W) mov` statements a structured
@@ -3216,4 +3225,5 @@ lake build Intel
 182. Stage 182: the second accumulator.
 183. Stage 183: census of the predicated forms.
 184. Stage 184: the DPAS chain over BF16 values.
-185. Stage 185 (this PR): decoding the predicated moves.
+185. Stage 185: decoding the predicated moves.
+186. Stage 186 (this PR): executing the predicated moves.
