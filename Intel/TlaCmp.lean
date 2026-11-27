@@ -10,7 +10,7 @@ public import Intel.TlaLoopCounter
 
 The mainloop exit condition is set by PC 1400,
 `cmp (lt)f3.1, null, r1.11, r1.15`, and consumed by the predicated jump at
-PC 1401, `(W&~f3.1) jmpi`. This module decodes the 20 predicated `cmp`
+PC 1401, `(W&~f3.1) jmpi`. This module decodes the 28 predicated `cmp`
 forms of the dump into a `TlaCmp` structure, gives them a flag-writing
 semantics, and proves the loop instance: `f3.1` is set to `1` exactly when
 `r1.11 < r1.15`.
@@ -23,6 +23,7 @@ instance proved here.
 namespace IntelGpu
 
 structure TlaCmp where
+  cond : String
   exec : Exec
   pred : String
   flag : Nat
@@ -40,12 +41,23 @@ def parseCmpFlag (s : String) : Option (String × Nat × Nat) :=
       | _ => none
   | _ => none
 
-/-- The predicated `cmp` form: `(W) cmp (C|M) (op)fN.M null A B`. -/
+/-- Does the opcode end in ` cmp`? -/
+def endsWithCmp (op : String) : Bool :=
+  match op.toList.reverse with
+  | 'p' :: 'm' :: 'c' :: ' ' :: _ => true
+  | _ => false
+
+/-- The predicated `cmp` form: `(W[&flags]) cmp (C|M) (op)fN.M null A B`.
+The full predicate text is kept in `cond`; conditional forms are recorded but
+their flag write is not yet gated. -/
 def parseTlaCmpInstr : TlaInstr → Option TlaCmp
-  | .predicated "(W) cmp" (e :: dst :: _null :: a :: b :: _) =>
-      match parseTlaExec e, parseCmpFlag dst, parseTlaSrc a, parseTlaSrc b with
-      | some ex, some (p, n, sub), some l, some r => some ⟨ex, p, n, sub, l, r⟩
-      | _, _, _, _ => none
+  | .predicated op (e :: dst :: _null :: a :: b :: _) =>
+      if endsWithCmp op then
+        match parseTlaExec e, parseCmpFlag dst, parseTlaSrc a, parseTlaSrc b with
+        | some ex, some (p, n, sub), some l, some r =>
+            some ⟨op, ex, p, n, sub, l, r⟩
+        | _, _, _, _ => none
+      else none
   | _ => none
 
 /-- The decoded comparisons. -/
@@ -74,6 +86,7 @@ def TlaCmp.step (st : TlaState) (c : TlaCmp) : TlaState :=
 
 /-- The loop-exit comparison at PC 1400. -/
 def loopCmp : TlaCmp where
+  cond := "(W) cmp"
   exec := ⟨16, 0, true⟩
   pred := "lt"
   flag := 3
@@ -82,8 +95,8 @@ def loopCmp : TlaCmp where
   srcR := .reg ⟨1, 0, 15, 0, 1, 0⟩
 
 set_option maxRecDepth 100000 in
-/-- There are 20 predicated comparisons in the dump. -/
-theorem realTlaGemmCmp_length : realTlaGemmCmp.length = 20 := by decide
+/-- There are 28 predicated comparisons in the dump. -/
+theorem realTlaGemmCmp_length : realTlaGemmCmp.length = 28 := by decide
 
 set_option maxRecDepth 100000 in
 /-- Every comparison predicate is one of `eq`, `ne`, `lt`, `gt`. -/

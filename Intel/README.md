@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 219: conditional comparisons
+
+`Intel/TlaCmpCond.lean` records the predicate text of every comparison in the
+new `TlaCmp.cond` field: 8 of the 28 forms are conditional (`(W&f0.0) cmp`,
+`(W&f1.1) cmp`, `(W&f0.1) cmp`, `(W&f3.0) cmp`, `(W&f2.0) cmp`,
+`(W&f2.1) cmp`, `(W&f1.0) cmp`). The flag write is not yet gated on `cond`;
+the loop comparison uses the unconditional `(W) cmp`, so the loop proofs are
+unaffected.
+
 ## Stage 218: plain instruction forms
 
 `Intel/TlaPlain.lean` decodes the unpredicated forms that dominate the
@@ -2963,8 +2972,9 @@ relation for the mainloop iteration and back-edge.
 
 ## Stage 205: loop-exit comparison
 
-`Intel/TlaCmp.lean` decodes the 20 predicated `cmp` forms (`eq`, `ne`, `lt`,
-`gt`) and gives them a flag-writing semantics. The mainloop exit comparison at
+`Intel/TlaCmp.lean` decodes the 28 predicated `cmp` forms (`eq`, `ne`, `lt`,
+`gt`, 8 of them with an extra predicate flag) and gives them a flag-writing
+semantics. The mainloop exit comparison at
 PC 1400 (`cmp (lt)f3.1, null, r1.11, r1.15`) decodes to `loopCmp`:
 `loopCmp_step_flags` evaluates `f3.1` to `r1.11 < r1.15`,
 `loopCmp_exit_iff` shows the flag is clear exactly when the counter has
@@ -3542,4 +3552,5 @@ lake build Intel
 215. Stage 215: full mainloop loop.
 216. Stage 216: A/B operand windows.
 217. Stage 217: prologue and epilogue census.
-218. Stage 218 (this PR): plain instruction forms.
+218. Stage 218: plain instruction forms.
+219. Stage 219 (this PR): conditional comparisons.
