@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 206: loop tail
+
+`Intel/TlaLoopTail.lean` composes the measured tail instructions into
+`tlaTailStep`. `tlaTail_continue` covers the continuing pass: both counters
+increment and the `acc`, `addr` and `cr` banks are preserved. `tlaTail_exit`
+covers the exiting pass: only `r1.11` increments. This is the transition
+relation for the mainloop iteration and back-edge.
+
 ## Stage 205: loop-exit comparison
 
 `Intel/TlaCmp.lean` decodes the 20 predicated `cmp` forms (`eq`, `ne`, `lt`,
@@ -3409,4 +3417,5 @@ lake build Intel
 202. Stage 202: mainloop DPAS phase.
 203. Stage 203: mainloop schedule.
 204. Stage 204: loop-tail counters.
-205. Stage 205 (this PR): loop-exit comparison.
+205. Stage 205: loop-exit comparison.
+206. Stage 206 (this PR): loop tail.
