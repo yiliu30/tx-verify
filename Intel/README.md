@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 182: the second accumulator
+
+`Intel/TlaDpasSum.lean` now also proves the `r13` half of the chain.
+`tlaDpasRunSeq_acc1_sum`, `tlaDpasRun_acc1_sum` and
+`realTlaGemmDpas_acc1_sum` show the second accumulator is the initial block
+plus the same ordered 32-slab sum. Together with stage 181 this covers both
+FP32 accumulator blocks of the real SYCL-TLA GEMM.
+
 ## Stage 181: the full 32-step DPAS sum
 
 `Intel/TlaDpasSum.lean` proves the whole SYCL-TLA DPAS chain with a first-order
@@ -3175,4 +3183,5 @@ lake build Intel
 178. Stage 178: BF16 source decode.
 179. Stage 179: BF16 values in the DPAS slab.
 180. Stage 180: packed BF16 register halves.
-181. Stage 181 (this PR): the full 32-step DPAS sum.
+181. Stage 181: the full 32-step DPAS sum.
+182. Stage 182 (this PR): the second accumulator.
