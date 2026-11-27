@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 189: executing the prologue ALU
+
+`Intel/TlaAluExec.lean` executes the register-destination `and`/`add`/`mad`
+subset on the logical register file. `tlaAluStep?_and/_add/_mad` give the
+written form, `writeTlaMasked_self_active` gives an active destination
+element, and the three prologue effects are proved:
+`r127.2 = r0.0 & 0xFFFFFFC0`, `r127.2 = r127.2 + 0x280`, and
+`r127.0 = r127.2 * r127.0 + 0x40`. Other ALU operations remain unmodelled
+(`none`).
+
 ## Stage 188: decoding the predicated ALU forms
 
 `Intel/TlaAlu.lean` gives the register-destination predicated ALU forms a
@@ -3246,4 +3256,5 @@ lake build Intel
 185. Stage 185: decoding the predicated moves.
 186. Stage 186: executing the predicated moves.
 187. Stage 187: sequencing moves and the entry effect.
-188. Stage 188 (this PR): decoding the predicated ALU forms.
+188. Stage 188: decoding the predicated ALU forms.
+189. Stage 189 (this PR): executing the prologue ALU.
