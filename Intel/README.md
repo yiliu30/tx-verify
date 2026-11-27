@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 226: mainloop loads feed the DPAS operands
+
+`Intel/TlaOperandLoad.lean` composes the five plain mainloop loads (PCs 979,
+983, 986, 987, 990) with the operand-window bridge: after the load,
+`readTileB (flat ·) base 0 k n` (and `readTileA · 30 m k`) is exactly the
+memory lane the load wrote, for the `r64`/`r80`/`r96`/`r112` B windows and the
+`r30` A window under the flat register view.
+
 ## Stage 225: trusted-base consolidation
 
 `Intel/REVIEW_63.md` now lists the SYCL-TLA modelling assumptions (tile
@@ -3611,4 +3619,5 @@ lake build Intel
 222. Stage 222: gated conditional comparisons.
 223. Stage 223: unified instruction dispatcher.
 224. Stage 224: 64-bit multiply high/low.
-225. Stage 225 (this PR): trusted-base consolidation.
+225. Stage 225: trusted-base consolidation.
+226. Stage 226 (this PR): mainloop loads feed the DPAS operands.
