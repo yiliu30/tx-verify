@@ -23,31 +23,34 @@ namespace IntelGpu
 
 /-- Execute one decoded ALU instruction, for the modelled operations. -/
 def tlaAluStep? (rf : RegFile) (a : TlaAlu) : Option RegFile :=
-  let f := readTlaSrc rf a.src1
-  let g := readTlaSrc rf a.src2
-  match a.op with
-  | .and => some (writeTlaMasked rf a.dst a.exec (fun i => f i &&& g i))
-  | .add => some (writeTlaMasked rf a.dst a.exec (fun i => f i + g i))
-  | .mad =>
-      match a.src3 with
-      | some s3 =>
-          some (writeTlaMasked rf a.dst a.exec
-            (fun i => f i * g i + readTlaSrc rf s3 i))
-      | none => none
+  match a.dst with
+  | .r d =>
+      let f := readTlaSrc rf a.src1
+      let g := readTlaSrc rf a.src2
+      match a.op with
+      | .and => some (writeTlaMasked rf d a.exec (fun i => f i &&& g i))
+      | .add => some (writeTlaMasked rf d a.exec (fun i => f i + g i))
+      | .mad =>
+          match a.src3 with
+          | some s3 =>
+              some (writeTlaMasked rf d a.exec
+                (fun i => f i * g i + readTlaSrc rf s3 i))
+          | none => none
+      | _ => none
   | _ => none
 
 theorem tlaAluStep?_and (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
-    tlaAluStep? rf ⟨.and, e, d, s1, s2, none⟩ =
+    tlaAluStep? rf ⟨.and, e, .r d, s1, s2, none⟩ =
       some (writeTlaMasked rf d e
         (fun i => readTlaSrc rf s1 i &&& readTlaSrc rf s2 i)) := rfl
 
 theorem tlaAluStep?_add (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
-    tlaAluStep? rf ⟨.add, e, d, s1, s2, none⟩ =
+    tlaAluStep? rf ⟨.add, e, .r d, s1, s2, none⟩ =
       some (writeTlaMasked rf d e
         (fun i => readTlaSrc rf s1 i + readTlaSrc rf s2 i)) := rfl
 
 theorem tlaAluStep?_mad (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 s3 : TlaSrc) :
-    tlaAluStep? rf ⟨.mad, e, d, s1, s2, some s3⟩ =
+    tlaAluStep? rf ⟨.mad, e, .r d, s1, s2, some s3⟩ =
       some (writeTlaMasked rf d e
         (fun i => readTlaSrc rf s1 i * readTlaSrc rf s2 i + readTlaSrc rf s3 i)) := rfl
 
@@ -63,17 +66,17 @@ theorem writeTlaMasked_self_active (rf : RegFile) (g : Grf) (e : Exec)
 
 /-- The prologue mask: `r127.2 = r0.0 & 0xFFFFFFC0`. -/
 def prologueAnd : TlaAlu :=
-  ⟨.and, ⟨1, 0, true⟩, ⟨127, 0, 2, 1, 1, 1⟩,
+  ⟨.and, ⟨1, 0, true⟩, .r ⟨127, 0, 2, 1, 1, 1⟩,
     .reg ⟨0, 0, 0, 0, 1, 0⟩, .imm (0xFFFFFFC0 : Int) .ud, none⟩
 
 /-- The prologue add: `r127.2 = r127.2 + 0x280`. -/
 def prologueAdd : TlaAlu :=
-  ⟨.add, ⟨1, 0, true⟩, ⟨127, 0, 2, 1, 1, 1⟩,
+  ⟨.add, ⟨1, 0, true⟩, .r ⟨127, 0, 2, 1, 1, 1⟩,
     .reg ⟨127, 0, 2, 0, 1, 0⟩, .imm (0x280 : Int) .ud, none⟩
 
 /-- The prologue multiply-add: `r127.0 = r127.2 * r127.0 + 0x40`. -/
 def prologueMad : TlaAlu :=
-  ⟨.mad, ⟨1, 0, true⟩, ⟨127, 0, 0, 1, 1, 1⟩,
+  ⟨.mad, ⟨1, 0, true⟩, .r ⟨127, 0, 0, 1, 1, 1⟩,
     .reg ⟨127, 0, 2, 0, 1, 0⟩, .reg ⟨127, 0, 0, 0, 1, 0⟩,
     some (.imm (0x40 : Int) .w16)⟩
 

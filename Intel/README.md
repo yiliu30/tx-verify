@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 191: all ALU destinations
+
+`Intel/TlaAlu.lean` now parses all 109 ALU instructions, including the
+`acc0`/`a0`/`cr0`/`f3` destination classes. `Intel/TlaAluCensus.lean` proves
+the class split: 68 `r`, 14 `acc`, 25 `addr`, 1 `cr`, 1 `flag`. Execution
+(`tlaAluStep?`) still models the 68 `r`-destination forms; the other classes
+are decoded but return `none` from the executor.
+
 ## Stage 190: ALU parsed/rejected census
 
 `Intel/TlaAluCensus.lean` records the exact split between the
@@ -3267,4 +3275,5 @@ lake build Intel
 187. Stage 187: sequencing moves and the entry effect.
 188. Stage 188: decoding the predicated ALU forms.
 189. Stage 189: executing the prologue ALU.
-190. Stage 190 (this PR): ALU parsed/rejected census.
+190. Stage 190: ALU parsed/rejected census.
+191. Stage 191 (this PR): all ALU destinations.
