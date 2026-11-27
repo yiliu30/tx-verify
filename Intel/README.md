@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 216: A/B operand windows
+
+`Intel/TlaOperandWindow.lean` introduces the flat register view
+`flat rf r e = rf (r + e/8) (e%8)` and proves that the plain mainloop loads
+fill the DPAS operands: a load into `r(base):16` writes lane
+`n*8 + (k/8)*8 + k%8`, exactly `readTileB (flat ·) base 0 k n`, and a load
+into `r(base):31` writes lane `k*8 + m`, exactly `readTileA · base m k`. The
+A read is unchanged by the flat view because its element index is below eight.
+This is the physical tile-packing bridge left open by the DPAS model's
+16-element logical columns.
+
 ## Stage 215: full mainloop loop
 
 `Intel/TlaMainloopLoopFull.lean` iterates `mainloopIterationFull` over the
@@ -3509,4 +3520,5 @@ lake build Intel
 212. Stage 212: stored accumulator is the DPAS sum.
 213. Stage 213: mainloop load/store phase.
 214. Stage 214: full mainloop iteration.
-215. Stage 215 (this PR): full mainloop loop.
+215. Stage 215: full mainloop loop.
+216. Stage 216 (this PR): A/B operand windows.
