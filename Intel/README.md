@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 236: rounding-aware DPAS accumulation
+
+`Intel/DpasRounding.lean` adds a rounding-aware accumulator: each step rounds
+`C + A*B` to a quantum with ties-to-even. On the unit grid the accumulator
+equals the exact integer slab sum (`dpasAccR_one`); on a quantum-2 grid a tie
+rounds `3` to `4`, away from the exact sum (`dpasAccR_quantum2_tie`). This is
+the scalar rounding model an FP32 accumulator would use; it is not yet wired
+to the Word slab. All four theorems are axiom-clean.
+
 ## Stage 235: SYCL-TLA conformance matrix
 
 `Tools/conformance/sycl_tla_gemm.md` now records four bit-exact hardware runs
@@ -3715,4 +3724,5 @@ lake build Intel
 232. Stage 232: assembly provenance re-check.
 233. Stage 233: trap halting semantics.
 234. Stage 234: DPAS slab exact-integer meaning.
-235. Stage 235 (this PR): SYCL-TLA conformance matrix.
+235. Stage 235: SYCL-TLA conformance matrix.
+236. Stage 236 (this PR): rounding-aware DPAS accumulation.
