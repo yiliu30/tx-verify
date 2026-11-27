@@ -2841,6 +2841,13 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 194: block2d memory forms
+
+`Intel/TlaBlock2d.lean` decodes the predicated `load.ugm.*` and `store.ugm.*`
+instructions into execution control, data-register and `ss[...]` address
+operands. The census proves 393 forms: 214 loads and 179 stores. The address
+expression is kept as text; splitting `ss[a0.2][r2:1-0x...]` is the next step.
+
 ## Stage 193: multi-bank ALU state
 
 `Intel/TlaAluState.lean` adds a `TlaState` with the `regs`, `acc`, `addr`,
@@ -3296,4 +3303,5 @@ lake build Intel
 190. Stage 190: ALU parsed/rejected census.
 191. Stage 191: all ALU destinations.
 192. Stage 192: more register-destination ALU ops.
-193. Stage 193 (this PR): multi-bank ALU state.
+193. Stage 193: multi-bank ALU state.
+194. Stage 194 (this PR): block2d memory forms.
