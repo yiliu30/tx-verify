@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 212: stored accumulator is the DPAS sum
+
+`Intel/TlaAccumulatorStore.lean` composes the window store bridge with
+`mainloopDpasRun_acc0_sum`: the value written by the `r21:4` and `r25:4`
+stores (PCs 1394 and 1395) to memory lane `row*8+col` is the initial C
+element plus the ordered sum of the 32 DPAS slabs, for all eight rows of the
+`r21..r28` block. The second accumulator block `r13..r20` is not stored in
+this dump.
+
 ## Stage 211: accumulator window bridge
 
 `Intel/TlaAccumulator.lean` connects the C-window loads and stores to the DPAS
@@ -3470,4 +3479,5 @@ lake build Intel
 208. Stage 208: mainloop iteration.
 209. Stage 209: loop structure and mainloop iteration.
 210. Stage 210: block2d register windows.
-211. Stage 211 (this PR): accumulator window bridge.
+211. Stage 211: accumulator window bridge.
+212. Stage 212 (this PR): stored accumulator is the DPAS sum.
