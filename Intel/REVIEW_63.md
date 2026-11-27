@@ -127,8 +127,11 @@ from `Classical.choose` in the racing-store model.
   addition, ties-to-even, signed zeros, subnormal crossings, the overflow
   threshold, NaN/Inf propagation, directed rounding, general per-binade RNE
   sticky exception flags, sticky per-lane flag accumulation and a fused
-  multiply-add and directed-rounding FMA; hardware traps, trap delivery,
-  FTZ/DAZ and tininess-before-rounding remain;
+  multiply-add and directed-rounding FMA; stage 229 adds explicit FTZ/DAZ
+  models, stage 230 exception masks and abstract trap delivery, and the
+  before-rounding tininess convention is modelled with a counterexample
+  against the after-rounding rule; hardware trap sequencing and timing
+  remain;
 - caches: stages 154, 157 and 162 model write-through caches with invalidate,
   broadcast traffic and a directory/ownership protocol; stage 167 models
   relaxed/release/acquire/seq_cst store buffers; stage 168 adds write-back

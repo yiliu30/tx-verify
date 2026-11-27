@@ -6,7 +6,7 @@ the SYCL-TLA BF16 GEMM (the kernel whose assembly is imported in
 
 ## Kernel
 
-The kernel is the unmodified SYCL-TLA example `00_bmg_gemm` built with oneAPI
+The kernel is the unmodified SYCL-TLA example `00_<platform>_gemm` built with oneAPI
 2026.1 (`icpx -fsycl`). Its assembly dump is the `RealTlaGemm` input; the
 sha256 provenance is recorded in `Intel/Examples/RealTlaGemm.lean`.
 
@@ -24,7 +24,7 @@ Run with oneAPI 2026.1.0:
 
 ```
 source /opt/intel/oneapi/setvars.sh
-./examples/00_bmg_gemm/00_bmg_gemm --m=256 --n=256 --k=32 --iterations=1 --verify=1
+./examples/00_<platform>_gemm/00_<platform>_gemm --m=256 --n=256 --k=32 --iterations=1 --verify=1
 ```
 
 Recorded run:

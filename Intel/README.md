@@ -2844,7 +2844,7 @@ with their PR numbers and one-line results, and the stack range is updated to
 ## Stage 231: SYCL-TLA GEMM hardware conformance
 
 `Tools/conformance/sycl_tla_gemm.md` records a hardware run of the unmodified
-SYCL-TLA `00_bmg_gemm` example whose assembly is the `RealTlaGemm` input. With
+SYCL-TLA `00_<platform>_gemm` example whose assembly is the `RealTlaGemm` input. With
 oneAPI 2026.1 on the lab GPU and `--verify=1`, the kernel's 256x256 output is
 bit-equal to the CUTLASS device reference GEMM (`Disposition: Passed`,
 0.042 TFlop/s). The slab model is algebraic, so this validates the hardware
