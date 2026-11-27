@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 213: mainloop load/store phase
+
+`Intel/TlaLoadPhase.lean` executes the block's 137 block2d instructions in
+program order over the window semantics (`blockLoadPhase`), with the six
+`null:0` operands as no-ops. The phase always succeeds, and it preserves every
+register element at index 8 or above -- in particular the loop counters
+`r1.11`, `r1.14` and the bound `r1.15` -- because a window spans only elements
+0..7. This is the frame needed to insert the load/store phase into the loop
+iteration.
+
 ## Stage 212: stored accumulator is the DPAS sum
 
 `Intel/TlaAccumulatorStore.lean` composes the window store bridge with
@@ -3480,4 +3490,5 @@ lake build Intel
 209. Stage 209: loop structure and mainloop iteration.
 210. Stage 210: block2d register windows.
 211. Stage 211: accumulator window bridge.
-212. Stage 212 (this PR): stored accumulator is the DPAS sum.
+212. Stage 212: stored accumulator is the DPAS sum.
+213. Stage 213 (this PR): mainloop load/store phase.
