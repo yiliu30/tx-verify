@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 242: remaining-work review pass
+
+`Intel/REVIEW_63.md` credits the SYCL-TLA stages in the remaining-work list:
+the flat-view A/B bridges and hardware validation for the FMHA bullet, the
+FP32 quantum and rounding accumulator for numerics, the TLA aliasing laws for
+caches, and a new SYCL-TLA status bullet (decoded and classified statements,
+both accumulator stores, hardware runs and the dump re-check). No Lean
+declarations change.
+
 ## Stage 241: the second accumulator block's output store
 
 The mainloop's four accumulator stores write only `r21..r28`; the second
@@ -3774,4 +3783,5 @@ lake build Intel
 238. Stage 238: DPAS accumulator with FP32-quantum rounding.
 239. Stage 239: refined instruction classification.
 240. Stage 240: jump predicate evaluation.
-241. Stage 241 (this PR): the second accumulator block's output store.
+241. Stage 241: the second accumulator block's output store.
+242. Stage 242 (this PR): remaining-work review pass.
