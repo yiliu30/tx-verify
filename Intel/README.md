@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 229: FTZ and DAZ
+
+`Intel/Fp16FtzDaz.lean` adds the two hardware flush modes: DAZ maps a
+subnormal input word to the signed zero before decoding, and FTZ flushes a
+finite value below the smallest normal (`1024` units of `2 ^ -24`) to the
+signed zero. Both are idempotent and are identities on zeros, normals and the
+non-finite words; `decodeFull_daz` relates the word and value views. All 20
+theorems are axiom-clean.
+
 ## Stage 228: barrier placement
 
 `Intel/TlaBarrier.lean` proves that no predicated block2d operation of the
@@ -3643,4 +3652,5 @@ lake build Intel
 225. Stage 225: trusted-base consolidation.
 226. Stage 226: mainloop loads feed the DPAS operands.
 227. Stage 227: aliasing laws.
-228. Stage 228 (this PR): barrier placement.
+228. Stage 228: barrier placement.
+229. Stage 229 (this PR): FTZ and DAZ.
