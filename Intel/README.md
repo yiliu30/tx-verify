@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 238: DPAS accumulator with FP32-quantum rounding
+
+`Intel/DpasF32Acc.lean` rounds every partial sum to the FP32 quantum of its
+own magnitude. When the initial accumulator plus the sum of the absolute
+products stays below `2 ^ 24`, every partial sum is on the unit grid and the
+accumulator equals the exact integer slab sum (`dpasAccF32_eq_slab`); above
+that bound rounding changes the result (`2 ^ 24 + 3` becomes `2 ^ 24 + 4`).
+All three theorems are axiom-clean.
+
 ## Stage 237: FP32 exponent-relative rounding
 
 `Intel/Fp32Rounding.lean` models the accumulator's FP32 rounding quantum
@@ -3734,4 +3743,5 @@ lake build Intel
 234. Stage 234: DPAS slab exact-integer meaning.
 235. Stage 235: SYCL-TLA conformance matrix.
 236. Stage 236: rounding-aware DPAS accumulation.
-237. Stage 237 (this PR): FP32 exponent-relative rounding.
+237. Stage 237: FP32 exponent-relative rounding.
+238. Stage 238 (this PR): DPAS accumulator with FP32-quantum rounding.
