@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 231: SYCL-TLA GEMM hardware conformance
+
+`Tools/conformance/sycl_tla_gemm.md` records a hardware run of the unmodified
+SYCL-TLA `00_bmg_gemm` example whose assembly is the `RealTlaGemm` input. With
+oneAPI 2026.1 on the lab GPU and `--verify=1`, the kernel's 256x256 output is
+bit-equal to the CUTLASS device reference GEMM (`Disposition: Passed`,
+0.042 TFlop/s). The slab model is algebraic, so this validates the hardware
+kernel against a same-device reference rather than comparing hardware numbers
+to Lean slab values. No Lean declarations change in this stage.
+
 ## Stage 230: trap delivery and exception masks
 
 `Intel/FpTrapDelivery.lean` adds exception masks and trap delivery: a trap is
@@ -3664,4 +3674,5 @@ lake build Intel
 227. Stage 227: aliasing laws.
 228. Stage 228: barrier placement.
 229. Stage 229: FTZ and DAZ.
-230. Stage 230 (this PR): trap delivery and exception masks.
+230. Stage 230: trap delivery and exception masks.
+231. Stage 231 (this PR): SYCL-TLA GEMM hardware conformance.
