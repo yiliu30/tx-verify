@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 237: FP32 exponent-relative rounding
+
+`Intel/Fp32Rounding.lean` models the accumulator's FP32 rounding quantum
+`f32Quantum x = 2 ^ (log2 x - 23)` (quantum one below `2 ^ 24`) and the
+induced `f32Round`. Below `2 ^ 24` rounding is exact for positive and
+negative values, while at `2 ^ 24` the quantum is two and `2 ^ 24 + 3`
+ties-to-even rounds to `2 ^ 24 + 4`. All six theorems are axiom-clean.
+
 ## Stage 236: rounding-aware DPAS accumulation
 
 `Intel/DpasRounding.lean` adds a rounding-aware accumulator: each step rounds
@@ -3725,4 +3733,5 @@ lake build Intel
 233. Stage 233: trap halting semantics.
 234. Stage 234: DPAS slab exact-integer meaning.
 235. Stage 235: SYCL-TLA conformance matrix.
-236. Stage 236 (this PR): rounding-aware DPAS accumulation.
+236. Stage 236: rounding-aware DPAS accumulation.
+237. Stage 237 (this PR): FP32 exponent-relative rounding.
