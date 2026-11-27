@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 234: the DPAS slab as an exact integer dot product
+
+`Intel/DpasNumeric.lean` proves that below `2 ^ 32` the Word-valued slab is
+exactly the natural-number dot product: `dpasSlab_toNat` and its BF16
+instantiation `tlaSlabBf16_toNat` (including the initial accumulator). The
+all-ones slab evaluates to `262144` on the `2 ^ -7` grid. This is the
+no-wraparound regime of the algebraic model; FP32 rounding of the products is
+not modelled. All three theorems are axiom-clean.
+
 ## Stage 233: trap halting semantics
 
 `Intel/FpTrapHalt.lean` gives trap delivery its architectural effect: a
@@ -3697,4 +3706,5 @@ lake build Intel
 230. Stage 230: trap delivery and exception masks.
 231. Stage 231: SYCL-TLA GEMM hardware conformance.
 232. Stage 232: assembly provenance re-check.
-233. Stage 233 (this PR): trap halting semantics.
+233. Stage 233: trap halting semantics.
+234. Stage 234 (this PR): DPAS slab exact-integer meaning.
