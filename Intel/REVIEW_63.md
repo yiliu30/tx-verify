@@ -261,6 +261,7 @@ from `Classical.choose` in the racing-store model.
 | 241 | #243 | second accumulator block output store |
 | 242 | #244 | remaining-work review pass |
 | 243 | #245 | one kernel entry for the whole conformance matrix |
+| 244 | #246 | verification visualization |
 
-The stack is intentionally one PR per stage (#64-#245), as requested. The
+The stack is intentionally one PR per stage (#64-#246), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.

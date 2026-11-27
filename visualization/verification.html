@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TxVerify — SYCL-TLA GEMM verification</title>
+<style>
+:root { color-scheme: dark; }
+body { margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+       background:#0b0e14; color:#d7dce5; }
+header { padding:28px 32px 12px; border-bottom:1px solid #1e2430; }
+h1 { margin:0 0 6px; font-size:22px; letter-spacing:.5px; }
+h1 span { color:#4aa3ff; }
+.sub { color:#8a94a6; font-size:13px; }
+.stats { display:flex; gap:14px; flex-wrap:wrap; padding:18px 32px; }
+.stat { background:#111621; border:1px solid #1e2430; border-radius:10px; padding:12px 16px; min-width:150px; }
+.stat b { display:block; font-size:20px; color:#fff; }
+.stat s { color:#8a94a6; text-decoration:none; font-size:12px; }
+section { padding:8px 32px 20px; }
+h2 { font-size:15px; color:#9fb0c7; margin:18px 0 12px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+.card { display:block; background:#111621; border:1px solid #1e2430; border-left:4px solid #444;
+         border-radius:8px; padding:10px 12px; color:inherit; text-decoration:none; }
+.card:hover { border-color:#3a4a63; transform:translateY(-1px); }
+.card .num { font-size:11px; color:#8a94a6; }
+.card .title { font-size:13px; color:#fff; margin:3px 0; }
+.card .desc { font-size:11.5px; color:#9aa6b8; line-height:1.35; }
+.card .pr { font-size:10.5px; color:#5f6b7f; margin-top:6px; }
+.card.memory { border-left-color:#4aa3ff; }
+.card.dpas { border-left-color:#b07cff; }
+.card.loop { border-left-color:#ffb547; }
+.card.coverage { border-left-color:#40d0a0; }
+.card.hardware { border-left-color:#ff6b81; }
+.card.numerics { border-left-color:#7fd1ff; }
+.card.docs { border-left-color:#8a94a6; }
+.chip { display:inline-block; font-size:11px; padding:2px 8px; border-radius:99px; margin-right:6px;
+         color:#0b0e14; font-weight:600; }
+.chip.memory { background:#4aa3ff; }
+.chip.dpas { background:#b07cff; }
+.chip.loop { background:#ffb547; }
+.chip.coverage { background:#40d0a0; }
+.chip.hardware { background:#ff6b81; }
+.chip.numerics { background:#7fd1ff; }
+.chip.docs { background:#8a94a6; }
+table { border-collapse:collapse; width:100%; font-size:12px; }
+th, td { text-align:left; padding:6px 10px; border-bottom:1px solid #1e2430; vertical-align:top; }
+th { color:#9fb0c7; font-weight:600; }
+code { color:#c8d3e6; }
+.pipe { background:#111621; border:1px solid #1e2430; border-radius:10px; padding:14px; overflow-x:auto; }
+.pipe svg { display:block; min-width:1060px; }
+.note { color:#8a94a6; font-size:12px; line-height:1.5; }
+</style>
+</head>
+<body>
+<header>
+  <h1>TxVerify <span>·</span> SYCL-TLA GEMM verification</h1>
+  <div class="sub">From a real IGC assembly dump to a bit-exact hardware run — every stage is a stacked PR with a machine-checked proof.</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><b>2252</b><s>statements decoded</s></div>
+  <div class="stat"><b>32</b><s>DPAS instructions (slab sum)</s></div>
+  <div class="stat"><b>2219</b><s>Lean theorems</s></div>
+  <div class="stat"><b>197</b><s>build jobs</s></div>
+  <div class="stat"><b>666</b><s>documented <code>Classical.choice</code> exceptions</s></div>
+  <div class="stat"><b>4</b><s>bit-exact hardware sizes</s></div>
+  <div class="stat"><b>sha256 ✓</b><s>re-dump matches the import</s></div>
+</div>
+
+<section>
+  <h2>Pipeline</h2>
+  <div class="pipe">
+  <svg viewBox="0 0 1060 240" xmlns="http://www.w3.org/2000/svg">
+    <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#3a4a63"/></marker></defs>
+    <g font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#d7dce5">
+      <rect x="10" y="70" width="190" height="100" rx="8" fill="#111621" stroke="#4aa3ff"/>
+      <text x="20" y="92" fill="#4aa3ff">assembled input</text>
+      <text x="20" y="112">RealTlaGemm.lean</text>
+      <text x="20" y="130" fill="#8a94a6">2252 statements</text>
+      <text x="20" y="148" fill="#8a94a6">sha256 698d4a30…</text>
+
+      <rect x="235" y="70" width="190" height="100" rx="8" fill="#111621" stroke="#40d0a0"/>
+      <text x="245" y="92" fill="#40d0a0">decode + classify</text>
+      <text x="245" y="112">TlaDecode / TlaPlain</text>
+      <text x="245" y="130">TlaCmp / TlaBfnSend</text>
+      <text x="245" y="148" fill="#8a94a6">no unclassified statement</text>
+
+      <rect x="460" y="70" width="190" height="100" rx="8" fill="#111621" stroke="#b07cff"/>
+      <text x="470" y="92" fill="#b07cff">semantics</text>
+      <text x="470" y="112">TlaWindow / TlaAccumulator</text>
+      <text x="470" y="130">TlaDpasSum / TlaSchedule</text>
+      <text x="470" y="148" fill="#8a94a6">slab sums + stores</text>
+
+      <rect x="685" y="70" width="190" height="100" rx="8" fill="#111621" stroke="#ffb547"/>
+      <text x="695" y="92" fill="#ffb547">mainloop</text>
+      <text x="695" y="112">TlaMainloopFull</text>
+      <text x="695" y="130">TlaMainloopLoopFull</text>
+      <text x="695" y="148" fill="#8a94a6">loads → DPAS → tail</text>
+
+      <rect x="910" y="70" width="140" height="100" rx="8" fill="#111621" stroke="#ff6b81"/>
+      <text x="920" y="92" fill="#ff6b81">hardware</text>
+      <text x="920" y="112">4 sizes</text>
+      <text x="920" y="130">bit-exact ✓</text>
+      <text x="920" y="148" fill="#8a94a6">same kernel entry</text>
+
+      <line x1="200" y1="120" x2="233" y2="120" stroke="#3a4a63" stroke-width="1.5" marker-end="url(#a)"/>
+      <line x1="425" y1="120" x2="458" y2="120" stroke="#3a4a63" stroke-width="1.5" marker-end="url(#a)"/>
+      <line x1="650" y1="120" x2="683" y2="120" stroke="#3a4a63" stroke-width="1.5" marker-end="url(#a)"/>
+      <line x1="875" y1="120" x2="908" y2="120" stroke="#3a4a63" stroke-width="1.5" marker-end="url(#a)"/>
+      <text x="235" y="200" fill="#8a94a6">every arrow is a chain of Lean theorems; the hardware box is a CUTLASS reference comparison plus a dump hash check</text>
+    </g>
+  </svg>
+  </div>
+</section>
+
+<section>
+  <h2>Stages 199–243</h2>
+  <div style="margin-bottom:12px"><span class="chip memory">memory</span><span class="chip dpas">dpas</span><span class="chip loop">loop</span><span class="chip coverage">coverage</span><span class="chip hardware">hardware</span><span class="chip numerics">numerics</span><span class="chip docs">docs</span></div>
+  <div class="grid">
+<a class="card memory" href="https://github.com/yiliu30/tx-verify/pull/201">
+  <div class="num">Stage 199</div>
+  <div class="title">block2d address operands</div>
+  <div class="desc">ss/bti/flat address parsing; all 393 operands parse</div>
+  <div class="pr">PR #201</div>
+</a>
+<a class="card memory" href="https://github.com/yiliu30/tx-verify/pull/202">
+  <div class="num">Stage 200</div>
+  <div class="title">block2d address semantics</div>
+  <div class="desc">effective addresses + tile-memory load/store; signed +/-- offsets</div>
+  <div class="pr">PR #202</div>
+</a>
+<a class="card memory" href="https://github.com/yiliu30/tx-verify/pull/203">
+  <div class="num">Stage 201</div>
+  <div class="title">mainloop operand-window loads</div>
+  <div class="desc">27 plain loads; r64/r80/r96/r112/r30 windows cover every DPAS base</div>
+  <div class="pr">PR #203</div>
+</a>
+<a class="card dpas" href="https://github.com/yiliu30/tx-verify/pull/204">
+  <div class="num">Stage 202</div>
+  <div class="title">mainloop DPAS phase</div>
+  <div class="desc">block DPAS sequence = realTlaGemmDpas; 32-step slab sum on both accumulators</div>
+  <div class="pr">PR #204</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/205">
+  <div class="num">Stage 203</div>
+  <div class="title">mainloop schedule</div>
+  <div class="desc">445-instruction classification; barrier at 1396; back-edge at 1404</div>
+  <div class="pr">PR #205</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/206">
+  <div class="num">Stage 204</div>
+  <div class="title">loop-tail counters</div>
+  <div class="desc">r1.11 / r1.14 increments with value and frame laws</div>
+  <div class="pr">PR #206</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/207">
+  <div class="num">Stage 205</div>
+  <div class="title">loop-exit comparison</div>
+  <div class="desc">28 cmp forms; f3.1 = r1.11 &lt; r1.15</div>
+  <div class="pr">PR #207</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/208">
+  <div class="num">Stage 206</div>
+  <div class="title">loop tail</div>
+  <div class="desc">continue/exit transition with bank preservation</div>
+  <div class="pr">PR #208</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/209">
+  <div class="num">Stage 207</div>
+  <div class="title">loop iteration</div>
+  <div class="desc">wordAddN; n continues advance both counters by n</div>
+  <div class="pr">PR #209</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/210">
+  <div class="num">Stage 208</div>
+  <div class="title">mainloop iteration</div>
+  <div class="desc">DPAS frame r13..r28; DPAS + tail iteration</div>
+  <div class="pr">PR #210</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/211">
+  <div class="num">Stage 209</div>
+  <div class="title">loop structure and mainloop iteration</div>
+  <div class="desc">exit target 1405, block head 959, back-edge 959+445=1404; loop lift</div>
+  <div class="pr">PR #211</div>
+</a>
+<a class="card memory" href="https://github.com/yiliu30/tx-verify/pull/212">
+  <div class="num">Stage 210</div>
+  <div class="title">block2d register windows</div>
+  <div class="desc">rN:M lane map i -&gt; (N+i/8, i%8); window load/store laws</div>
+  <div class="pr">PR #212</div>
+</a>
+<a class="card dpas" href="https://github.com/yiliu30/tx-verify/pull/213">
+  <div class="num">Stage 211</div>
+  <div class="title">accumulator window bridge</div>
+  <div class="desc">r21:4 / r25:4 read and write readTileC rows 0-3 and 4-7</div>
+  <div class="pr">PR #213</div>
+</a>
+<a class="card dpas" href="https://github.com/yiliu30/tx-verify/pull/214">
+  <div class="num">Stage 212</div>
+  <div class="title">stored accumulator is the DPAS sum</div>
+  <div class="desc">the four mainloop stores write the ordered slab sum</div>
+  <div class="pr">PR #214</div>
+</a>
+<a class="card memory" href="https://github.com/yiliu30/tx-verify/pull/215">
+  <div class="num">Stage 213</div>
+  <div class="title">mainloop load/store phase</div>
+  <div class="desc">137 block2d ops in program order; counter frame</div>
+  <div class="pr">PR #215</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/216">
+  <div class="num">Stage 214</div>
+  <div class="title">full mainloop iteration</div>
+  <div class="desc">loads -&gt; DPAS -&gt; tail composed</div>
+  <div class="pr">PR #216</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/217">
+  <div class="num">Stage 215</div>
+  <div class="title">full mainloop loop</div>
+  <div class="desc">full iteration loop; counter trajectory</div>
+  <div class="pr">PR #217</div>
+</a>
+<a class="card memory" href="https://github.com/yiliu30/tx-verify/pull/218">
+  <div class="num">Stage 216</div>
+  <div class="title">A/B operand windows</div>
+  <div class="desc">flat view: loads fill readTileA/readTileB exactly</div>
+  <div class="pr">PR #218</div>
+</a>
+<a class="card coverage" href="https://github.com/yiliu30/tx-verify/pull/219">
+  <div class="num">Stage 217</div>
+  <div class="title">prologue and epilogue census</div>
+  <div class="desc">959 + 445 + 848 = 2252 statements; no DPAS outside the block</div>
+  <div class="pr">PR #219</div>
+</a>
+<a class="card coverage" href="https://github.com/yiliu30/tx-verify/pull/220">
+  <div class="num">Stage 218</div>
+  <div class="title">plain instruction forms</div>
+  <div class="desc">531 plain mov, 288 plain ALU, 32 plain block2d stores</div>
+  <div class="pr">PR #220</div>
+</a>
+<a class="card coverage" href="https://github.com/yiliu30/tx-verify/pull/221">
+  <div class="num">Stage 219</div>
+  <div class="title">conditional comparisons</div>
+  <div class="desc">28 cmp forms; 8 conditional predicates recorded</div>
+  <div class="pr">PR #221</div>
+</a>
+<a class="card coverage" href="https://github.com/yiliu30/tx-verify/pull/222">
+  <div class="num">Stage 220</div>
+  <div class="title">bit-field/message forms; full coverage</div>
+  <div class="desc">4 bfn + 2 send decoded; all 2252 statements decoded</div>
+  <div class="pr">PR #222</div>
+</a>
+<a class="card coverage" href="https://github.com/yiliu30/tx-verify/pull/223">
+  <div class="num">Stage 221</div>
+  <div class="title">bit-field and message execution</div>
+  <div class="desc">bfn value/frame laws; send log with EOT</div>
+  <div class="pr">PR #223</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/224">
+  <div class="num">Stage 222</div>
+  <div class="title">gated conditional comparisons</div>
+  <div class="desc">conditional cmp gated on its guard flag</div>
+  <div class="pr">PR #224</div>
+</a>
+<a class="card coverage" href="https://github.com/yiliu30/tx-verify/pull/225">
+  <div class="num">Stage 223</div>
+  <div class="title">unified instruction dispatcher</div>
+  <div class="desc">classify + step over TlaFullMachine; per-class projections</div>
+  <div class="pr">PR #225</div>
+</a>
+<a class="card dpas" href="https://github.com/yiliu30/tx-verify/pull/226">
+  <div class="num">Stage 224</div>
+  <div class="title">64-bit multiply high/low</div>
+  <div class="desc">mach/macl as unsigned high/low 32; ALU subset 54 -&gt; 68</div>
+  <div class="pr">PR #226</div>
+</a>
+<a class="card docs" href="https://github.com/yiliu30/tx-verify/pull/227">
+  <div class="num">Stage 225</div>
+  <div class="title">trusted-base consolidation</div>
+  <div class="desc">every SYCL-TLA modelling assumption and claim mapped</div>
+  <div class="pr">PR #227</div>
+</a>
+<a class="card memory" href="https://github.com/yiliu30/tx-verify/pull/228">
+  <div class="num">Stage 226</div>
+  <div class="title">mainloop loads feed the DPAS operands</div>
+  <div class="desc">PCs 979/983/986/987/990 fill the A/B tiles under the flat view</div>
+  <div class="pr">PR #228</div>
+</a>
+<a class="card memory" href="https://github.com/yiliu30/tx-verify/pull/229">
+  <div class="num">Stage 227</div>
+  <div class="title">aliasing laws</div>
+  <div class="desc">tile alias = word equality; store/store and window overlap laws</div>
+  <div class="pr">PR #229</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/230">
+  <div class="num">Stage 228</div>
+  <div class="title">barrier placement</div>
+  <div class="desc">no block memory op after the barrier; SLM barrier pattern at 0xF900</div>
+  <div class="pr">PR #230</div>
+</a>
+<a class="card numerics" href="https://github.com/yiliu30/tx-verify/pull/231">
+  <div class="num">Stage 229</div>
+  <div class="title">FTZ and DAZ</div>
+  <div class="desc">flush modes for the fp16 value path; 20 axiom-clean theorems</div>
+  <div class="pr">PR #231</div>
+</a>
+<a class="card numerics" href="https://github.com/yiliu30/tx-verify/pull/232">
+  <div class="num">Stage 230</div>
+  <div class="title">trap delivery and exception masks</div>
+  <div class="desc">masked trap delivery; overflow case worked</div>
+  <div class="pr">PR #232</div>
+</a>
+<a class="card hardware" href="https://github.com/yiliu30/tx-verify/pull/233">
+  <div class="num">Stage 231</div>
+  <div class="title">SYCL-TLA GEMM hardware conformance</div>
+  <div class="desc">256x256x32 bit-equal to CUTLASS reference (Passed)</div>
+  <div class="pr">PR #233</div>
+</a>
+<a class="card hardware" href="https://github.com/yiliu30/tx-verify/pull/234">
+  <div class="num">Stage 232</div>
+  <div class="title">assembly provenance re-check</div>
+  <div class="desc">re-dump reproduces the imported sha256 exactly</div>
+  <div class="pr">PR #234</div>
+</a>
+<a class="card numerics" href="https://github.com/yiliu30/tx-verify/pull/235">
+  <div class="num">Stage 233</div>
+  <div class="title">trap halting semantics</div>
+  <div class="desc">trap halts and leaves the destination unwritten</div>
+  <div class="pr">PR #235</div>
+</a>
+<a class="card dpas" href="https://github.com/yiliu30/tx-verify/pull/236">
+  <div class="num">Stage 234</div>
+  <div class="title">DPAS slab exact-integer meaning</div>
+  <div class="desc">below 2^32 the slab is the exact integer dot product</div>
+  <div class="pr">PR #236</div>
+</a>
+<a class="card hardware" href="https://github.com/yiliu30/tx-verify/pull/237">
+  <div class="num">Stage 235</div>
+  <div class="title">SYCL-TLA conformance matrix</div>
+  <div class="desc">four problem sizes bit-equal (Passed)</div>
+  <div class="pr">PR #237</div>
+</a>
+<a class="card dpas" href="https://github.com/yiliu30/tx-verify/pull/238">
+  <div class="num">Stage 236</div>
+  <div class="title">rounding-aware DPAS accumulation</div>
+  <div class="desc">ties-to-even per step; exact on the unit grid</div>
+  <div class="pr">PR #238</div>
+</a>
+<a class="card dpas" href="https://github.com/yiliu30/tx-verify/pull/239">
+  <div class="num">Stage 237</div>
+  <div class="title">FP32 exponent-relative rounding</div>
+  <div class="desc">f32Quantum = 2^(log2 x - 23); exact below 2^24</div>
+  <div class="pr">PR #239</div>
+</a>
+<a class="card dpas" href="https://github.com/yiliu30/tx-verify/pull/240">
+  <div class="num">Stage 238</div>
+  <div class="title">DPAS accumulator with FP32-quantum rounding</div>
+  <div class="desc">rounding accumulator = exact slab under the 2^24 bound</div>
+  <div class="pr">PR #240</div>
+</a>
+<a class="card coverage" href="https://github.com/yiliu30/tx-verify/pull/241">
+  <div class="num">Stage 239</div>
+  <div class="title">refined instruction classification</div>
+  <div class="desc">dispatcher-class census with no unclassified statement</div>
+  <div class="pr">PR #241</div>
+</a>
+<a class="card loop" href="https://github.com/yiliu30/tx-verify/pull/242">
+  <div class="num">Stage 240</div>
+  <div class="title">jump predicate evaluation</div>
+  <div class="desc">(W&amp;~f3.1) exit taken exactly when the bound is reached</div>
+  <div class="pr">PR #242</div>
+</a>
+<a class="card dpas" href="https://github.com/yiliu30/tx-verify/pull/243">
+  <div class="num">Stage 241</div>
+  <div class="title">second accumulator block output store</div>
+  <div class="desc">r13:8 epilogue store writes the acc1 slab sum</div>
+  <div class="pr">PR #243</div>
+</a>
+<a class="card docs" href="https://github.com/yiliu30/tx-verify/pull/244">
+  <div class="num">Stage 242</div>
+  <div class="title">remaining-work review pass</div>
+  <div class="desc">review credits every SYCL-TLA stage</div>
+  <div class="pr">PR #244</div>
+</a>
+<a class="card hardware" href="https://github.com/yiliu30/tx-verify/pull/245">
+  <div class="num">Stage 243</div>
+  <div class="title">one kernel entry for the whole conformance matrix</div>
+  <div class="desc">all four sizes dispatch to the imported sha256</div>
+  <div class="pr">PR #245</div>
+</a>
+  </div>
+</section>
+
+<section>
+  <h2>Verified claims</h2>
+  <table>
+    <tr><th>Claim</th><th>Theorem</th></tr>
+    <tr><td>All 2252 statements are decoded</td><td><code>realTlaGemm_decoded_all</code></td></tr>
+    <tr><td>All 2252 statements are classified into dispatcher classes</td><td><code>kindR_no_other</code></td></tr>
+    <tr><td>Every statement has a dispatcher step</td><td><code>realTlaGemm_step_total</code></td></tr>
+    <tr><td>The 32 DPAS steps accumulate the ordered slab sum (both blocks)</td><td><code>mainloopDpasRun_acc0_sum</code> / <code>_acc1_sum</code></td></tr>
+    <tr><td>The mainloop stores write the slab sum</td><td><code>store21_dpas_sum</code> / <code>store25_dpas_sum</code></td></tr>
+    <tr><td>The `r13:8` epilogue store writes the second block's slab sum</td><td><code>store2116_dpas_sum</code></td></tr>
+    <tr><td>n continuing iterations advance both counters by n</td><td><code>mainloopLoopFull_continue</code></td></tr>
+    <tr><td>The exit jump is taken exactly when the bound is reached</td><td><code>exitJmp_taken_iff</code></td></tr>
+    <tr><td>Below 2^24 the FP32-quantum accumulator equals the exact slab</td><td><code>dpasAccF32_eq_slab</code></td></tr>
+    <tr><td>Hardware output is bit-equal to the reference (4 sizes)</td><td><code>Tools/conformance/sycl_tla_gemm.md</code></td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Trusted base</h2>
+  <div class="note">
+    Decoded assembly with recorded sha256; structural operand parsers; M1–M8 masks;
+    tile memory keyed by effective base address; register windows with 8 dwords per register;
+    the flat register view for the DPAS B layout; the algebraic slab (Word) with an
+    exact-integer and an FP32-quantum rounding model; `mach`/`macl` as unsigned high/low;
+    `sync` as a no-op against the separate SLM barrier model; an append-only send log.
+    Axioms: <code>propext</code>, <code>Quot.sound</code>; the documented
+    <code>Classical.choice</code> exceptions come from string decoding.
+  </div>
+</section>
+
+<footer style="padding:8px 32px 28px" class="note">
+  Generated from <code>Intel/README.md</code> and <code>Intel/REVIEW_63.md</code> · stack: PRs #201–#245
+</footer>
+</body>
+</html>

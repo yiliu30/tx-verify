@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 244: verification visualization
+
+`visualization/verification.html` is a self-contained page that renders the
+SYCL-TLA verification stack: the pipeline from the imported assembly to the
+bit-exact hardware runs, the stage timeline 199-243 with PR links, the
+headline verified claims and the trusted base. It has no external resources.
+No Lean declarations change.
+
 ## Stage 243: one kernel entry for the whole conformance matrix
 
 Re-dumping each problem size in the conformance matrix produces the same
@@ -3793,4 +3801,5 @@ lake build Intel
 240. Stage 240: jump predicate evaluation.
 241. Stage 241: the second accumulator block's output store.
 242. Stage 242: remaining-work review pass.
-243. Stage 243 (this PR): one kernel entry for the whole conformance matrix.
+243. Stage 243: one kernel entry for the whole conformance matrix.
+244. Stage 244 (this PR): verification visualization.
