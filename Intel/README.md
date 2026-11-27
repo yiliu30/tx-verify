@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 193: multi-bank ALU state
+
+`Intel/TlaAluState.lean` adds a `TlaState` with the `regs`, `acc`, `addr`,
+`cr` and `flags` banks and executes the modelled ALU operations on all of
+them. `writeBank_same`/`writeBank_other` are the bank-write laws, and the
+worked examples are `mul acc0, r1.13, r1.20`,
+`shr a0.2, r1.9, 4` and `or cr0, cr0, 0x400004C0`. This covers the decoded
+`acc`/`a`/`cr` destination classes; `mach`/`macl` remain unmodelled.
+
 ## Stage 192: more register-destination ALU ops
 
 `Intel/TlaAluExec.lean` now also executes the register-destination `mul`, `or`,
@@ -3286,4 +3295,5 @@ lake build Intel
 189. Stage 189: executing the prologue ALU.
 190. Stage 190: ALU parsed/rejected census.
 191. Stage 191: all ALU destinations.
-192. Stage 192 (this PR): more register-destination ALU ops.
+192. Stage 192: more register-destination ALU ops.
+193. Stage 193 (this PR): multi-bank ALU state.
