@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 178: BF16 source decode
+
+`Intel/Bf16Decode.lean` grounds the SYCL-TLA DPAS `:bf` sources in the same
+`Fixed` value model as FP16. `decodeBf16` accepts finite normalized values
+(exponent at least the bias) and rejects NaN, infinity, subnormals and
+fractional values; `decodeBf16_some` pins the fields. Exact examples include
+`1.0`, `-1.0`, `2.0` and `4.0`. `bf16ToWord` embeds the 16-bit pattern in the
+high half of a 32-bit word, and `bf16Pair_low`/`_high` split a packed register
+into its two BF16 halves. This is the numeric source interpretation the DPAS
+chain still needs to be connected to.
+
 ## Stage 177: composing two SYCL-TLA DPAS steps
 
 `Intel/TlaDpasFold.lean` composes the first two real DPAS instructions of the
@@ -3132,4 +3143,5 @@ lake build Intel
 174. Stage 174: real SYCL-TLA GEMM import.
 175. Stage 175: total decoder for the SYCL-TLA dump.
 176. Stage 176: register-level execution of the SYCL-TLA DPAS chain.
-177. Stage 177 (this PR): composing two SYCL-TLA DPAS steps.
+177. Stage 177: composing two SYCL-TLA DPAS steps.
+178. Stage 178 (this PR): BF16 source decode.
