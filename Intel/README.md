@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 211: accumulator window bridge
+
+`Intel/TlaAccumulator.lean` connects the C-window loads and stores to the DPAS
+tile model. Loading `r21:4` and `r25:4` writes `readTileC` rows 0--3 and 4--7
+of the `r21..r28` block, and storing them writes the same elements back
+(`load21_readTileC`, `store21_readTileC`, `load25_readTileC`,
+`store25_readTileC`); `readTileC_25_eq_21` shows both windows read the same C
+block. This connects the accumulator loads at PCs 1385/1387 and the stores at
+PCs 1394/1395 to the tile semantics.
+
 ## Stage 210: block2d register windows
 
 `Intel/TlaWindow.lean` parses the `rN:M` data regions and defines the lane
@@ -3459,4 +3469,5 @@ lake build Intel
 207. Stage 207: loop iteration.
 208. Stage 208: mainloop iteration.
 209. Stage 209: loop structure and mainloop iteration.
-210. Stage 210 (this PR): block2d register windows.
+210. Stage 210: block2d register windows.
+211. Stage 211 (this PR): accumulator window bridge.
