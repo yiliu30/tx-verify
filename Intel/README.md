@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 210: block2d register windows
+
+`Intel/TlaWindow.lean` parses the `rN:M` data regions and defines the lane
+mapping `i ↦ (N + i/8, i%8)` over `M` consecutive eight-dword registers. The
+block2d load/store steps are restated over windows (`tlaBlock2dLoadW?`,
+`tlaBlock2dStoreW?`) with the same memory/register frame and round-trip laws.
+The accumulator stores at PCs 1394 and 1395 use `r21:4` and `r25:4`, and
+`window21_covers` / `window25_covers` show that the two windows cover all 64
+elements of the `r21..r28` C block.
+
 ## Stage 209: loop structure and mainloop iteration
 
 `Intel/TlaLoopStructure.lean` records the loop skeleton: the exit jump at
@@ -3448,4 +3458,5 @@ lake build Intel
 206. Stage 206: loop tail.
 207. Stage 207: loop iteration.
 208. Stage 208: mainloop iteration.
-209. Stage 209 (this PR): loop structure and mainloop iteration.
+209. Stage 209: loop structure and mainloop iteration.
+210. Stage 210 (this PR): block2d register windows.
