@@ -51,3 +51,27 @@ sum (`store21_dpas_sum`, `store25_dpas_sum`). The slab is an algebraic `Word`
 model rather than a BF16 numeric model, so this run validates the hardware
 kernel bit-exactly against a same-device reference; it does not compare
 hardware numbers to the Lean slab values.
+
+## Assembly provenance re-check
+
+The same binary was re-dumped after the verification run, with the same
+command that produced the imported assembly:
+
+```
+IGC_ShaderDumpEnable=1 IGC_DumpToCustomDir=<dump_dir> NEO_CACHE_PERSISTENT=0 \
+  NEOReadDebugKeys=1 RebuildPrecompiledKernels=1 \
+  ./examples/00_<platform>_gemm/00_<platform>_gemm --m=256 --n=256 --k=32 \
+  --iterations=1 --verify=0
+```
+
+The main kernel file `OCL_asm3007175a26f3a66d_1_simd16_entry_0001.asm` hashes
+to
+
+```
+698d4a3001744180b3f687f4efdf43dc54aa3e0fcdc4b2b60a9c47557e373c12
+```
+
+which is exactly the sha256 recorded in `Intel/Examples/RealTlaGemm.lean`.
+The imported 2252-statement program is therefore byte-identical to a fresh
+dump of the binary whose 256x256 output passed the bit-exact reference
+comparison above.

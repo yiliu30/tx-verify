@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 232: assembly provenance re-check
+
+Re-dumping the assembly of the binary that passed the hardware verification
+reproduces the imported sha256 exactly:
+`OCL_asm3007175a26f3a66d_1_simd16_entry_0001.asm` hashes to
+`698d4a3001744180b3f687f4efdf43dc54aa3e0fcdc4b2b60a9c47557e373c12`, the value
+recorded in `Intel/Examples/RealTlaGemm.lean`. The formalized 2252-statement
+program is therefore byte-identical to a fresh dump of the binary whose
+256x256 output passed the bit-exact reference comparison. Recorded in
+`Tools/conformance/sycl_tla_gemm.md`; no Lean declarations change.
+
 ## Stage 231: SYCL-TLA GEMM hardware conformance
 
 `Tools/conformance/sycl_tla_gemm.md` records a hardware run of the unmodified
@@ -3675,4 +3686,5 @@ lake build Intel
 228. Stage 228: barrier placement.
 229. Stage 229: FTZ and DAZ.
 230. Stage 230: trap delivery and exception masks.
-231. Stage 231 (this PR): SYCL-TLA GEMM hardware conformance.
+231. Stage 231: SYCL-TLA GEMM hardware conformance.
+232. Stage 232 (this PR): assembly provenance re-check.
