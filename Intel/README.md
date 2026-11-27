@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 214: full mainloop iteration
+
+`Intel/TlaMainloopFull.lean` composes the load/store phase, the DPAS phase and
+the loop tail into `mainloopIterationFull`. `mainloopIterationFull_continue`
+and `mainloopIterationFull_exit` give the two outcomes with the counters
+advanced, and the `_initial` variants state the exit test on the pre-load
+counters using the load-phase frame.
+
 ## Stage 213: mainloop load/store phase
 
 `Intel/TlaLoadPhase.lean` executes the block's 137 block2d instructions in
@@ -3491,4 +3499,5 @@ lake build Intel
 210. Stage 210: block2d register windows.
 211. Stage 211: accumulator window bridge.
 212. Stage 212: stored accumulator is the DPAS sum.
-213. Stage 213 (this PR): mainloop load/store phase.
+213. Stage 213: mainloop load/store phase.
+214. Stage 214 (this PR): full mainloop iteration.
