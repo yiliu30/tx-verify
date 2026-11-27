@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 185: decoding the predicated moves
+
+`Intel/TlaMovDecode.lean` gives the 377 `(W) mov` statements a structured
+form: `(N|M0)` execution control, `rN.M<...>` destination, and a GRF or signed
+immediate source. `parseTlaExec`, `parseTlaDst`, `parseTlaSrc` handle the
+`r`-syntax, `null`, positive/negative immediates and the `ud`/`uw`/`f`/`hf`
+width suffixes. `realTlaGemmMovs_length` proves all 377 moves parse, and the
+prologue and id-move examples are worked out.
+
 ## Stage 184: the DPAS chain over BF16 values
 
 `Intel/TlaDpasBf16.lean` gives the BF16 numeric instantiation of the DPAS
@@ -3206,4 +3215,5 @@ lake build Intel
 181. Stage 181: the full 32-step DPAS sum.
 182. Stage 182: the second accumulator.
 183. Stage 183: census of the predicated forms.
-184. Stage 184 (this PR): the DPAS chain over BF16 values.
+184. Stage 184: the DPAS chain over BF16 values.
+185. Stage 185 (this PR): decoding the predicated moves.
