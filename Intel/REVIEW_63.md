@@ -9,7 +9,7 @@ fork.
 
 | Review item | Stages (PRs) | Evidence | Status |
 | --- | --- | --- | --- |
-| P0 real assembly import | 62 (#64), 65 (#67), 82 (#84), 83 (#85), 174, 183, 185 | four real dumps (add-one, integer GEMM, loop vector add, straight-line vector add) with sha256 provenance and generated statement lists; the FMHA DPAS line in 79 (#81); the raw SYCL-TLA 256x256x32 BF16 GEMM dump with 2252 statements and 32 DPAS, with the prologue/epilogue census of the non-mainloop regions; a total decoder for that dump (stage 175) a census of its 968 predicated forms (stage 183) and structured decoding of all 377 predicated moves (stage 185) | addressed for these kernels; the SYCL-TLA dump is imported and total-decoded, but not yet connected to execution semantics |
+| P0 real assembly import | 62 (#64), 65 (#67), 82 (#84), 83 (#85), 174, 183, 185 | four real dumps (add-one, integer GEMM, loop vector add, straight-line vector add) with sha256 provenance and generated statement lists; the FMHA DPAS line in 79 (#81); the raw SYCL-TLA 256x256x32 BF16 GEMM dump with 2252 statements and 32 DPAS, all 2252 statements decoded by a formal parser, with the prologue/epilogue census of the non-mainloop regions; a total decoder for that dump (stage 175) a census of its 968 predicated forms (stage 183) and structured decoding of all 377 predicated moves (stage 185) | addressed for these kernels; the SYCL-TLA dump is imported and total-decoded, but not yet connected to execution semantics |
 | P0 reject unsupported explicitly | 62b (#64), 63 (#65), 82 (#84), 92 | `rejected`, `realGemm_rejectedOps`, `realVectorAdd_rejectedOps`, the fail-closed `parseExec` mask check, `masked_mov_decodes` and `parseExec_rejects_M9` | addressed; all dumps are all-or-nothing |
 | P0 unified semantics | 63-67 (#65-#69), 68-77 (#70-#79), 83-85 (#85-#87), 104-113, 204-215 | one `RInstr`/`stepWith` model; `realAddOne_effect`, `realGemm_output`, `realVectorAdd_effect`; loop vector-add tables, index, body effect, per-lane CF and decoded branch sites; the SYCL-TLA loop-tail counter increments with their value and frame laws the loop-exit comparison with its flag semantics the composed loop-tail transition with both outcomes the iteration theorems for continuing and exiting runs the mainloop iteration composing the DPAS phase with the loop tail under the DPAS register frame, the back-edge/exit targets and the lifted iteration theorems | addressed for the modeled slots; predicate-value composition remains |
 | P0 GRF and SIMD | 64 (#66), 66 (#68), 68 (#70), 83 (#85), 90-98, 103, 105, 107, 112, 141, 151, 186, 187, 188, 189, 190, 191, 192, 193 | regions, aliases, execution sizes in `Grf`/`gemmAlias`; per-lane predicates, predicated `sel`, predicate `and`/`or`, register comparisons, both predicated gotos; M1-M8 masks, all six masked moves, frame laws, a wrong-mask negative test, correct destination `<hstride>` parsing, dword/qword view laws, the 24-lane pack layout and a per-lane CF interpreter; generic active-window, operand-index, write-coverage and commutation laws; mask-aware add/load/store execution for the loop body with full-mask agreement and frame laws; execution of the SYCL-TLA predicated moves with destination frames and a proved entry block; a structured decoder and execution for the prologue `and`/`add`/`mad` forms, with a total parser for all 109 ALU forms, a destination-class census, 54 executed ALU forms and a multi-bank `acc`/`a`/`cr` state | addressed for the modeled loop body and the TLA moves; general instruction-level mask dispatch outside these classes remains |
@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (179 jobs) and `Tools/check_axioms.py --all`
-  (2086 theorems, 598 documented exceptions at stage 219).
+  `lake build Intel` (180 jobs) and `Tools/check_axioms.py --all`
+  (2094 theorems, 606 documented exceptions at stage 220).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -190,6 +190,7 @@ from `Classical.choose` in the racing-store model.
 | 217 | #219 | prologue and epilogue census |
 | 218 | #220 | plain instruction forms |
 | 219 | #221 | conditional comparisons |
+| 220 | #222 | bit-field/message forms; full coverage |
 
-The stack is intentionally one PR per stage (#64-#221), as requested. The
+The stack is intentionally one PR per stage (#64-#222), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.

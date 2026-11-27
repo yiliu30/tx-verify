@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 220: bit-field and message forms; full coverage
+
+`Intel/TlaBfnSend.lean` decodes the last six unmodeled statements: four `bfn`
+bit-field forms (`(s0 &&& s1) ||| s2` and `s0 ||| s1 ||| s2`) and two
+`send.gtwy` messages, the last carrying `EOT`. `realTlaGemm_decoded_all`
+proves that every one of the 2252 statements in the dump is decoded by at
+least one of the formal parsers.
+
 ## Stage 219: conditional comparisons
 
 `Intel/TlaCmpCond.lean` records the predicate text of every comparison in the
@@ -3553,4 +3561,5 @@ lake build Intel
 216. Stage 216: A/B operand windows.
 217. Stage 217: prologue and epilogue census.
 218. Stage 218: plain instruction forms.
-219. Stage 219 (this PR): conditional comparisons.
+219. Stage 219: conditional comparisons.
+220. Stage 220 (this PR): bit-field/message forms; full coverage.
