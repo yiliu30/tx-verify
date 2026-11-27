@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 184: the DPAS chain over BF16 values
+
+`Intel/TlaDpasBf16.lean` gives the BF16 numeric instantiation of the DPAS
+chain. `tlaBf16Step` writes both accumulator blocks with
+`tlaBf16Slab`, which reads the packed source halves through `bf16Word`.
+`tlaBf16Run_acc0_sum` and `_acc1_sum` prove both accumulators are the initial
+block plus the ordered 32-slab sum, and `realTlaGemmDpas_bf16_sum` specializes
+to the real instruction list. Source reads above the accumulator blocks are
+framed by `bf16ReadA_writeTileC`/`bf16ReadB_writeTileC`.
+
 ## Stage 183: census of the predicated forms
 
 `Intel/TlaPredCensus.lean` inventories the SYCL-TLA GEMM's 968
@@ -3195,4 +3205,5 @@ lake build Intel
 180. Stage 180: packed BF16 register halves.
 181. Stage 181: the full 32-step DPAS sum.
 182. Stage 182: the second accumulator.
-183. Stage 183 (this PR): census of the predicated forms.
+183. Stage 183: census of the predicated forms.
+184. Stage 184 (this PR): the DPAS chain over BF16 values.
