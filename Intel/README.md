@@ -2841,6 +2841,19 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 200: block2d address semantics
+
+`Intel/TlaBlock2dExec.lean` turns the parsed address operands into effective
+addresses and gives the 393 block2d instructions a tile-memory load/store
+semantics. The dump splits into 384 `ss` operands, 4 `bti` operands and 5 flat
+operands, and every instruction computes an effective address. `TlaAddr` now
+records the sign of the `+offset`/`-offset` forms. A load writes the memory
+tile through `writeTlaMasked` and leaves memory unchanged; a store writes the
+active destination elements and leaves the registers unchanged. An active
+store followed by a load returns the stored register value, and a load followed
+by a store is a memory no-op when the destination does not contain the address
+base register.
+
 ## Stage 199: block2d address operands
 
 `Intel/TlaAddr.lean` parses the `ss[a0.2][r2:1-0x...]`, `bti[255][r127:1]`
@@ -3344,4 +3357,5 @@ lake build Intel
 196. Stage 196: control-flow targets.
 197. Stage 197: mainloop bounds.
 198. Stage 198: mainloop block census.
-199. Stage 199 (this PR): block2d address operands.
+199. Stage 199: block2d address operands.
+200. Stage 200 (this PR): block2d address semantics.
