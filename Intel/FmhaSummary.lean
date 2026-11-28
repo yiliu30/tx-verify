@@ -6,6 +6,7 @@ public import Intel.TlaFmhaPv
 public import Intel.TlaFmhaQk
 public import Intel.TlaBf16Rne
 public import Intel.TlaFmhaPvCensus
+public import Intel.TlaFmhaSchedule
 public import Intel.TlaEpilogue
 public import Intel.TlaMask
 
@@ -92,11 +93,24 @@ def FmhaPvCensusSummary : Prop :=
 theorem fmha_pv_census_summary : FmhaPvCensusSummary :=
   ⟨by decide, pvDpas_accs_mem, fun a ha => pvGroup_length_of_mem ha⟩
 
+/-- The pipeline order: QK^T, exp, PV, inv. -/
+def FmhaScheduleSummary : Prop :=
+  qkDpasPcs.length = 32 ∧ pvDpasPcs.length = 32 ∧ expPcs.length = 33 ∧
+  qkDpasPcs.all (fun pc => pc < 1272) = true ∧
+  expPcs.all (fun pc => 1272 ≤ pc && pc ≤ 1412) = true ∧
+  pvDpasPcs.all (fun pc => 1456 ≤ pc && pc ≤ 1654) = true ∧
+  invPcs = [1774]
+
+theorem fmha_schedule_summary : FmhaScheduleSummary :=
+  ⟨qkDpasPcs_length, pvDpasPcs_length, expPcs_length, qkDpasPcs_before_exp,
+   expPcs_range, pvDpasPcs_range, invPcs_eq⟩
+
 /-- The headline checklist. -/
 theorem fmha_prefill_summary :
     FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary ∧
-    FmhaConvertSummary ∧ FmhaExecSummary ∧ FmhaPvCensusSummary :=
+    FmhaConvertSummary ∧ FmhaExecSummary ∧ FmhaPvCensusSummary ∧ FmhaScheduleSummary :=
   ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary,
-   fmha_convert_summary, fmha_exec_summary, fmha_pv_census_summary⟩
+   fmha_convert_summary, fmha_exec_summary, fmha_pv_census_summary,
+   fmha_schedule_summary⟩
 
 end IntelGpu
