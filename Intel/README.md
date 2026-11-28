@@ -97,6 +97,42 @@ theorem gemmTile_slm_correct ... :
 
 `#print axioms` on each of these reports only `[propext, Quot.sound]`.
 
+## Stage 17: workgroup control flow and the SLM compute loop
+
+`Intel/WControl.lean` adds a pc-based program layer over the stage-16 machine:
+
+```lean
+inductive CInstr where
+  | w (i : WInstr)
+  | cmpGe (K : Nat)
+  | incK
+  | jmpiIf (target : Nat)
+  | jmpi (target : Nat)
+```
+
+Control flow is uniform across the workgroup (one `pred`, one `k`), which is
+the lockstep requirement a barrier already imposes; per-lane masks are a later
+refinement.
+
+`Intel/GemmSlmCompute.lean` runs the compute phase for real. `computeProg K`
+loads A from the lane's SLM slot, loads the B column from global memory,
+multiplies, accumulates into register 4, advances both pointers and the shared
+counter, and branches while `k < K`:
+
+```lean
+theorem dotRange_add_last ...        -- loop appends one term per iteration
+theorem dotRange_eq_dotMatFrom ...   -- loop sum agrees with the spec
+theorem computeProg_correct ... :
+    let s' := crun (computeProg K) (10 * K + 3) s
+    s'.halted = true ∧ s'.w.phase = 1 ∧
+      ∀ l < 2, (s'.w.lanes l).regs 4 = dotMat A B l 0 K
+theorem gemmTile_executed ... :      -- staging + barrier + loop, end to end
+    fin.halted = true ∧ fin.w.phase = 1 ∧
+      ∀ l < 2, (fin.w.lanes l).regs 4 = dotMat A B l 0 K
+```
+
+`#print axioms` on each of these reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -131,6 +167,6 @@ lake build Intel
 13. Stage 13: GEMM tiling and tile coverage.
 14. Stage 14: tile scheduler enumeration.
 15. Stage 15: scheduled-tile correctness and global composition.
-16. Stage 16 (this PR): SLM staging and workgroup barriers.
-17. Stage 17: workgroup control flow and the SLM GEMM compute loop.
+16. Stage 16: SLM staging and workgroup barriers.
+17. Stage 17 (this PR): workgroup control flow and the SLM GEMM compute loop.
 18. Stage 18: DPAS/XMX and the SYCL-TLA GEMM instance.
