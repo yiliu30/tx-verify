@@ -2122,6 +2122,24 @@ dwords, that the qword round trip is exact (`qwordOf_setQword`), and that
 writing an unrelated dword preserves the qword. This is the foundation needed
 to model `V0061` as a dword view over the qword-per-lane `V0059`.
 
+## Stage 106: the real loop body's memory effect
+
+`Intel/VectorAddLoopBody.lean` proves the exact four instructions at
+`_0_009`:
+
+```lean
+theorem vaLoopBody_store_at :
+  (runVAL s vaLoopBody).mem (cPtr.toNat / 4 + idx l) =
+    s.mem (aPtr.toNat / 4 + idx l) + s.mem (bPtr.toNat / 4 + idx l)
+```
+
+`realVectorAdd_body_prefix` checks the decoded prefix, `vaLoopBody_sum`
+proves the add result, and `vaLoopBody_mem` gives the store-vector form. The
+proofs use the real pointer/index aliases and the per-lane 64-bit index.
+
+This is one loop-body memory step, not the whole loop: the qword/dword
+pack/select update of `V0059` remains the next stage.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2288,4 +2306,5 @@ lake build Intel
 102. Stage 102: execute a packed DPAS known-answer test.
 103. Stage 103: parse destination regions as `<hstride>`.
 104. Stage 104: import the loop vector add's tables and prove its index.
-105. Stage 105 (this PR): add dword storage and qword-view laws.
+105. Stage 105: add dword storage and qword-view laws.
+106. Stage 106 (this PR): prove the loop body's load/add/store effect.
