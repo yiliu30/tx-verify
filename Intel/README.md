@@ -784,12 +784,30 @@ the bias or in the implicit leading bit:
 
 So subnormals and fractions are now numbers rather than classes.
 
-Not done: the gluing lemma `scaled = mag * 2 ^ 14` on the decoded fragment. I
-had it down to an arithmetic rewrite that kept timing out in `whnf` while
-elaborating through `decode`, and chose to ship the verified vectors instead of
-a half-proved gluing.
+The relation to the numeric layer's scale shows up as an executable fact in
+stage 47: every normal decodes to a multiple of `2 ^ 14` in scaled units (the
+`Fixed` grid), while the smallest subnormal has residue `1` — which is exactly
+why a subnormal cannot be a `Fixed`. The general gluing lemma
+`scaled = mag * 2 ^ 14` is still not proved; two attempts died on `whnf`
+heartbeats while rewriting through `decode`, and the exactness results are
+stated separately for `Fixed` and for bits, so nothing depends on it.
 
 `#print axioms` on each theorem reports only `[propext, Quot.sound]`.
+
+## Stage 47: executable checks for the fp16 path
+
+`Intel/SmokeFp16.lean` runs the decoder and `scaled` on real bit patterns, all
+with kernel `decide`:
+
+- sign does not change the magnitude (`0xBC00` vs `0x3C00`);
+- a depth-2 dot of A = [1.0, 2.0] and B = [2.0, 1.0] gives `2 ^ 49 + 2 ^ 49`;
+- `1.0` plus the smallest subnormal is `2 ^ 24 + 1` in scaled units;
+- `65504 * 1.0` is `65504 * 2 ^ 48`;
+- **every normal is `0 mod 2 ^ 14`** in scaled units — the `Fixed` grid —
+  while the smallest subnormal has residue `1`.
+
+The last pair is the executable form of the scale gap: a subnormal genuinely
+cannot be a `Fixed`.
 
 ## Not modeled yet
 
@@ -799,10 +817,9 @@ a half-proved gluing.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
-- IEEE-754 value semantics: stages 43-46 cover the bit layout, the value
+- IEEE-754 value semantics: stages 43-47 cover the bit layout, the value
   domain, and values in units of `2 ^ -24` for normals, subnormals and
-  fractions. NaN *payloads*, and the gluing between the `2 ^ -24` scale and the
-  numeric layer's scale, are not done.
+  fractions, with executable checks. NaN *payloads* remain unmodeled.
 - Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
 - Strided per-thread staging as SYCL-TLA's copy atoms use it: stage 37 models
   a block distribution (lane `l` owns a contiguous chunk), not the interleaved
@@ -870,4 +887,5 @@ lake build Intel
 43. Stage 43: a bit-level fp16 encoding.
 44. Stage 44: a value domain with NaN and infinities.
 45. Stage 45: CI builds the library and runs the axiom audit.
-46. Stage 46 (this PR): values for every finite fp16.
+46. Stage 46: values for every finite fp16.
+47. Stage 47 (this PR): executable checks for the fp16 path.
