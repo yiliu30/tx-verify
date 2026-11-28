@@ -498,6 +498,11 @@ KNOWN = {
     # Stage 268: BF16 operand types.
     "IntelGpu.fmhaPrefill_dpas_bf16": {"Classical.choice"},
     "IntelGpu.fmha_bf16_summary": {"Classical.choice"},
+    # Stage 269: FMHA load -> BF16 operand bridge.
+    "IntelGpu.loadWindow_feeds_bf16ReadB": {"Classical.choice"},
+    "IntelGpu.loadWindow_feeds_bf16ReadA": {"Classical.choice"},
+    "IntelGpu.parseLoad1543": {"Classical.choice"},
+    "IntelGpu.load1543_feeds_bf16B": {"Classical.choice"},
     # Stage 258: the FMHA prefill summary.
     "IntelGpu.fmha_decode_summary": {"Classical.choice"},
     "IntelGpu.fmha_scalar_summary": {"Classical.choice"},
@@ -2870,6 +2875,10 @@ THEOREMS = [
     ("Intel.FmhaSummary", "IntelGpu.fmha_lse_summary"),
     ("Intel.FmhaPrefillCoverage", "IntelGpu.fmhaPrefill_dpas_bf16"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_bf16_summary"),
+    ("Intel.TlaFmhaLoad", "IntelGpu.loadWindow_feeds_bf16ReadB"),
+    ("Intel.TlaFmhaLoad", "IntelGpu.loadWindow_feeds_bf16ReadA"),
+    ("Intel.TlaFmhaLoad", "IntelGpu.parseLoad1543"),
+    ("Intel.TlaFmhaLoad", "IntelGpu.load1543_feeds_bf16B"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_decode_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_scalar_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_phase_summary"),

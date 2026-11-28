@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (215 jobs) and `Tools/check_axioms.py --all`
-  (2367 theorems, 783 documented exceptions at stage 268).
+  `lake build Intel` (216 jobs) and `Tools/check_axioms.py --all`
+  (2371 theorems, 787 documented exceptions at stage 269).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -291,6 +291,7 @@ from `Classical.choose` in the racing-store model.
 | 266 | #272 | packed-BF16 DPAS atom semantics |
 | 267 | #273 | LSE model support |
 | 268 | #274 | BF16 operand check |
+| 269 | #275 | PV load -> BF16 operand bridge |
 
-The stack is intentionally one PR per stage (#64-#274), as requested. The
+The stack is intentionally one PR per stage (#64-#275), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
