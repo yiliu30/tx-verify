@@ -2,6 +2,7 @@
 module
 
 public import Intel.TlaDpasExec
+public import Intel.TlaDpasBf16
 public import Intel.TlaMovDecode
 
 @[expose] public section
@@ -41,18 +42,19 @@ def parseFmhaDpas : TlaInstr → Option FmhaDpas
       | _, _, _, _ => none
   | _ => none
 
-/-- Execute one atom: one slab into the first accumulator. -/
-def fmhaAtomStep (rf : RegFile) (d : FmhaDpas) : RegFile :=
-  let A := readTileA rf d.srcA
-  let B := readTileB rf d.srcB 0
-  let C := readTileC rf d.acc0
-  writeTileC rf d.acc0 (tlaSlab A B C)
+/-- The packed-BF16 slab of one FMHA atom. -/
+def fmhaBf16Slab (rf : RegFile) (d : FmhaDpas) (m n : Nat) : Word :=
+  dpasSlab 16 (bf16ReadA rf d.srcA) (bf16ReadB rf d.srcB) m n
 
-/-- The first accumulator after one atom is the slab value. -/
+/-- Execute one atom: one packed-BF16 slab into the first accumulator. -/
+def fmhaAtomStep (rf : RegFile) (d : FmhaDpas) : RegFile :=
+  writeTileC rf d.acc0 (fun m n => readTileC rf d.acc0 m n + fmhaBf16Slab rf d m n)
+
+/-- The first accumulator after one atom is the packed-BF16 slab value. -/
 theorem fmhaAtomStep_acc0 (rf : RegFile) (d : FmhaDpas) (m n : Nat)
     (hm : m < 8) (hn : n < 8) :
     readTileC (fmhaAtomStep rf d) d.acc0 m n =
-      tlaSlab (readTileA rf d.srcA) (readTileB rf d.srcB 0) (readTileC rf d.acc0) m n := by
+      readTileC rf d.acc0 m n + fmhaBf16Slab rf d m n := by
   unfold fmhaAtomStep
   exact readTileC_writeTileC rf d.acc0 _ m n hm hn
 

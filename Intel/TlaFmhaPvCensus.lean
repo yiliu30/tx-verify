@@ -31,8 +31,7 @@ theorem pvGroup_sum (a : Nat) (rf : RegFile) (m n : Nat) (hm : m < 8) (hn : n < 
       (a + 8 ≤ d.srcB || d.srcB + 8 ≤ a)) = true) :
     readTileC (fmhaAtomRun (pvGroup a) rf) a m n =
       readTileC rf a m n +
-        ((pvGroup a).map (fun d =>
-          dpasSlab 16 (readTileA rf d.srcA) (readTileB rf d.srcB 0) m n)).sum := by
+        ((pvGroup a).map (fun d => fmhaBf16Slab rf d m n)).sum := by
   refine fmhaAtomRun_fixed_acc (pvGroup a) rf a ?_ ?_ ?_ m n hm hn
   · intro d hd
     have h := (List.mem_filter.mp hd).2
@@ -74,8 +73,7 @@ theorem pvGroup_sum_of_mem {a : Nat} (ha : a ∈ pvAccs) (rf : RegFile) (m n : N
     (hm : m < 8) (hn : n < 8) :
     readTileC (fmhaAtomRun (pvGroup a) rf) a m n =
       readTileC rf a m n +
-        ((pvGroup a).map (fun d =>
-          dpasSlab 16 (readTileA rf d.srcA) (readTileB rf d.srcB 0) m n)).sum := by
+        ((pvGroup a).map (fun d => fmhaBf16Slab rf d m n)).sum := by
   have h := (List.all_eq_true.mp pvAccs_ok) a ha
   simp only [Bool.and_eq_true] at h
   exact pvGroup_sum a rf m n hm hn h.2

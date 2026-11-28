@@ -29,8 +29,7 @@ theorem qkGroup_sum (a : Nat) (rf : RegFile) (m n : Nat) (hm : m < 8) (hn : n < 
       (a + 8 ≤ d.srcB || d.srcB + 8 ≤ a)) = true) :
     readTileC (fmhaAtomRun (qkGroup a) rf) a m n =
       readTileC rf a m n +
-        ((qkGroup a).map (fun d =>
-          dpasSlab 16 (readTileA rf d.srcA) (readTileB rf d.srcB 0) m n)).sum := by
+        ((qkGroup a).map (fun d => fmhaBf16Slab rf d m n)).sum := by
   refine fmhaAtomRun_fixed_acc (qkGroup a) rf a ?_ ?_ ?_ m n hm hn
   · intro d hd
     have h := (List.mem_filter.mp hd).2
@@ -62,8 +61,7 @@ set_option maxHeartbeats 2000000 in
 theorem qk42_sum (rf : RegFile) (m n : Nat) (hm : m < 8) (hn : n < 8) :
     readTileC (fmhaAtomRun (qkGroup 42) rf) 42 m n =
       readTileC rf 42 m n +
-        ((qkGroup 42).map (fun d =>
-          dpasSlab 16 (readTileA rf d.srcA) (readTileB rf d.srcB 0) m n)).sum :=
+        ((qkGroup 42).map (fun d => fmhaBf16Slab rf d m n)).sum :=
   qkGroup_sum 42 rf m n hm hn (by decide)
 
 set_option maxRecDepth 1000000 in
@@ -72,8 +70,7 @@ set_option maxHeartbeats 2000000 in
 theorem qk50_sum (rf : RegFile) (m n : Nat) (hm : m < 8) (hn : n < 8) :
     readTileC (fmhaAtomRun (qkGroup 50) rf) 50 m n =
       readTileC rf 50 m n +
-        ((qkGroup 50).map (fun d =>
-          dpasSlab 16 (readTileA rf d.srcA) (readTileB rf d.srcB 0) m n)).sum :=
+        ((qkGroup 50).map (fun d => fmhaBf16Slab rf d m n)).sum :=
   qkGroup_sum 50 rf m n hm hn (by decide)
 
 set_option maxRecDepth 1000000 in
@@ -82,8 +79,7 @@ set_option maxHeartbeats 2000000 in
 theorem qk58_sum (rf : RegFile) (m n : Nat) (hm : m < 8) (hn : n < 8) :
     readTileC (fmhaAtomRun (qkGroup 58) rf) 58 m n =
       readTileC rf 58 m n +
-        ((qkGroup 58).map (fun d =>
-          dpasSlab 16 (readTileA rf d.srcA) (readTileB rf d.srcB 0) m n)).sum :=
+        ((qkGroup 58).map (fun d => fmhaBf16Slab rf d m n)).sum :=
   qkGroup_sum 58 rf m n hm hn (by decide)
 
 set_option maxRecDepth 1000000 in
@@ -92,8 +88,7 @@ set_option maxHeartbeats 2000000 in
 theorem qk66_sum (rf : RegFile) (m n : Nat) (hm : m < 8) (hn : n < 8) :
     readTileC (fmhaAtomRun (qkGroup 66) rf) 66 m n =
       readTileC rf 66 m n +
-        ((qkGroup 66).map (fun d =>
-          dpasSlab 16 (readTileA rf d.srcA) (readTileB rf d.srcB 0) m n)).sum :=
+        ((qkGroup 66).map (fun d => fmhaBf16Slab rf d m n)).sum :=
   qkGroup_sum 66 rf m n hm hn (by decide)
 
 end IntelGpu
