@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 208: mainloop iteration
+
+`Intel/TlaMainloopIterate.lean` composes the DPAS phase and the loop tail into
+`mainloopIteration`. The DPAS phase only writes the accumulator blocks
+`r13..r28`, so `mainloopDpasRun_frame` shows that the scalar counters and the
+bound in register 1 are untouched. `mainloopIteration_continue` and
+`mainloopIteration_exit` give the two outcomes of one iteration with the
+counters advanced.
+
 ## Stage 207: loop iteration
 
 `Intel/TlaLoopIterate.lean` iterates the tail. `wordAddN w n` is the `n`-fold
@@ -3428,4 +3437,5 @@ lake build Intel
 204. Stage 204: loop-tail counters.
 205. Stage 205: loop-exit comparison.
 206. Stage 206: loop tail.
-207. Stage 207 (this PR): loop iteration.
+207. Stage 207: loop iteration.
+208. Stage 208 (this PR): mainloop iteration.

@@ -11,7 +11,7 @@ fork.
 | --- | --- | --- | --- |
 | P0 real assembly import | 62 (#64), 65 (#67), 82 (#84), 83 (#85), 174, 183, 185 | four real dumps (add-one, integer GEMM, loop vector add, straight-line vector add) with sha256 provenance and generated statement lists; the FMHA DPAS line in 79 (#81); the raw SYCL-TLA 256x256x32 BF16 GEMM dump with 2252 statements and 32 DPAS; a total decoder for that dump (stage 175) a census of its 968 predicated forms (stage 183) and structured decoding of all 377 predicated moves (stage 185) | addressed for these kernels; the SYCL-TLA dump is imported and total-decoded, but not yet connected to execution semantics |
 | P0 reject unsupported explicitly | 62b (#64), 63 (#65), 82 (#84), 92 | `rejected`, `realGemm_rejectedOps`, `realVectorAdd_rejectedOps`, the fail-closed `parseExec` mask check, `masked_mov_decodes` and `parseExec_rejects_M9` | addressed; all dumps are all-or-nothing |
-| P0 unified semantics | 63-67 (#65-#69), 68-77 (#70-#79), 83-85 (#85-#87), 104-113, 204-207 | one `RInstr`/`stepWith` model; `realAddOne_effect`, `realGemm_output`, `realVectorAdd_effect`; loop vector-add tables, index, body effect, per-lane CF and decoded branch sites; the SYCL-TLA loop-tail counter increments with their value and frame laws the loop-exit comparison with its flag semantics the composed loop-tail transition with both outcomes and the iteration theorems for continuing and exiting runs | addressed for the modeled slots; predicate-value composition remains |
+| P0 unified semantics | 63-67 (#65-#69), 68-77 (#70-#79), 83-85 (#85-#87), 104-113, 204-208 | one `RInstr`/`stepWith` model; `realAddOne_effect`, `realGemm_output`, `realVectorAdd_effect`; loop vector-add tables, index, body effect, per-lane CF and decoded branch sites; the SYCL-TLA loop-tail counter increments with their value and frame laws the loop-exit comparison with its flag semantics the composed loop-tail transition with both outcomes the iteration theorems for continuing and exiting runs and the mainloop iteration composing the DPAS phase with the loop tail under the DPAS register frame | addressed for the modeled slots; predicate-value composition remains |
 | P0 GRF and SIMD | 64 (#66), 66 (#68), 68 (#70), 83 (#85), 90-98, 103, 105, 107, 112, 141, 151, 186, 187, 188, 189, 190, 191, 192, 193 | regions, aliases, execution sizes in `Grf`/`gemmAlias`; per-lane predicates, predicated `sel`, predicate `and`/`or`, register comparisons, both predicated gotos; M1-M8 masks, all six masked moves, frame laws, a wrong-mask negative test, correct destination `<hstride>` parsing, dword/qword view laws, the 24-lane pack layout and a per-lane CF interpreter; generic active-window, operand-index, write-coverage and commutation laws; mask-aware add/load/store execution for the loop body with full-mask agreement and frame laws; execution of the SYCL-TLA predicated moves with destination frames and a proved entry block; a structured decoder and execution for the prologue `and`/`add`/`mad` forms, with a total parser for all 109 ALU forms, a destination-class census, 54 executed ALU forms and a multi-bank `acc`/`a`/`cr` state | addressed for the modeled loop body and the TLA moves; general instruction-level mask dispatch outside these classes remains |
 | P0 SEND and SBID | 78 (#80), 147 | `issueLoad`/`issueStore`/`wait`/`commitLoad`, `loadPipeline_value`, `storePipeline_value`, `addOnePipeline_value`; one transcribed descriptor layout with SBID extraction, distinct-token progression and out-of-range rejection | mechanism modeled; the SBID bit layout is a documented transcription assumption because the dumps do not print the field |
 | P1 memory and concurrency | 60, 64 (#66), 67 (#69), 106, 139, 152, 153, 154, 157, 162, 167, 168, 169, 194, 199, 200 | word/byte memory, alignment, `load32LE_store32LE_*`, `realAddOne_byteRangesDisjoint`, per-lane stores and frames, real loop-body `load/add/store` effect; a per-location visibility model with release/acquire message passing; global/SLM address-space disjointness and workgroup-barrier SLM visibility; cross-lane C-address disjointness from launch-id injectivity, a composed 32-lane store result and a write-through workgroup cache; two-cache broadcast-invalidation traffic; a directory with ownership transfer and sharer invalidation; relaxed/release/acquire/seq_cst store buffers; write-back dirty lines, eviction and FIFO request queues; an SLM bank-conflict/swizzle model; decoded block2d load/store forms, their parsed address operands, effective addresses and a tile-memory load/store semantics | partial: no hardware address aliasing or arbitration/dual-port effects; the cache, store-buffer and bank models are separate; the tile memory abstracts swizzles and row geometry |
@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (167 jobs) and `Tools/check_axioms.py --all`
-  (1991 theorems, 523 documented exceptions at stage 207).
+  `lake build Intel` (168 jobs) and `Tools/check_axioms.py --all`
+  (1997 theorems, 527 documented exceptions at stage 208).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -178,6 +178,7 @@ from `Classical.choose` in the racing-store model.
 | 205 | #207 | loop-exit comparison |
 | 206 | #208 | loop tail |
 | 207 | #209 | loop iteration |
+| 208 | #210 | mainloop iteration |
 
-The stack is intentionally one PR per stage (#64-#209), as requested. The
+The stack is intentionally one PR per stage (#64-#210), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
