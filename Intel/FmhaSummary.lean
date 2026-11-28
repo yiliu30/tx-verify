@@ -9,6 +9,7 @@ public import Intel.TlaFmhaPvCensus
 public import Intel.TlaFmhaSchedule
 public import Intel.FmhaLseCoverage
 public import Intel.MufuSamples
+public import Intel.TlaFmhaPhys
 public import Intel.TlaEpilogue
 public import Intel.TlaMask
 
@@ -155,15 +156,31 @@ def FmhaMufuSummary : Prop :=
 
 theorem fmha_mufu_summary : FmhaMufuSummary := labMufuSamples_fields
 
+/-- The physical 8x8x16 BF16 layout and its load bridges. -/
+def FmhaPhysSummary : Prop :=
+  (∀ (rf : RegFile) (base : Nat) (e : Exec) (f : Nat → Word) (m k : Nat),
+    m < 4 → k < 16 → e.elementActive (m * 8 + k / 2) = true →
+    readA16 (writeWindow rf ⟨base, 4⟩ e f) base m k =
+      bf16Half (f (m * 8 + k / 2)) k) ∧
+  (∀ (rf : RegFile) (base : Nat) (e : Exec) (f : Nat → Word) (k n : Nat),
+    n < 8 → k < 16 → e.elementActive (n * 8 + k / 2) = true →
+    readB16 (writeWindow rf ⟨base, 16⟩ e f) base k n =
+      bf16Half (f (n * 8 + k / 2)) k) ∧
+  (fmhaParsedAt 1004).bind parseTlaBlock2dInstr = some load1004 ∧
+  (fmhaParsedAt 1543).bind parseTlaBlock2dPlain = some load1543
+
+theorem fmha_phys_summary : FmhaPhysSummary :=
+  ⟨readA16_writeWindow, readB16_writeWindow, parseLoad1004, parseLoad1543⟩
+
 /-- The headline checklist. -/
 theorem fmha_prefill_summary :
     FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary ∧
     FmhaConvertSummary ∧ FmhaExecSummary ∧ FmhaPvCensusSummary ∧
     FmhaScheduleSummary ∧ FmhaLseSummary ∧ FmhaBf16Summary ∧
-    FmhaLseDumpSummary ∧ FmhaMufuSummary :=
+    FmhaLseDumpSummary ∧ FmhaMufuSummary ∧ FmhaPhysSummary :=
   ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary,
    fmha_convert_summary, fmha_exec_summary, fmha_pv_census_summary,
    fmha_schedule_summary, fmha_lse_summary, fmha_bf16_summary,
-   fmha_lse_dump_summary, fmha_mufu_summary⟩
+   fmha_lse_dump_summary, fmha_mufu_summary, fmha_phys_summary⟩
 
 end IntelGpu
