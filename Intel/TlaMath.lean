@@ -26,7 +26,7 @@ model used by machines that never execute a math instruction.
 namespace IntelGpu
 
 inductive TlaMathOp where
-  | exp | inv
+  | exp | inv | log
   deriving Repr, DecidableEq
 
 /-- A decoded `math.exp`/`math.inv`: `(16|M0) dst src`. -/
@@ -46,17 +46,24 @@ def parseTlaMath : TlaInstr → Option TlaMath
       match parseTlaExec e, parseTlaDst dst, parseTlaSrc src with
       | some ex, some (.reg g), some s => some ⟨.inv, ex, g, s⟩
       | _, _, _ => none
+  | .plain "math.log" (e :: dst :: src :: _) =>
+      match parseTlaExec e, parseTlaDst dst, parseTlaSrc src with
+      | some ex, some (.reg g), some s => some ⟨.log, ex, g, s⟩
+      | _, _, _ => none
   | _ => none
 
 /-- The hardware MUFU model: bit functions plus rational references. -/
 structure MufuModel where
   expFun : Word → Word
   invFun : Word → Word
+  logFun : Word → Word
   toRat : Word → Rat
   expRef : Rat → Rat
   invRef : Rat → Rat
+  logRef : Rat → Rat
   expErr : Rat
   invErr : Rat
+  logErr : Rat
 
 /-- The hardware contract: error bounds and monotonicity. -/
 def MufuModel.Spec (m : MufuModel) : Prop :=
@@ -66,23 +73,29 @@ def MufuModel.Spec (m : MufuModel) : Prop :=
   (∀ (x y : Word), m.toRat x ≤ m.toRat y →
     m.toRat (m.expFun x) ≤ m.toRat (m.expFun y)) ∧
   (∀ (x y : Word), 0 < m.toRat x → m.toRat x ≤ m.toRat y →
-    m.toRat (m.invFun y) ≤ m.toRat (m.invFun x))
+    m.toRat (m.invFun y) ≤ m.toRat (m.invFun x)) ∧
+  (∀ x, 0 < m.toRat x →
+    Rat.abs (m.toRat (m.logFun x) - m.logRef (m.toRat x)) ≤ m.logErr)
 
 /-- The degenerate model for machines without math instructions. -/
 def idMufu : MufuModel where
   expFun := id
   invFun := id
+  logFun := id
   toRat := fun _ => 0
   expRef := fun _ => 0
   invRef := fun _ => 0
+  logRef := fun _ => 0
   expErr := 0
   invErr := 0
+  logErr := 0
 
 /-- The value of a math instruction at a lane. -/
 def TlaMath.value (model : MufuModel) (rf : RegFile) (m : TlaMath) (i : Nat) : Word :=
   match m.op with
   | .exp => model.expFun (readTlaSrc rf m.src i)
   | .inv => model.invFun (readTlaSrc rf m.src i)
+  | .log => model.logFun (readTlaSrc rf m.src i)
 
 /-- Execute a math instruction. -/
 def TlaMath.step (model : MufuModel) (rf : RegFile) (m : TlaMath) : RegFile :=
@@ -118,10 +131,24 @@ theorem MufuModel.exp_monotone (m : MufuModel) (hm : m.Spec) (x y : Word)
     m.toRat (m.expFun x) ≤ m.toRat (m.expFun y) :=
   hm.2.2.1 x y h
 
+set_option maxRecDepth 100000 in
+/-- A synthetic `math.log` parses to the log op. -/
+theorem parseTlaMath_log :
+    parseTlaMath (.plain "math.log"
+      ["(16|M0)", "r4.0<1>:f", "r4.0<1;1,0>:f", "{F@1}"]) =
+      some ⟨.log, ⟨16, 0, true⟩, ⟨4, 0, 0, 1, 1, 1⟩,
+        .reg ⟨4, 0, 0, 1, 1, 0⟩⟩ := by decide
+
+/-- The `log` error budget. -/
+theorem MufuModel.log_bound (m : MufuModel) (hm : m.Spec) (x : Word)
+    (h : 0 < m.toRat x) :
+    Rat.abs (m.toRat (m.logFun x) - m.logRef (m.toRat x)) ≤ m.logErr :=
+  (hm.2.2.2).2 x h
+
 /-- `inv` is antitone on the represented values. -/
 theorem MufuModel.inv_antitone (m : MufuModel) (hm : m.Spec) (x y : Word)
     (hx : 0 < m.toRat x) (h : m.toRat x ≤ m.toRat y) :
     m.toRat (m.invFun y) ≤ m.toRat (m.invFun x) :=
-  hm.2.2.2 x y hx h
+  (hm.2.2.2).1 x y hx h
 
 end IntelGpu
