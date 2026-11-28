@@ -2440,6 +2440,14 @@ the range-completion fact.
 The body's store effect is proved in `Intel/LoopBodyExec.lean`, but transporting
 it through the remaining slices is still open.
 
+## Stage 137: per-lane memory effect on the decoded path
+
+`Intel/LoopMemoryTransport.lean` proves the post-body increment/guard slices
+preserve memory, transports the entry state into `VaLoopBodyPre`, and connects
+the decoded body store to the full path. `vaLoop_lane_body_exit_mem` and
+`vaLoop_lane_body_exit_with_guard_mem` state the resulting
+`C[id] = A[id] + B[id]` effect on the PC 44 target state.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2638,4 +2646,5 @@ lake build Intel
 133. Stage 133: execute the decoded P6 prefix.
 134. Stage 134: execute the decoded body slice.
 135. Stage 135: execute the decoded entry slice.
-136. Stage 136 (this PR): compose the per-lane decoded control path.
+136. Stage 136: compose the per-lane decoded control path.
+137. Stage 137 (this PR): prove the per-lane memory effect on the decoded path.
