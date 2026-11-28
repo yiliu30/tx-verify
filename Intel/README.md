@@ -30,8 +30,11 @@ on a silent assumption.
 7. **Accumulator rounding** — nearest, ties to even, on the accumulator
    quantum. `Intel/NumericBridge.lean` (`hstep`). Discharged on a shared grid
    (stage 34); bounded by `n * (q / 2)` off it (stages 30-32).
-8. **Staging** — a per-lane block distribution of a contiguous chunk.
-   `Intel/LaneStaging.lean`. Interleaved per-thread addressing not modelled.
+8. **Staging** — `Intel/LaneStaging.lean` models a per-lane block distribution
+   (contiguous chunks). Stage 50 adds the interleaved copy primitive
+   (`copyInterleaved`, lane `l` taking words `l, l + L, l + 2L, ...`), so this
+   is discharged in part; composing lanes into a workgroup copy and proving
+   coverage is still open.
 9. **fp16 classes** — NaN and infinity carry a class but no payload;
    subnormals are values in units of `2 ^ -24`. `Intel/Fp16Value.lean`,
    `Intel/Fp16Scaled.lean`. Not discharged.
@@ -867,6 +870,25 @@ So a tile DPAS is a chain of atom instructions, not a primitive.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 50: interleaved copies
+
+Stage 37's staging gives each lane a contiguous chunk. SYCL-TLA's copy atoms
+interleave instead — lane `l` takes words `l, l + L, l + 2L, ...` — which needs
+a copy whose *destination* is strided too:
+
+```lean
+def copyInterleaved (dstMem srcMem) (dst src stride) : Nat → Nat → Word
+theorem copyInterleaved_value ...   -- every word comes from the matching offset
+theorem copyInterleaved_frame ...   -- nothing else moves
+```
+
+Not done: composing the lanes into a workgroup copy and proving that the lanes
+cover the slab. That needs the mod-`L` coverage argument, which is where the
+earlier attempts stalled; this stage stops at the primitive rather than
+overclaiming again.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -948,4 +970,5 @@ lake build Intel
 46. Stage 46: values for every finite fp16.
 47. Stage 47: executable checks for the fp16 path.
 48. Stage 48: consolidate the assumption ledger.
-49. Stage 49 (this PR): DPAS at instruction granularity.
+49. Stage 49: DPAS at instruction granularity.
+50. Stage 50 (this PR): interleaved copies.
