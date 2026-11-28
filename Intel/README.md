@@ -2812,6 +2812,17 @@ rounding differs from the fused result. `fmaFlags_*` covers NaN quieting,
 `0 * inf` invalid, infinity, overflow and inexact. Traps, sticky lane state,
 FTZ/DAZ, directed rounding and hardware FMA timing are not modeled.
 
+## Stage 171: sticky per-lane flags
+
+`Intel/FpFlagLanes.lean` models architectural sticky per-lane flags.
+`LaneFlags` has `getLane`/`setLane`/`orLane`; `sticky_set` and `sticky_monotone`
+prove flags never clear. `warpFlags` folds a lane group,
+`warpFlags_projects_lane` gives the per-lane projection, and
+`warpFlags_iterate`/`kernelFlags_eq_iteration_union` commute the lane and
+iteration folds. Concrete overflow/inexact and invalid examples are included;
+`lastWrite_loses_earlier_inexact` shows a non-sticky state loses a flag.
+Trap/mask behavior, trap delivery and physical flag registers are not modeled.
+
 ## Stage 165: review stage map
 
 `Intel/REVIEW_63.md` now carries a single stage index for stages 137--164
@@ -3050,4 +3061,5 @@ lake build Intel
 167. Stage 167: relaxed atomics and store buffers.
 168. Stage 168: write-back caches and request queues.
 169. Stage 169: SLM banks and swizzling.
-170. Stage 170 (this PR): fp16 fused multiply-add.
+170. Stage 170: fp16 fused multiply-add.
+171. Stage 171 (this PR): sticky per-lane flags.
