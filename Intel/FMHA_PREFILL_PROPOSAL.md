@@ -4,7 +4,7 @@ Status: proposal for stages 247+. The GEMM stack (stages 174–245) is merged
 on `main`; this document scopes the next kernel family: the SYCL-TLA FMHA
 prefill (`XeFMHAFwdKernel`, BF16, head dim 128). Stages 247 and 248 are
 merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261,
-#262, #263, #265, #266, #267, #268, #269); decoding and execution are total,
+#262, #263, #265, #266, #267, #268, #269, #270); decoding and execution are total,
 and the MUFU contract, softmax pipeline, causal mask, DPAS atoms, QK/PV
 chains, RNE conversion, epilogue ratio and pipeline order are proved. The
 remaining gaps are listed in section 8.
@@ -169,7 +169,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247-263 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265, #266, #267, #268, #269).
+Stages 247-264 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265, #266, #267, #268, #269).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |
@@ -215,8 +215,10 @@ the fixed-accumulator PV chain and the epilogue ratio.
 
 Still open:
 
-- **QK^T chain composition**: done in stage 259 (`TlaFmhaQk`); each of the
-  four blocks is its initial value plus eight slabs.
+- **QK^T chain composition**: the DPAS-only chain is done in stage 259
+  (`TlaFmhaQk`); each of the four blocks is its initial value plus eight
+  slabs. The real schedule reloads A/B between short groups, so the
+  program-level composition with the loads is still open.
 - **RNE P→BF16**: the packing views exist, but the rounding conversion from
   FP32 softmax values to BF16 is not modelled yet.
 - **LSE variant**: the imported dump is the non-LSE prefill; the LSE build
