@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 218: plain instruction forms
+
+`Intel/TlaPlain.lean` decodes the unpredicated forms that dominate the
+prologue and epilogue: 531 plain `mov` forms, 288 plain ALU forms (`and` 6,
+`add` 4, `mul` 128, `mad` 128, `or` 16, `shl` 3, `shr` 3) and 32 plain
+`store_block2d.ugm.*` stores into the same `TlaMov`, `TlaAlu` and
+`TlaBlock2d` structures, so the existing semantics apply unchanged. Worked
+examples cover the first plain move (PC 48), a plain multiply (PC 1622, with
+its ALU value) and a plain block2d store (PC 1646).
+
 ## Stage 217: prologue and epilogue census
 
 `Intel/TlaRegions.lean` records the two regions outside the verified mainloop.
@@ -3531,4 +3541,5 @@ lake build Intel
 214. Stage 214: full mainloop iteration.
 215. Stage 215: full mainloop loop.
 216. Stage 216: A/B operand windows.
-217. Stage 217 (this PR): prologue and epilogue census.
+217. Stage 217: prologue and epilogue census.
+218. Stage 218 (this PR): plain instruction forms.
