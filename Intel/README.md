@@ -528,6 +528,24 @@ that input class. Off the grid, stage 31/32 bound the error by `n * (q / 2)`.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 35: executable checks for the workgroup stages
+
+`Intel/SmokeSlm.lean` extends the smoke tests to the stage-16/17 machines:
+two-lane SLM staging, the barrier, and the SLM compute loop, on the same tiny
+GEMM.
+
+```lean
+example : (wrun smokeW (stageProg 2 ++ [.barrier])).slm 0 = 3   -- staging
+example : (wrun smokeW (stageProg 2 ++ [.barrier])).phase = 1   -- barrier retired
+example : (... computeProg 2 ...).w.lanes 0).regs 4 = 88        -- 3*12 + 4*13
+example : (... computeProg 2 ...).w.lanes 1).regs 4 = 138       -- 5*12 + 6*13
+example : (... computeProg 2 ...).halted = true
+```
+
+Lane 1 computing `138` rather than `88` is the model behaving correctly: each
+lane reads its own staged row. I got that wrong when writing the test and
+`#eval` corrected me, which is the point of having executable checks.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -586,4 +604,5 @@ lake build Intel
 31. Stage 31: ties-to-even, the hardware tie rule.
 32. Stage 32: bridging word arithmetic to the numeric bound.
 33. Stage 33: executable smoke tests.
-34. Stage 34 (this PR): exactness on a shared quantization grid.
+34. Stage 34: exactness on a shared quantization grid.
+35. Stage 35 (this PR): executable checks for the workgroup stages.
