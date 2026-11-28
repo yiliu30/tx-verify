@@ -2665,6 +2665,22 @@ Assumptions: write-through, no write-allocate, one line per address per cache,
 synchronous broadcast invalidation, no directory/ownership protocol or relaxed
 atomics.
 
+## Stage 158: the decoded loop-back block
+
+`Intel/LoopGridStrideControl.lean` executes PCs 36--43: the `_0_010` label,
+the two `sel` instructions and the four 16-lane writeback packs, then the
+`goto` back to `_0_009` at PC 20. `vaLoop_loopBack_id` proves the qword view of
+`V0059` becomes `selectId old (old + stride) takeNew` for lanes below 24, and
+`vaLoop_loopBack_is_strideId` identifies this as one `strideId` step.
+`vaLoop_lane_second_body` proves the intended second-iteration store on the
+value-level reentry state.
+
+The module also records an open modeling gap: after the decoded dword-view
+writeback, `regs 59 l` for `l < 24` holds dword slot `l`, while the PC 21 load
+reads `regs 59 l` as a qword lane. `vaLoopLoopBack_dword_counterexample`
+proves the naive all-lane reconstruction is false, so a fully literal second
+iteration needs a dword/qword coalescing step in the existing semantics.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2884,4 +2900,5 @@ lake build Intel
 154. Stage 154: write-through cache coherence.
 155. Stage 155: register-level FMHA mainloop.
 156. Stage 156: fp16 special values and overflow.
-157. Stage 157 (this PR): coherence traffic between two caches.
+157. Stage 157: coherence traffic between two caches.
+158. Stage 158 (this PR): the decoded loop-back block.
