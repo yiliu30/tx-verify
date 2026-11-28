@@ -23,6 +23,7 @@ structure TlaAddr where
   base : Nat
   baseSub : Nat
   offset : Nat
+  neg : Bool
   deriving Repr, DecidableEq
 
 def splitAtChar (c : Char) : List Char → Option (List Char × List Char)
@@ -72,12 +73,15 @@ def parseAddrFirst (s : List Char) : Option (Nat × Nat) :=
       | some n => some (n, 0)
       | none => none
 
-/-- The second bracket: `rN:M` with an optional `-offset`. -/
-def parseAddrSecond (s : List Char) : Option (Nat × Nat × Nat) :=
-  let (before, off) :=
+/-- The second bracket: `rN:M` with an optional signed `+offset`/`-offset`. -/
+def parseAddrSecond (s : List Char) : Option (Nat × Nat × Nat × Bool) :=
+  let (before, off, neg) :=
     match splitAtChar '-' s with
-    | some (b, o) => (b, o)
-    | none => (s, [])
+    | some (b, o) => (b, o, true)
+    | none =>
+        match splitAtChar '+' s with
+        | some (b, o) => (b, o, false)
+        | none => (s, [], false)
   let (baseStr, subStr) :=
     match splitAtChar ':' before with
     | some (b, r) => (b, r)
@@ -85,8 +89,8 @@ def parseAddrSecond (s : List Char) : Option (Nat × Nat × Nat) :=
   match numRuns (String.ofList baseStr) with
   | [n] =>
       match parseLit (String.ofList subStr) with
-      | some sub => some (n, sub, (parseLit (String.ofList off)).getD 0)
-      | none => some (n, 0, (parseLit (String.ofList off)).getD 0)
+      | some sub => some (n, sub, (parseLit (String.ofList off)).getD 0, neg)
+      | none => some (n, 0, (parseLit (String.ofList off)).getD 0, neg)
   | _ => none
 
 def parseTlaAddr (s : String) : Option TlaAddr :=
@@ -95,30 +99,38 @@ def parseTlaAddr (s : String) : Option TlaAddr :=
       match parseBrackets rest with
       | some (first, second) =>
           match parseAddrFirst first, parseAddrSecond second with
-          | some (reg, sub), some (base, baseSub, offset) =>
-              some ⟨space, reg, sub, base, baseSub, offset⟩
+          | some (reg, sub), some (base, baseSub, offset, neg) =>
+              some ⟨space, reg, sub, base, baseSub, offset, neg⟩
           | _, _ => none
       | none => none
   | none =>
       match parseSingleBracket s.toList with
       | some content =>
           match parseAddrSecond content with
-          | some (base, baseSub, offset) =>
-              some ⟨"flat", 0, 0, base, baseSub, offset⟩
+          | some (base, baseSub, offset, neg) =>
+              some ⟨"flat", 0, 0, base, baseSub, offset, neg⟩
           | none => none
       | none => none
 
 theorem parseTlaAddr_ss :
     parseTlaAddr "ss[a0.2][r2:1-0xE2C0]" =
-      some ⟨"ss", 0, 2, 2, 1, 0xE2C0⟩ := by decide
+      some ⟨"ss", 0, 2, 2, 1, 0xE2C0, true⟩ := by decide
 
 theorem parseTlaAddr_bti :
     parseTlaAddr "bti[255][r127:1]" =
-      some ⟨"bti", 255, 0, 127, 1, 0⟩ := by decide
+      some ⟨"bti", 255, 0, 127, 1, 0, false⟩ := by decide
 
 theorem parseTlaAddr_flat :
     parseTlaAddr "[r4:1]" =
-      some ⟨"flat", 0, 0, 4, 1, 0⟩ := by decide
+      some ⟨"flat", 0, 0, 4, 1, 0, false⟩ := by decide
+
+theorem parseTlaAddr_bti_pos :
+    parseTlaAddr "bti[255][r127:1+0x100]" =
+      some ⟨"bti", 255, 0, 127, 1, 0x100, false⟩ := by decide
+
+theorem parseTlaAddr_flat_pos :
+    parseTlaAddr "[r5:1+0x4A0]" =
+      some ⟨"flat", 0, 0, 5, 1, 0x4A0, false⟩ := by decide
 
 set_option maxRecDepth 100000 in
 /-- Every block2d address operand parses. -/
