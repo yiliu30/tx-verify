@@ -289,6 +289,132 @@ theorem vaTail_halted (s : RealState) :
     readRegWith, readSrcWith, srcIndex, vaAlias, isWideOf, vaRegType,
     RegType.is64, binOpWide]
 
+
+/-- The final memory is a store vector over the C addresses. -/
+theorem vaMem (s : RealState) (aPtr bPtr cPtr : Addr)
+    (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16)
+    (h : VaLaunch s aPtr bPtr cPtr localSize r0 globalOffset localId) :
+    (runVA s (vaPreamble ++ vaTail)).mem =
+      storeVec s.mem 32
+        (fun l' => cPtr + (zext (vaId localSize r0 globalOffset localId l')) <<< 2)
+        (fun l' => low32 ((runVA s (vaPreamble ++ vaTail)).regs 60 l')) := by
+  have hp := vaPreamble_pointers s
+  have hp35 : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 35 0 = aPtr := by
+    simpa [runVA, runRealWith, stepVA, h.aReg] using hp.1
+  have hp36 : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 36 0 = bPtr := by
+    simpa [runVA, runRealWith, stepVA, h.bReg] using hp.2.1
+  have hp34 : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 34 0 = cPtr := by
+    simpa [runVA, runRealWith, stepVA, h.cReg] using hp.2.2
+  have hidAll : ∀ l', (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 55 l' =
+      zext (vaId localSize r0 globalOffset localId l') := by
+    intro l'
+    simpa [runVA, runRealWith, stepVA] using
+      vaPreamble_id s aPtr bPtr cPtr localSize r0 globalOffset localId h l'
+  have hmem' : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).mem = s.mem := by
+    simpa [runVA, runRealWith, stepVA] using vaPreamble_mem s
+  unfold vaTail runVA
+  rw [runRealWith_append]
+  simp [runRealWith, stepVA, stepWith, writeVecWith, setReg, readScalarWith,
+    readRegWith, readSrcWith, srcIndex, vaAlias, isWideOf, vaRegType,
+    RegType.is64, binOpWide, load32, hp35, hp36, hp34, hidAll, hmem']
+
+/-- The store writes each lane's `a[id] + b[id]` at its C word. -/
+theorem vaStore (s : RealState) (aPtr bPtr cPtr : Addr)
+    (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16)
+    (h : VaLaunch s aPtr bPtr cPtr localSize r0 globalOffset localId)
+    (l : Nat) (hl : l < 32) (ha : aPtr.toNat % 4 = 0) (hb : bPtr.toNat % 4 = 0)
+    (hc : cPtr.toNat % 4 = 0)
+    (hab : aPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l).toNat < 2 ^ 64)
+    (hbb : bPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l).toNat < 2 ^ 64)
+    (hboundC : ∀ l', l' < 32 →
+      cPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l').toNat < 2 ^ 64)
+    (hdistinct : ∀ l', l' < 32 → l' ≠ l →
+      cPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l').toNat ≠
+        cPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat) :
+    (runVA s (vaPreamble ++ vaTail)).mem
+        (cPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat) =
+      s.mem (aPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat) +
+        s.mem (bPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat) := by
+  rw [vaMem s aPtr bPtr cPtr localSize r0 globalOffset localId h]
+  have hdistinct' : ∀ l', l' < 32 → l' ≠ l →
+      ((fun l' => cPtr + (zext (vaId localSize r0 globalOffset localId l')) <<< 2)
+          l').toNat / 4 ≠
+        ((fun l' => cPtr + (zext (vaId localSize r0 globalOffset localId l')) <<< 2)
+          l).toNat / 4 := by
+    intro l' hl' hne
+    change vaWord cPtr (vaId localSize r0 globalOffset localId l') ≠
+      vaWord cPtr (vaId localSize r0 globalOffset localId l)
+    rw [vaWord_eq cPtr (vaId localSize r0 globalOffset localId l') hc (hboundC l' hl'),
+      vaWord_eq cPtr (vaId localSize r0 globalOffset localId l) hc (hboundC l hl)]
+    exact hdistinct l' hl' hne
+  have hword : (BitVec.toNat (cPtr + zext (vaId localSize r0 globalOffset localId l) <<< 2)) / 4 =
+      cPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat := by
+    change vaWord cPtr (vaId localSize r0 globalOffset localId l) = _
+    rw [vaWord_eq cPtr (vaId localSize r0 globalOffset localId l) hc (hboundC l hl)]
+  have hsame := storeVec_same s.mem 32
+    (fun l' => cPtr + (zext (vaId localSize r0 globalOffset localId l')) <<< 2)
+    (fun l' => low32 ((runVA s (vaPreamble ++ vaTail)).regs 60 l')) l hl hdistinct'
+  change storeVec s.mem 32
+      (fun l' => cPtr + (zext (vaId localSize r0 globalOffset localId l')) <<< 2)
+      (fun l' => low32 ((runVA s (vaPreamble ++ vaTail)).regs 60 l'))
+      (BitVec.toNat (cPtr + zext (vaId localSize r0 globalOffset localId l) <<< 2) / 4) =
+    low32 ((runVA s (vaPreamble ++ vaTail)).regs 60 l) at hsame
+  rw [hword] at hsame
+  rw [hsame]
+  rw [vaAdd s aPtr bPtr cPtr localSize r0 globalOffset localId h l ha hb hab hbb]
+  simp
+
+theorem vaRun_append (s : RealState) (is js : List RInstr) :
+    runVA s (is ++ js) = runVA (runVA s is) js :=
+  runRealWith_append stepVA s is js
+
+/-- Unrelated words are unchanged by the vector add. -/
+theorem vaFrame (s : RealState) (aPtr bPtr cPtr : Addr)
+    (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16)
+    (h : VaLaunch s aPtr bPtr cPtr localSize r0 globalOffset localId)
+    (w : Nat) (hc : cPtr.toNat % 4 = 0)
+    (hboundC : ∀ l', l' < 32 →
+      cPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l').toNat < 2 ^ 64)
+    (hw : ∀ l', l' < 32 →
+      w ≠ cPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l').toNat) :
+    (runVA s (vaPreamble ++ vaTail)).mem w = s.mem w := by
+  rw [vaMem s aPtr bPtr cPtr localSize r0 globalOffset localId h]
+  apply storeVec_frame
+  intro l' hl'
+  change vaWord cPtr (vaId localSize r0 globalOffset localId l') ≠ w
+  rw [vaWord_eq cPtr (vaId localSize r0 globalOffset localId l') hc (hboundC l' hl')]
+  exact fun he => hw l' hl' he.symm
+
+/-- The real vector add: `c[id] = a[id] + b[id]` at each lane, unrelated words
+unchanged, and the kernel halts. -/
+theorem realVectorAdd_effect (s : RealState) (aPtr bPtr cPtr : Addr)
+    (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16)
+    (h : VaLaunch s aPtr bPtr cPtr localSize r0 globalOffset localId)
+    (l : Nat) (hl : l < 32) (ha : aPtr.toNat % 4 = 0) (hb : bPtr.toNat % 4 = 0)
+    (hc : cPtr.toNat % 4 = 0)
+    (hab : aPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l).toNat < 2 ^ 64)
+    (hbb : bPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l).toNat < 2 ^ 64)
+    (hboundC : ∀ l', l' < 32 →
+      cPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l').toNat < 2 ^ 64)
+    (hdistinct : ∀ l', l' < 32 → l' ≠ l →
+      cPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l').toNat ≠
+        cPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat) :
+    (runVA s (vaPreamble ++ vaTail)).halted = true ∧
+    (runVA s (vaPreamble ++ vaTail)).mem
+        (cPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat) =
+      s.mem (aPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat) +
+        s.mem (bPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat) ∧
+    (∀ w, (∀ l', l' < 32 →
+        w ≠ cPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l').toNat) →
+      (runVA s (vaPreamble ++ vaTail)).mem w = s.mem w) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [vaRun_append]
+    exact vaTail_halted (runVA s vaPreamble)
+  · exact vaStore s aPtr bPtr cPtr localSize r0 globalOffset localId h l hl ha hb hc
+      hab hbb hboundC hdistinct
+  · intro w hw
+    exact vaFrame s aPtr bPtr cPtr localSize r0 globalOffset localId h w hc hboundC hw
+
 end
 
 end IntelGpu

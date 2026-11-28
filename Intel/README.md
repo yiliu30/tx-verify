@@ -1792,6 +1792,25 @@ and memory frame through the preamble.
 The remaining piece is the scaled store and its frame: `c[id] = a[id] + b[id]`
 at each lane, with unrelated words unchanged.
 
+## Stage 85: the real vector add, end to end
+
+`vaMem` exposes the final memory as a store vector over the C addresses; then
+`vaStore` and `vaFrame` give the effect:
+
+```lean
+theorem realVectorAdd_effect :
+    (runVA s (vaPreamble ++ vaTail)).halted = true ∧
+    (runVA ...).mem (cPtr/4 + id l) =
+      s.mem (aPtr/4 + id l) + s.mem (bPtr/4 + id l) ∧
+    (∀ w, (∀ l', l' < 32 -> w ≠ cPtr/4 + id l') ->
+      (runVA ...).mem w = s.mem w)
+```
+
+So the real, straight-line `nd_range` SIMD vector add writes
+`c[i] = a[i] + b[i]` at each lane, preserves every unrelated word, and halts,
+under aligned A/B/C pointers, the index bounds and per-lane distinctness. The
+hardware run of the same source is `bad=0`.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1929,4 +1948,5 @@ lake build Intel
 82. Stage 82: import a real SIMD vector add and measure the decoder gap, with
     a fail-closed mask check.
 83. Stage 83: decode scaled memory and prove the vector-add index preamble.
-84. Stage 84 (this PR): prove the vector-add loads and sum.
+84. Stage 84: prove the vector-add loads and sum.
+85. Stage 85 (this PR): the real vector add end-to-end.
