@@ -416,6 +416,30 @@ and fp16 exponent range are still out of scope.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 30: round to nearest
+
+`Intel/RoundingNearest.lean` halves the stage-29 bound by rounding instead of
+truncating.
+
+```lean
+def roundQ (q : Nat) (x : Int) : Int     -- nearest multiple of q, ties toward zero
+theorem roundQ_bound ... :               -- error at most q / 2
+    (roundQ q x - x).natAbs ≤ q / 2
+theorem roundQ_one (z : Int) : roundQ 1 z = z
+def stepRound (q : Nat) ...              -- machine multiply-add with nearest rounding
+theorem stepRound_contract ...           -- stage-27 contract with eps = q / 2
+theorem roundDot_error ... :             -- n steps within n * (q / 2)
+    ... ≤ n * (q / 2)
+theorem roundDot_exact ...               -- q = 1 ⇒ exact
+```
+
+`#eval roundQ 8 36` is `40`, `#eval roundQ 8 33` is `32`, `#eval roundQ 8 35`
+is `32` — a tie resolves toward zero, which the module documents. Real
+hardware resolves ties to even; that is a refinement of the same bound
+argument, not a different one.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -424,8 +448,8 @@ and fp16 exponent range are still out of scope.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
-- Bit-level fp16/bf16 rounding: stage 29 derives the per-step error from a
-  truncating quantum, but IEEE-754 subnormals and ties-to-even are not
+- Bit-level fp16/bf16 rounding: stages 29/30 derive the per-step error from a
+  concrete quantum rounding, but IEEE-754 subnormals and ties-to-even are not
   modeled.
 - Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
 - Per-work-item staging schedules: the copies are workgroup-wide
@@ -469,4 +493,5 @@ lake build Intel
 26. Stage 26: the full tile pipeline (mainloop + epilogue).
 27. Stage 27: rounding contract and accumulation error bound.
 28. Stage 28: executed tail slab, so the pipeline covers every K.
-29. Stage 29 (this PR): concrete truncating rounding, deriving the contract.
+29. Stage 29: concrete truncating rounding, deriving the contract.
+30. Stage 30 (this PR): round-to-nearest, halving the accumulation bound.
