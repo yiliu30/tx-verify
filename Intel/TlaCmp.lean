@@ -79,10 +79,42 @@ def TlaCmp.holds (st : TlaState) (c : TlaCmp) : Bool :=
   | "gt" => decide (c.valR st < c.valL st)
   | _ => false
 
-/-- Write the comparison result into the destination flag. -/
+/-- Parse the flag condition of `(W&fN.M)`; `(W)` is unconditional. -/
+def parseCondFlag (s : String) : Option (Nat × Nat) :=
+  match splitAtChar '&' s.toList with
+  | some (_, rest) =>
+      match numRuns (String.ofList rest) with
+      | [n, m] => some (n, m)
+      | _ => none
+  | none => none
+
+/-- The flag condition of a comparison, if it is conditional. -/
+def TlaCmp.condFlag (c : TlaCmp) : Option (Nat × Nat) :=
+  parseCondFlag c.cond
+
+/-- The unconditional flag write. -/
+def TlaCmp.writeFlag (st : TlaState) (c : TlaCmp) : TlaState :=
+  { st with flags := writeBank st.flags c.flag c.flagSub (if c.holds st then 1 else 0) }
+
+/-- Write the comparison result into the destination flag. A conditional
+comparison leaves the state unchanged when its guard flag is clear. -/
 def TlaCmp.step (st : TlaState) (c : TlaCmp) : TlaState :=
-  let v : Word := if c.holds st then 1 else 0
-  { st with flags := writeBank st.flags c.flag c.flagSub v }
+  match c.condFlag with
+  | some (n, m) => if st.flags n m = 0 then st else c.writeFlag st
+  | none => c.writeFlag st
+
+theorem TlaCmp.step_unconditional (st : TlaState) (c : TlaCmp)
+    (h : c.condFlag = none) :
+    TlaCmp.step st c = c.writeFlag st := by
+  unfold TlaCmp.step
+  rw [h]
+
+theorem TlaCmp.step_cond_clear (st : TlaState) (c : TlaCmp) (n m : Nat)
+    (h : c.condFlag = some (n, m)) (hclear : st.flags n m = 0) :
+    TlaCmp.step st c = st := by
+  unfold TlaCmp.step
+  rw [h]
+  simp [hclear]
 
 /-- The loop-exit comparison at PC 1400. -/
 def loopCmp : TlaCmp where
@@ -122,6 +154,8 @@ theorem blockExitJmp :
     blockInstrAt 1401 =
       some (.predicated "(W&~f3.1) jmpi" ["_0_118"]) := by decide
 
+theorem loopCmp_condFlag : loopCmp.condFlag = none := by decide
+
 theorem loopCmp_holds (st : TlaState) :
     loopCmp.holds st = decide (st.regs 1 11 < st.regs 1 15) := by
   simp [loopCmp, TlaCmp.holds, TlaCmp.valL, TlaCmp.valR, readTlaSrcState, srcIndex]
@@ -129,13 +163,17 @@ theorem loopCmp_holds (st : TlaState) :
 theorem loopCmp_step_flags (st : TlaState) :
     (loopCmp.step st).flags 3 1 =
       (if st.regs 1 11 < st.regs 1 15 then 1 else 0) := by
-  simp [TlaCmp.step, loopCmp, TlaCmp.holds, TlaCmp.valL, TlaCmp.valR,
+  rw [TlaCmp.step_unconditional st loopCmp loopCmp_condFlag]
+  unfold TlaCmp.writeFlag
+  simp [loopCmp, TlaCmp.holds, TlaCmp.valL, TlaCmp.valR,
     readTlaSrcState, srcIndex, writeBank]
 
 theorem loopCmp_step_flags_other (st : TlaState) (r j : Nat)
     (h : (r, j) ≠ (3, 1)) :
     (loopCmp.step st).flags r j = st.flags r j := by
-  simp only [TlaCmp.step, loopCmp, writeBank]
+  rw [TlaCmp.step_unconditional st loopCmp loopCmp_condFlag]
+  unfold TlaCmp.writeFlag
+  simp only [loopCmp, writeBank]
   by_cases hr : r = 3
   · by_cases hj : j = 1
     · exact absurd (by simp [hr, hj]) h
