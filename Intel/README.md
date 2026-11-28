@@ -1509,6 +1509,22 @@ expressions needed the 64-bit and `Nat` variants `or_shift_six_64`,
 
 Next is the K-induction over repeated per-lane steps and the epilogue store.
 
+## Stage 73: the GEMM epilogue address
+
+`gemmEpilogue` is the exit path: `add3` computes the C index `i*64 + j0 +
+globalOffset[0]` in `V0080`, `mov`/`shl`/`add` turn it into the C byte address
+`V0085`, then `lsc_store` writes `V0062` and the kernel returns.
+
+```lean
+theorem gemmEpilogue_address :
+    (runGemm s gemmEpilogue).regs 85 l =
+      (zext (i * 64 + j0 + goX)) <<< 2 + cPtr
+```
+
+The store itself writes the per-lane sum `V0062` at that address; its
+word-level correctness needs the per-lane distinctness hypothesis and is the
+next step, together with the K-induction over repeated loop steps.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1628,5 +1644,5 @@ lake build Intel
 70. Stage 70: prove the byte addresses, both loads, the multiply and the
     accumulation.
 71. Stage 71: prove one full loop iteration and its inductive invariant.
-72. Stage 72 (this PR): make the GEMM loop invariant per-lane, matching the
-    launch.
+72. Stage 72: make the GEMM loop invariant per-lane, matching the launch.
+73. Stage 73 (this PR): prove the GEMM epilogue's C address.

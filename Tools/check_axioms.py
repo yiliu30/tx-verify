@@ -94,6 +94,7 @@ KNOWN = {
     "IntelGpu.gemmBodyStep_sum": {"Classical.choice"},
     "IntelGpu.gemmBodyStep_frame": {"Classical.choice"},
     "IntelGpu.gemmBodyStep_inv": {"Classical.choice"},
+    "IntelGpu.gemmEpilogue_address": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -173,6 +174,7 @@ THEOREMS = [
     ("Intel.GemmReal", "IntelGpu.gemmBody"),
     ("Intel.GemmReal", "IntelGpu.gemmBodyStep_sum"),
     ("Intel.GemmReal", "IntelGpu.gemmBodyStep_inv"),
+    ("Intel.GemmReal", "IntelGpu.gemmEpilogue_address"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
