@@ -149,6 +149,11 @@ from `Classical.choose` in the racing-store model.
   runs re-dumps to the imported sha256, and every problem size dispatches to
   that same kernel entry (stages 231-232, 243). The SBID field and the
   hardware FP32 product rounding remain.
+- SYCL-TLA FMHA prefill: `Intel/FMHA_PREFILL_PROPOSAL.md` scopes the next
+  kernel family. The prefill dump decodes 1813/1965 statements (92.3%) with
+  the GEMM stack; the 152 unclassified forms (`sel`, negated `mad` sources,
+  `math.exp`/`inv`, `sync.allwr` and four singletons) and the softmax,
+  online-rescaling and causal-mask semantics are staged in the proposal.
 
 ## Stage index 137-172
 
@@ -262,6 +267,8 @@ from `Classical.choose` in the racing-store model.
 | 242 | #244 | remaining-work review pass |
 | 243 | #245 | one kernel entry for the whole conformance matrix |
 | 244 | #246 | verification visualization |
+| 245 | #247 | fix the accumulator store docstring |
+| 246 | #248 | FMHA prefill gap analysis and proposal |
 
-The stack is intentionally one PR per stage (#64-#246), as requested. The
+The stack is intentionally one PR per stage (#64-#248), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
