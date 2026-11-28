@@ -15,7 +15,9 @@ the window store bridge with `mainloopDpasRun_acc0_sum`: the value written to
 memory lane `row*8+col` is the initial C element plus the ordered sum of the
 32 DPAS slabs, for both the first and the last four rows of the block.
 
-The second accumulator block `r13..r20` is not stored anywhere in this dump.
+The mainloop's four accumulator stores write only the `r21..r28` block. The
+second accumulator block `r13..r20` is stored by the epilogue's plain
+`store_block2d` at `r13:8` (PC 2116); see `Intel/TlaAcc1Store.lean`.
 -/
 
 namespace IntelGpu
