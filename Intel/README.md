@@ -84,7 +84,7 @@ lake build Intel
 1. Stage 1: minimal Intel GPU / IGC core and `add_one`.
 2. Stage 2: GEMM specification and loop invariant.
 3. Stage 3: GEMM loop-body semantics.
-4. Stage 4 (this PR): IGC syntax and parser.
+4. Stage 4: IGC syntax and parser.
 5. Stage 5: typed IGC operand decoding.
 6. Stage 6: IGC loop-control step semantics.
 7. Stage 7: data + control-flow semantics.
@@ -94,7 +94,7 @@ lake build Intel
 11. Stage 11: word-indexed memory GEMM loop.
 12. Stage 12: matrix GEMM specification.
 13. Stage 13: GEMM tiling and tile coverage.
-14. Stage 14 (this PR): tile scheduler enumeration.
-15. Stage 15: scheduled-tile correctness and global composition.
+14. Stage 14: tile scheduler enumeration.
+15. Stage 15 (this PR): scheduled-tile correctness and global composition.
 16. Stage 16: SLM/barrier semantics.
 17. Stage 17: DPAS and SYCL-TLA GEMM instance.
