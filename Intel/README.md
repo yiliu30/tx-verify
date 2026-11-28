@@ -2353,6 +2353,12 @@ to the composed pack. `vaLoopP3_packed_full` uses those facts to derive
 `P3 = id < globalSize` directly from the launch size dwords, with no remaining
 size assumption about the post-pack state.
 
+## Stage 125: the increment's low pack
+
+`vaPackIncLow_value` executes the M1+M5 low pack from `V0074` into `V0075`
+through `stepLoop`, proving the register contains the low dwords of the next
+IDs for lanes 0..23.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2539,4 +2545,5 @@ lake build Intel
 121. Stage 121: execute the real M1+M5 high pack.
 122. Stage 122: compose both packs into one state.
 123. Stage 123: derive P3 from the executed packs.
-124. Stage 124 (this PR): derive P3 with preserved size dwords.
+124. Stage 124: derive P3 with preserved size dwords.
+125. Stage 125 (this PR): execute the increment's low pack.
