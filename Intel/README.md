@@ -63,7 +63,10 @@ code and, where possible, exercised by an executable check; nothing here rests
 on a silent assumption.
 
 1. **Memory model** — word-addressed, modelled `d32` accesses 4-byte aligned.
-   Lives in `Intel/Asm.lean`. Not discharged.
+   `Intel/Asm.lean` states the abstraction and takes alignment as an explicit
+   precondition; stage 60 collects the store/load laws every frame argument
+   needs (`Intel/MemoryLaws.lean`). Discharged in part — byte-level addressing
+   and endianness are not modelled.
 2. **Lane dimension** — the machines are scalar. Stage 59 adds a SIMD layer
    (`Intel/Simd.lean`): per-lane scalar states plus a mask, with predication
    (`simdRun`), and `add_one_simd` lifting the stage-1 proof to every active
@@ -1136,6 +1139,25 @@ Still not modelled, and stated: GRF regions and sub-group packing.
 `#print axioms`: the two `simdRun` lemmas use `[propext]`, `add_one_simd` uses
 `[propext, Quot.sound]`.
 
+## Stage 60: memory-model laws
+
+Stage 1 defined `load32`/`store32` and proved only what `add_one` needed, so
+every later frame argument re-derived the rest. `Intel/MemoryLaws.lean` collects
+them once:
+
+```lean
+theorem store32_store32_same ...      -- last write wins at one address
+theorem store32_store32_commute ...   -- stores at different words commute
+theorem load32_store32_other ...      -- a load sees only its own address
+theorem store32_eq_self ...           -- storing what is already there is a no-op
+```
+
+The abstraction stays what stage 1 said: one 32-bit word per aligned address,
+word-addressed underneath. Alignment is an explicit precondition, not a silent
+assumption.
+
+`#print axioms`: `[propext]` or `[propext, Quot.sound]` throughout.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -1228,4 +1250,5 @@ lake build Intel
 56. Stage 56: the two scales agree.
 57. Stage 57: interleaved staging, covered.
 58. Stage 58: what uniform control flow buys.
-59. Stage 59 (this PR): a SIMD lane dimension.
+59. Stage 59: a SIMD lane dimension.
+60. Stage 60 (this PR): memory-model laws.
