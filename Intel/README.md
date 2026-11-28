@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 205: loop-exit comparison
+
+`Intel/TlaCmp.lean` decodes the 20 predicated `cmp` forms (`eq`, `ne`, `lt`,
+`gt`) and gives them a flag-writing semantics. The mainloop exit comparison at
+PC 1400 (`cmp (lt)f3.1, null, r1.11, r1.15`) decodes to `loopCmp`:
+`loopCmp_step_flags` evaluates `f3.1` to `r1.11 < r1.15`,
+`loopCmp_exit_iff` shows the flag is clear exactly when the counter has
+reached the bound, and `blockExitJmp` records the predicated jump at PC 1401
+that consumes it.
+
 ## Stage 204: loop-tail counters
 
 `Intel/TlaLoopCounter.lean` decodes the two loop-tail increments at PCs 1397
@@ -3398,4 +3408,5 @@ lake build Intel
 201. Stage 201: mainloop operand-window loads.
 202. Stage 202: mainloop DPAS phase.
 203. Stage 203: mainloop schedule.
-204. Stage 204 (this PR): loop-tail counters.
+204. Stage 204: loop-tail counters.
+205. Stage 205 (this PR): loop-exit comparison.
