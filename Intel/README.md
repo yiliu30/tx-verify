@@ -2572,6 +2572,17 @@ that a general nested-rounding identity is false
 finite operands, a supplied destination exponent, no subnormals, signed zeros,
 NaN payloads, overflow to infinity or FMA. It is not a full IEEE FMA.
 
+## Stage 150: register-level FMHA DPAS execution
+
+`Intel/FmhaExec.lean` executes the decoded FMHA DPAS on a register file.
+`fmhaDpasStep_c` / `fmhaDpasStep_atom` show the C block at the decoded base is
+`fmhaAtom` over the register-file tiles, `fmhaDpasStep_frame` fixes everything
+outside the C block, and `fmhaDpasStep_decoded` specializes to the decoded
+`⟨383, 335, 0, 39⟩` bases. The two-atom theorems on C bases 383 and 391 show
+disjoint updates commute and sum pointwise. The logical tile addressing is a
+documented model assumption; the dump gives bases, not the full physical
+layout.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2783,4 +2794,5 @@ lake build Intel
 146. Stage 146: grid-stride indices and store composition.
 147. Stage 147: SBID fields in an encoded SEND descriptor.
 148. Stage 148: fp8 E4M3 decode for the FMHA atom.
-149. Stage 149 (this PR): IEEE fp16 addition rounding.
+149. Stage 149: IEEE fp16 addition rounding.
+150. Stage 150 (this PR): register-level FMHA DPAS execution.
