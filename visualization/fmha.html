@@ -104,6 +104,7 @@
     <tr><td>266</td><td>#272</td><td>packed-BF16 DPAS atom semantics</td></tr>
     <tr><td>267</td><td>#273</td><td>LSE model support (`math.log`, `lseOut`)</td></tr>
     <tr><td>268</td><td>#274</td><td>BF16 operand check</td></tr>
+    <tr><td>269</td><td>#275</td><td>PV load &rarr; BF16 operand bridge</td></tr>
   </table>
 </section>
 
@@ -136,7 +137,7 @@
   <table>
     <tr><th>Gap</th><th>Status</th></tr>
     <tr><td>LSE variant <code>math.log</code> (8 forms in the LSE dump)</td><td><span class="tag pending">model ready, dump pending</span></td></tr>
-    <tr><td>Program-level DPAS composition with the A/B reload schedule and loop</td><td><span class="tag pending">DPAS-only chains proved</span></td></tr>
+    <tr><td>Program-level DPAS composition with the A/B reload schedule and loop</td><td><span class="tag pending">first PV load bridge (PC 1543) proved</span></td></tr>
     <tr><td>Float-valued half-ulp bound of the RNE conversion</td><td><span class="tag pending">structural bound proved</span></td></tr>
     <tr><td>Per-op MUFU samples</td><td><span class="tag pending">end-to-end 1.5e-05 only</span></td></tr>
     <tr><td>Plain prefill runner <code>--verify=1</code></td><td><span class="tag gap">kErrorInternal on the lab host</span></td></tr>

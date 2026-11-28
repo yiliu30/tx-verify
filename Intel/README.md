@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 269: PV load -> BF16 operand bridge
+
+`Intel/TlaFmhaLoad.lean` lifts the GEMM load-window bridge to the packed-BF16
+operand reads (`loadWindow_feeds_bf16ReadA`/`_bf16ReadB`) and works out the
+actual V load at PC 1543: `bf16ReadB (flat p.1.regs) 46 k n` is the memory
+lane the load wrote. This is the first concrete load -> DPAS dataflow step
+for the FMHA phase; the remaining loads and the loop are still open.
+
 ## Stage 268: BF16 operand check
 
 `endsWithBf` checks the `:bf` source suffix, and `parseFmhaDpas` now rejects
@@ -4058,4 +4066,5 @@ lake build Intel
 265. Stage 265: RNE structural bound.
 266. Stage 266: packed-BF16 DPAS atom semantics.
 267. Stage 267: LSE model support.
-268. Stage 268 (this PR): BF16 operand check.
+268. Stage 268: BF16 operand check.
+269. Stage 269 (this PR): PV load -> BF16 operand bridge.
