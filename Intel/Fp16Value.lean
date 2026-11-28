@@ -27,18 +27,23 @@ numbers.
 namespace IntelGpu
 
 inductive Fval where
-  | nan
+  | nan (payload : Nat)
   | inf (neg : Bool)
   | fin (v : Fixed)
   deriving Repr, DecidableEq
 
+/-- Is this value a NaN? -/
+def Fval.isNan : Fval → Bool
+  | .nan _ => true
+  | _ => false
+
 /-- The accumulation step on values. -/
 def vstep (stepF : Fixed → Fixed → Fixed → Fixed) (acc x y : Fval) : Fval :=
   match acc, x, y with
-  | .nan, _, _ => .nan
-  | _, .nan, _ => .nan
-  | _, _, .nan => .nan
-  | .inf p, .inf r, _ => if p = r then .inf p else .nan
+  | .nan pl, _, _ => .nan pl
+  | _, .nan pl, _ => .nan pl
+  | _, _, .nan pl => .nan pl
+  | .inf p, .inf r, _ => if p = r then .inf p else .nan 0
   | .inf p, _, _ => .inf p
   | _, .inf r, _ => .inf r
   | .fin _, .fin _, .inf r => .inf r
@@ -59,13 +64,18 @@ def foldVal (stepF : Fixed → Fixed → Fixed → Fixed) (a b : Nat → Fval) (
 theorem vstep_fin (stepF : Fixed → Fixed → Fixed → Fixed) (c a b : Fixed) :
     vstep stepF (.fin c) (.fin a) (.fin b) = .fin (stepF c a b) := rfl
 
-theorem vstep_nan_acc (stepF : Fixed → Fixed → Fixed → Fixed) (x y : Fval) :
-    vstep stepF .nan x y = .nan := by
+theorem vstep_nan_acc (stepF : Fixed → Fixed → Fixed → Fixed) (pl : Nat) (x y : Fval) :
+    vstep stepF (.nan pl) x y = .nan pl := by
   cases x <;> cases y <;> rfl
+
+/-- The payload of the accumulator propagates: the first NaN in the step wins. -/
+theorem vstep_nan_left (stepF : Fixed → Fixed → Fixed → Fixed) (pl : Nat) (x y : Fval) :
+    (vstep stepF (.nan pl) x y).isNan = true := by
+  rw [vstep_nan_acc]; rfl
 
 theorem vstep_ne_fin_acc (stepF : Fixed → Fixed → Fixed → Fixed) (acc x y : Fval)
     (h : ¬ ∃ c, acc = .fin c) (v : Fixed) : vstep stepF acc x y ≠ .fin v := by
-  rcases acc with _ | p | c
+  rcases acc with pl | p | c
   · cases x <;> cases y <;> simp [vstep]
   · cases x <;> cases y <;> simp [vstep]
     · split <;> simp

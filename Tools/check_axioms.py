@@ -78,6 +78,7 @@ THEOREMS = [
     ("Intel.Fp16Shape", "IntelGpu.fp16_grid_exact_of_exp"),
     ("Intel.Fp16Bits", "IntelGpu.fp16_bits_exact"),
     ("Intel.Fp16Value", "IntelGpu.foldVal_fin"),
+    ("Intel.Fp16Value", "IntelGpu.vstep_nan_left"),
     ("Intel.Fp16Scaled", "IntelGpu.scaled_normal"),
     ("Intel.Fp16Gluing", "IntelGpu.scaled_eq_mag"),
 ]
