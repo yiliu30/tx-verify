@@ -21,3 +21,7 @@ lean_lib PTX where
     .submodules `Kernels.FlashAttn4Fwd, .submodules `Kernels.AddOne,
     .submodules `Kernels.FlashMlaSparseDecodeH64, .submodules `Kernels.InklingRelDecode,
     .submodules `Kernels.TmlFa4Fwd]
+
+lean_lib Intel where
+  globs := #[.submodules `Intel]
+  leanOptions := #[⟨`weak.linter.style.longLine, true⟩]
