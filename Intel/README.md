@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 204: loop-tail counters
+
+`Intel/TlaLoopCounter.lean` decodes the two loop-tail increments at PCs 1397
+and 1403 (`add r1.11, r1.11, 1:w` and `add r1.14, r1.14, 1:w`) and proves their
+values: `tlaLoopCounterStep` adds one to both counters and leaves every other
+register element and the `acc`, `addr`, `cr` and `flags` banks unchanged. This
+is the loop-carried counter update for one iteration.
+
 ## Stage 203: mainloop schedule
 
 `Intel/TlaSchedule.lean` classifies all 445 mainloop instructions into ten
@@ -3389,4 +3397,5 @@ lake build Intel
 200. Stage 200: block2d address semantics.
 201. Stage 201: mainloop operand-window loads.
 202. Stage 202: mainloop DPAS phase.
-203. Stage 203 (this PR): mainloop schedule.
+203. Stage 203: mainloop schedule.
+204. Stage 204 (this PR): loop-tail counters.
