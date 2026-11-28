@@ -104,7 +104,7 @@ def runVA (s : RealState) (is : List RInstr) : RealState := runRealWith stepVA s
 def vaPreamble : List RInstr :=
   [ .label "_main_0",
     .prologue,
-    .mul 1 ⟨52, 0, 0, 1, 1, 0⟩ ⟨40, 0, 0, 0, 1, 0⟩ ⟨38, 0, 1, 0, 1, 0⟩,
+    .mul (Exec.nm 1) ⟨52, 0, 0, 1, 1, 0⟩ ⟨40, 0, 0, 0, 1, 0⟩ ⟨38, 0, 1, 0, 1, 0⟩,
     .mov 32 ⟨53, 0, 0, 1, 1, 0⟩ ⟨54, 0, 0, 1, 1, 0⟩,
     .add3 32 ⟨55, 0, 0, 1, 1, 0⟩ ⟨52, 0, 0, 0, 1, 0⟩ ⟨53, 0, 0, 1, 1, 0⟩
       ⟨39, 0, 0, 0, 1, 0⟩ ]
@@ -317,6 +317,7 @@ theorem vaMem (s : RealState) (aPtr bPtr cPtr : Addr)
   simp [runRealWith, stepVA, stepWith, writeVecWith, setReg, readScalarWith,
     readRegWith, readSrcWith, srcIndex, vaAlias, isWideOf, vaRegType,
     RegType.is64, binOpWide, load32, hp35, hp36, hp34, hidAll, hmem']
+  rfl
 
 /-- The store writes each lane's `a[id] + b[id]` at its C word. -/
 theorem vaStore (s : RealState) (aPtr bPtr cPtr : Addr)

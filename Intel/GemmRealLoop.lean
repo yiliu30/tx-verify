@@ -110,7 +110,7 @@ theorem gemmStepIter_inv (n : Nat) (s : RealState) (aPtr bPtr cPtr : Addr)
 
 /-- The last iteration: the body plus `cmp.lt`, without the counter increment. -/
 def gemmFinalStep : List RInstr :=
-  gemmBodyBlock ++ [.cmpLt 32 1 ⟨79, 0, 0, 0, 1, 0⟩ 63 .ud]
+  gemmBodyBlock ++ [.cmpLt (Exec.nm 32) 1 ⟨79, 0, 0, 0, 1, 0⟩ 63 .ud]
 
 theorem gemmFinalStep_sum (s : RealState) (aPtr bPtr cPtr : Addr)
     (i j0 k sum goX : Word) (l : Nat)
@@ -138,9 +138,10 @@ theorem gemmFinalStep_pred (s : RealState) (aPtr bPtr cPtr : Addr)
     (i j0 k sum goX : Word) (l : Nat)
     (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX) :
     (runGemm s gemmFinalStep).preds 1 0 = decide (k < 63) := by
+  have h32 : (Exec.nm 32).size = 32 := rfl
   unfold gemmFinalStep runGemm
   rw [runRealWith_append]
-  simp [runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
+  simp [h32, runRealWith, gemmBodyBlock, stepGemm, stepWith, writeVecWith, setReg,
     readRegWith, readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType,
     RegType.is64, binOpWide, add3Wide, shlWide, load32, h.v61]
 

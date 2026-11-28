@@ -10,9 +10,9 @@ fork.
 | Review item | Stages (PRs) | Evidence | Status |
 | --- | --- | --- | --- |
 | P0 real assembly import | 62 (#64), 65 (#67), 82 (#84), 83 (#85) | four real dumps (add-one, integer GEMM, loop vector add, straight-line vector add) with sha256 provenance and generated statement lists; the FMHA DPAS line in 79 (#81) | addressed for these kernels |
-| P0 reject unsupported explicitly | 62b (#64), 63 (#65), 82 (#84) | `rejected`, `realGemm_rejectedOps`, `realVectorAdd_rejectedOps`, the fail-closed `parseExec` mask check and `masked_mov_rejected` | addressed; all dumps are all-or-nothing |
+| P0 reject unsupported explicitly | 62b (#64), 63 (#65), 82 (#84), 92 | `rejected`, `realGemm_rejectedOps`, `realVectorAdd_rejectedOps`, the fail-closed `parseExec` mask check, `masked_mov_decodes` and `parseExec_rejects_M9` | addressed; all dumps are all-or-nothing |
 | P0 unified semantics | 63-67 (#65-#69), 68-77 (#70-#79), 83-85 (#85-#87) | one `RInstr`/`stepWith` model; `realAddOne_effect`, `realGemm_output`, `realVectorAdd_effect` | addressed for the modeled instructions |
-| P0 GRF and SIMD | 64 (#66), 66 (#68), 68 (#70), 83 (#85) | regions, aliases, execution sizes in `Grf`/`gemmAlias`; predicates and `runRealCF`; scaled memory | partial: masked `(M5, ...)`/`sel`/loop forms are decoded as refusals, not executed |
+| P0 GRF and SIMD | 64 (#66), 66 (#68), 68 (#70), 83 (#85), 90-92 | regions, aliases, execution sizes in `Grf`/`gemmAlias`; per-lane predicates, predicated `sel`; M1-M8 masks in `Exec` | partial: masks are decoded but their lane offset is not yet applied; predicated `goto` and the loop are open |
 | P0 SEND and SBID | 78 (#80) | `issueLoad`/`issueStore`/`wait`/`commitLoad`, `loadPipeline_value`, `storePipeline_value`, `addOnePipeline_value` | mechanism modeled; exact SBIDs are not printed and remain assumptions |
 | P1 memory and concurrency | 60, 64 (#66), 67 (#69) | word/byte memory, alignment, `load32LE_store32LE_*`, `realAddOne_byteRangesDisjoint`, per-lane stores and frames | partial: no caches, visibility, synchronization or SLM aliasing |
 | P1 DPAS refinement | 49, 50, 79 (#81), 86 (#88) | decoded `dpas.8x8`; `fmhaFp8Atom` 8x8x32 vs `tlaXeF16Atom` 8x16x16; atom counts 1 vs 2 | partial: operand packing/dataflow of the 8x8x32 atom not modeled |
@@ -51,7 +51,8 @@ Parser/decoder scope:
 
 - operands are parsed with structural `List Char` helpers; unsupported forms
   return `none`;
-- only M1/M1_NM masks are accepted; M5-masked forms are refused;
+- M1-M8 and `_NM` masks are decoded into `Exec`; the execution model does not
+  yet apply the mask offset;
 - the scaled memory decoder accepts only the `0x4*index` form.
 
 Model assumptions:
@@ -71,8 +72,8 @@ from `Classical.choose` in the racing-store model.
 
 ## Remaining work
 
-- masked/predicated loop vector add: `(M5, 16)` execution masks, `cmp`/`and`/
-  `or` predicate logic, `sel`, predicated `goto`, and the grid-stride loop;
+- masked/predicated loop vector add: apply `(M5, 16)` execution masks,
+  `cmp`/`and`/`or` predicate logic, predicated `goto`, and the grid-stride loop;
 - FMHA/SageAttention execution and low-precision paths;
 - 8x8x32 DPAS operand packing and dataflow;
 - full IEEE semantics and a hardware memory model with visibility and
