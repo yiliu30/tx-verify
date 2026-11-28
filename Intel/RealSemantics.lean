@@ -274,6 +274,9 @@ def stepWith (alias : Nat → Nat) (typeOf : Nat → Option RegType) :
         mem := storeVec s.mem n
           (fun l => readScalarWith alias s base + ((readRegWith alias s idx l) <<< 2))
           (fun l => low32 (readRegWith alias s src l)) }
+  | s, .sel _ p dst a b =>
+      writeVecWith alias s dst.num (fun l =>
+        if s.preds p l then readSrcWith alias s a l else readSrcWith alias s b l)
   | s, .ret _ => { s with halted := true }
   | s, .label _ => s
   | s, .movImm _ dst imm _ =>
@@ -399,6 +402,7 @@ def RInstr.regionsSimple : RInstr → Bool
   | .gotoIf _ _ _ _ => true
   | .loadScaled _ _ _ _ _ => true
   | .storeScaled _ _ _ _ _ => true
+  | .sel _ _ d a b => d.dstSimple && a.simple && b.simple
 
 /-- The region interpretation used by `stepReal` is exactly what this kernel
 prints: dense destinations at `(0,0)`, width 1, horizontal stride 0. -/
@@ -479,6 +483,7 @@ def RInstr.dstCountOk : RInstr → Bool
   | .gotoIf _ _ _ _ => true
   | .loadScaled n d _ _ _ => regElems d == n && (regType d).isSome
   | .storeScaled _ _ _ _ _ => true
+  | .sel n _ d _ _ => regElems d.num == n && (regType d.num).isSome
 
 /-- Every destination has a declared type and exactly as many elements as the
 execution size writes, so writing the whole register is exact. -/
@@ -602,5 +607,12 @@ theorem cmpLt_inactive (alias : Nat → Nat) (typeOf : Nat → Option RegType)
     (s : RealState) (n p imm : Nat) (src : Grf) (w : Width) (l : Nat) (hl : ¬ l < n) :
     (stepWith alias typeOf s (.cmpLt n p src imm w)).preds p l = s.preds p l := by
   simp [stepWith, hl]
+
+/-- A predicated select reads `a` on true lanes and `b` on false lanes. -/
+theorem sel_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (n p : Nat) (dst a b : Grf) (l : Nat) :
+    (stepWith alias typeOf s (.sel n p dst a b)).regs (alias dst.num) l =
+      if s.preds p l then readSrcWith alias s a l else readSrcWith alias s b l := by
+  simp [stepWith, writeVecWith, setReg]
 
 end IntelGpu

@@ -122,6 +122,8 @@ KNOWN = {
     "IntelGpu.cmpLt_lane": {"Classical.choice"},
     "IntelGpu.cmpLt_other": {"Classical.choice"},
     "IntelGpu.cmpLt_inactive": {"Classical.choice"},
+    # Stage 91 predicated select: `stepWith` embeds the store model's choice.
+    "IntelGpu.sel_lane": {"Classical.choice"},
     "IntelGpu.vaPreamble_pointers": {"Classical.choice"},
     "IntelGpu.vaPreamble_mem": {"Classical.choice"},
     "IntelGpu.realVectorAddFlat_decoded_eq": {"Classical.choice"},

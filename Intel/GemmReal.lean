@@ -308,6 +308,7 @@ def RInstr.gemmDstOk : RInstr → Bool
   | .gotoIf _ _ _ _ => true
   | .loadScaled n d _ _ _ => gemmRegElems d == n && (gemmRegType d).isSome
   | .storeScaled _ _ _ _ _ => true
+  | .sel n _ d _ _ => gemmRegElems d.num == n && (gemmRegType d.num).isSome
 
 theorem gemmPreamble_dst_counts :
     gemmPreamble.all RInstr.gemmDstOk = true := by

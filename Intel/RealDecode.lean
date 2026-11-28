@@ -91,6 +91,8 @@ inductive RInstr where
   | loadScaled (exec : Nat) (dst : Nat) (w : Width) (base idx : Nat)
   /-- A scaled global store `flat(base)[4*index]`. -/
   | storeScaled (exec : Nat) (base idx : Nat) (w : Width) (src : Nat)
+  /-- A predicated select `(Pp) sel`: `dst = pred ? a : b` per lane. -/
+  | sel (exec : Nat) (pred : Nat) (dst a b : Grf)
   deriving Repr, DecidableEq
 
 /-- Every decimal run in a list, in order. Structural on the fuel; each step
@@ -220,6 +222,17 @@ def parseScaledMem (s : String) : Option (Nat × Nat) :=
   | [b, 0, 4, i] => some (b, i)
   | _ => none
 
+/-- The predicate of a `(Pp) sel` mnemonic. -/
+def parseSelPred (s : String) : Option Nat :=
+  match s.toList with
+  | '(' :: 'P' :: rest =>
+      let digits := rest.takeWhile isDigit
+      if digits.isEmpty then none
+      else if rest.dropWhile isDigit = [')', ' ', 's', 'e', 'l'] then
+        some (digitsToNat digits)
+      else none
+  | _ => none
+
 /-- A predicate operand `P1`. -/
 def parsePred (s : String) : Option Nat :=
   match s.toList with
@@ -303,6 +316,10 @@ def decodeReal : Stmt → Option RInstr
           match parseExec e with
           | some n => some (.gotoIf n 1 true l)
           | none => none
+      | op, [e, d, a, b] =>
+          match parseSelPred op, parseExec e, parseGrf d, parseGrf a, parseGrf b with
+          | some p, some n, some x, some y, some z => some (.sel n p x y z)
+          | _, _, _, _, _ => none
       | "ret", [e] =>
           match parseExec e with
           | some n => some (.ret n)
