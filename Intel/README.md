@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 255: causal mask
+
+`Intel/TlaMask.lean` proves the causal contribution set: `causalKeep q k` is
+`k ≤ q`, `mem_causalRow_iff` characterizes exactly the kept `(k, logit)`
+pairs, the diagonal pair is kept and the first pair beyond it is dropped, and
+`causalWeights_sum` shows that zeroing the dropped weights equals summing the
+kept sublist.
+
 ## Stage 254: online softmax invariant
 
 `Intel/TlaOnlineSoftmax.lean` proves the running-state invariant for the
@@ -3911,4 +3919,5 @@ lake build Intel
 251. Stage 251: `sync.allwr` waits.
 252. Stage 252: `math.exp` and `math.inv`.
 253. Stage 253: row softmax algebra.
-254. Stage 254 (this PR): online softmax invariant.
+254. Stage 254: online softmax invariant.
+255. Stage 255 (this PR): causal mask.
