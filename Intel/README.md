@@ -40,7 +40,21 @@ def GemmSpec (A B C : Nat → Nat → Int) (M N K : Nat) : Prop
 ```
 
 `#print axioms IntelGpu.gemmRun_acc` reports only `[propext]`. This is the
-spec/loop layer; connecting it to the IGC loop body is stage 3.
+spec/loop layer.
+
+## Stage 3: GEMM loop body
+
+`Intel/GemmBody.lean` adds `mul`/`add` to the core and proves one straight-line
+IGC-style body iteration:
+
+```lean
+theorem gemmBody_correct ... :
+    let s' := run s gemmBody
+    s'.regs 4 = sum + a * b ∧ s'.mem = s.mem ∧ s'.halted = s.halted
+```
+
+This is one lane; SIMD masks, loop control, pointer increment, and IGC text
+parsing are later stages.
 
 ## Not modeled yet
 
@@ -61,6 +75,7 @@ lake build Intel
 ## Roadmap
 
 1. Stage 1: minimal Intel GPU / IGC core and `add_one`.
-2. Stage 2 (this PR): GEMM specification and loop invariant.
-3. Stage 3: IGC text/parser and GEMM loop-body proof.
-4. Stage 4: SYCL-TLA GEMM instance.
+2. Stage 2: GEMM specification and loop invariant.
+3. Stage 3 (this PR): GEMM loop-body semantics.
+4. Stage 4: IGC text/parser and loop control.
+5. Stage 5: SYCL-TLA GEMM instance.
