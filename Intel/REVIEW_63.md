@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (204 jobs) and `Tools/check_axioms.py --all`
-  (2291 theorems, 730 documented exceptions at stage 254).
+  `lake build Intel` (208 jobs) and `Tools/check_axioms.py --all`
+  (2318 theorems, 742 documented exceptions at stage 257).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -277,6 +277,9 @@ from `Classical.choose` in the racing-store model.
 | 252 | #257 | `math.exp` and `math.inv` |
 | 253 | #258 | row softmax algebra |
 | 254 | #259 | online softmax invariant |
+| 255 | #260 | causal mask |
+| 256 | #261 | FMHA DPAS atoms |
+| 257 | #262 | PV chain and epilogue ratio |
 
-The stack is intentionally one PR per stage (#64-#259), as requested. The
+The stack is intentionally one PR per stage (#64-#262), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
