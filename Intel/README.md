@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 233: trap halting semantics
+
+`Intel/FpTrapHalt.lean` gives trap delivery its architectural effect: a
+trapping operation halts the machine, records the trap and does not write its
+destination; an untrapped operation writes the wrapped sum and keeps running;
+halting is absorbing for writes (`halted_write`). The concrete overflow
+pattern is carried through: a trap with the overflow mask and the unchanged
+destination, the sum without a mask. All five theorems are axiom-clean.
+
 ## Stage 232: assembly provenance re-check
 
 Re-dumping the assembly of the binary that passed the hardware verification
@@ -3687,4 +3696,5 @@ lake build Intel
 229. Stage 229: FTZ and DAZ.
 230. Stage 230: trap delivery and exception masks.
 231. Stage 231: SYCL-TLA GEMM hardware conformance.
-232. Stage 232 (this PR): assembly provenance re-check.
+232. Stage 232: assembly provenance re-check.
+233. Stage 233 (this PR): trap halting semantics.
