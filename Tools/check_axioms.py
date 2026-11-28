@@ -107,6 +107,7 @@ KNOWN = {
     "IntelGpu.gemmEpilogue_halted": {"Classical.choice"},
     "IntelGpu.realGemm_output": {"Classical.choice"},
     "IntelGpu.realFmhaDpas_form": {"Classical.choice"},
+    "IntelGpu.realFmhaDpas_atom": {"Classical.choice"},
     # Stage 82 vector-add coverage: `decodeReal` walks `String` operands.
     "IntelGpu.realVectorAdd_accepted": {"Classical.choice"},
     "IntelGpu.realVectorAdd_rejectedOps": {"Classical.choice"},
