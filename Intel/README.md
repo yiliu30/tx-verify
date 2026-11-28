@@ -1692,6 +1692,28 @@ payload `0`; the stage-61 NaN-payload propagation rules are unchanged. This is
 not yet a full IEEE FMA: subnormals, exponent overflow/underflow, signed zero
 and rounding are still outside the class model.
 
+## Stage 81: hardware conformance for the real GEMM
+
+Issue #63's P1 conformance item: a differential test between actual Intel GPU
+execution and the formal model.
+
+- `Tools/conformance/gemm_conformance.cpp` runs the 64x64x64 integer GEMM with
+  the dump's source shape and deterministic inputs, checks every output against
+  a CPU reference, and prints a 32-bit checksum.
+- `Tools/conformance/gemm_eval.lean` evaluates the Lean `gemmDot` on the same
+  inputs.
+- Recorded run: compiler oneAPI 2026.2.0, Level-Zero runtime 1.18.40867; the
+  device is an Intel discrete GPU with product/PCI details withheld per policy.
+
+Result: the GPU prints `C00=-2 C11=-5 C6363=4 checksum=4294967290 bad=0`; the
+Lean model's unsigned forms are `4294967294 4294967291 4` and its full
+4096-output checksum is `4294967290`. Both sides agree bit-for-bit.
+
+This is a conformance test, not a proof; the end-to-end theorem remains
+`realGemm_output`. The dump was compiled with oneAPI 2026.1 and this run with
+2026.2, so it tests the source-level kernel semantics on the same GPU family,
+not the exact binary.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1824,4 +1846,5 @@ lake build Intel
 77. Stage 77: the real GEMM's end-to-end output theorem.
 78. Stage 78: model SEND/SBID issue, completion, wait and commit.
 79. Stage 79: decode a real FMHA DPAS and check the atom mapping.
-80. Stage 80 (this PR): refine the value step with `0 * inf = NaN`.
+80. Stage 80: refine the value step with `0 * inf = NaN`.
+81. Stage 81 (this PR): differential hardware conformance for the real GEMM.
