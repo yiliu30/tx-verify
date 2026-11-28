@@ -2681,6 +2681,17 @@ reads `regs 59 l` as a qword lane. `vaLoopLoopBack_dword_counterexample`
 proves the naive all-lane reconstruction is false, so a fully literal second
 iteration needs a dword/qword coalescing step in the existing semantics.
 
+## Stage 159: directed fp16 rounding
+
+`Intel/IeeeFp16Directed.lean` adds round-toward-zero, round-down and round-up
+for the fp16 value model. It proves the directed bounds, exact-grid fixed
+points, that ties-to-even always lies between down and up, and subnormal /
+first-normal-binade results under every mode. The overflow table is exact:
+toward zero saturates at signed `65504`, up-positive and down-negative go to
+infinity above `65504`, and the other directions saturate. Bit-level examples
+and counterexamples show where the modes differ. General per-binade RNE,
+exception flags and FMA remain open.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2901,4 +2912,5 @@ lake build Intel
 155. Stage 155: register-level FMHA mainloop.
 156. Stage 156: fp16 special values and overflow.
 157. Stage 157: coherence traffic between two caches.
-158. Stage 158 (this PR): the decoded loop-back block.
+158. Stage 158: the decoded loop-back block.
+159. Stage 159 (this PR): directed fp16 rounding.
