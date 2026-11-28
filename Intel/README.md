@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 183: census of the predicated forms
+
+`Intel/TlaPredCensus.lean` inventories the SYCL-TLA GEMM's 968
+predicate-prefixed statements. `predOpcodes` collects their exact opcode
+spellings, `predOpcodes_length` and `predOpcodes_mov_count` prove the 968 total
+and 377 moves, and `predOpcodes_all_known` proves every opcode is in the
+45-entry documented list (predicated moves, loads/stores, integer ALU,
+`cmp`/`jmpi` predication variants, `send.gtwy`, `sync.bar`). This scopes the
+next semantics stages to a finite instruction list.
+
 ## Stage 182: the second accumulator
 
 `Intel/TlaDpasSum.lean` now also proves the `r13` half of the chain.
@@ -3184,4 +3194,5 @@ lake build Intel
 179. Stage 179: BF16 values in the DPAS slab.
 180. Stage 180: packed BF16 register halves.
 181. Stage 181: the full 32-step DPAS sum.
-182. Stage 182 (this PR): the second accumulator.
+182. Stage 182: the second accumulator.
+183. Stage 183 (this PR): census of the predicated forms.
