@@ -2459,6 +2459,17 @@ keeps the bound registers intact. `vaLoop_lane_body_exit_pc8_mem` then starts
 at PC 8 and needs only the real P3 guard, the range bound, and the body's
 memory-safety hypotheses.
 
+## Stage 139: per-location visibility and release/acquire
+
+`Intel/MemoryVisibility.lean` adds a small memory model: each location has a
+store log with a visible prefix, plain writes stay pending, a release fence
+publishes the whole log, and an acquire fence is identity in the cacheless
+model. `read_write_same`, `write_write_order` and `read_never_unwritten` state
+the coherence laws; `release_acquire_message_passing` proves that observing a
+released flag returns the published data, and `without_release_stale_observable`
+shows the release is load-bearing. The module docstring lists the model
+assumptions and the parts that remain outside it.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2659,4 +2670,5 @@ lake build Intel
 135. Stage 135: execute the decoded entry slice.
 136. Stage 136: compose the per-lane decoded control path.
 137. Stage 137: prove the per-lane memory effect on the decoded path.
-138. Stage 138 (this PR): derive the path guards from the decoded prefix.
+138. Stage 138: derive the path guards from the decoded prefix.
+139. Stage 139 (this PR): per-location visibility and release/acquire.
