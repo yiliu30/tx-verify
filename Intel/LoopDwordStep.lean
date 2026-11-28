@@ -73,5 +73,31 @@ theorem stepLoop_mov74_unit (s : RealState) (e : Exec) (dst src : Grf)
   simp [stepLoop, hsrc, writeMaskedWith, Grf.dstIndex, Exec.laneIndex, hnm,
     hdst, Nat.add_sub_of_le hle, hactive]
 
+theorem stepLoop_movMasked61_unit (s : RealState) (e : Exec) (dst src : Grf)
+    (hsrc : src.num = 61) (hnm : e.noMask = false) (hdst : dst.hstride = 1)
+    (l : Nat) (hactive : e.laneActive l = true) :
+    (stepLoop s (.movMasked e dst src)).regs (vaLoopAlias dst.num)
+        (dst.dstIndex (e.laneIndex l)) =
+      zext (dwordAtQ s 59 (srcIndexRegion src (e.laneIndex l))) := by
+  have hle : e.offset ≤ l := by
+    have h := hactive
+    simp [Exec.laneActive, hnm] at h
+    exact h.1
+  simp [stepLoop, hsrc, writeMaskedWith, Grf.dstIndex, Exec.laneIndex, hnm, hdst,
+    Nat.add_sub_of_le hle, hactive]
+
+theorem stepLoop_movMasked74_unit (s : RealState) (e : Exec) (dst src : Grf)
+    (hsrc : src.num = 74) (hnm : e.noMask = false) (hdst : dst.hstride = 1)
+    (l : Nat) (hactive : e.laneActive l = true) :
+    (stepLoop s (.movMasked e dst src)).regs (vaLoopAlias dst.num)
+        (dst.dstIndex (e.laneIndex l)) =
+      zext (dwordAtQ s 72 (srcIndexRegion src (e.laneIndex l))) := by
+  have hle : e.offset ≤ l := by
+    have h := hactive
+    simp [Exec.laneActive, hnm] at h
+    exact h.1
+  simp [stepLoop, hsrc, writeMaskedWith, Grf.dstIndex, Exec.laneIndex, hnm, hdst,
+    Nat.add_sub_of_le hle, hactive]
+
 end
 end IntelGpu
