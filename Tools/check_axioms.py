@@ -58,7 +58,12 @@ KNOWN = {
     "IntelGpu.realGemm_accepted": {"Classical.choice"},
     "IntelGpu.realGemm_rejectedOps": {"Classical.choice"},
     "IntelGpu.realGemm_rejectedLabels": {"Classical.choice"},
-    "IntelGpu.realGemm_not_decoded": {"Classical.choice"},
+    "IntelGpu.realGemm_decodes": {"Classical.choice"},
+    "IntelGpu.realGemm_decoded_length": {"Classical.choice"},
+    "IntelGpu.realGemm_label_main": {"Classical.choice"},
+    "IntelGpu.realGemm_label_loop": {"Classical.choice"},
+    "IntelGpu.realGemm_label_step": {"Classical.choice"},
+    "IntelGpu.realGemm_label_exit": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -120,7 +125,9 @@ THEOREMS = [
     ("Intel.RealSemantics", "IntelGpu.realAddOne_address_preamble"),
     ("Intel.RealSemantics", "IntelGpu.realAddOne_effect"),
     ("Intel.RealGemmCoverage", "IntelGpu.realGemm_accepted"),
-    ("Intel.RealGemmCoverage", "IntelGpu.realGemm_not_decoded"),
+    ("Intel.RealGemmCoverage", "IntelGpu.realGemm_decodes"),
+    ("Intel.RealGemmCoverage", "IntelGpu.realGemm_decoded_length"),
+    ("Intel.RealGemmCoverage", "IntelGpu.realGemm_label_loop"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
