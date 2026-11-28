@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SYCL-TLA FMHA prefill: verification status</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --ink: #e2e8f0; --muted: #94a3b8;
+    --accent: #38bdf8; --good: #34d399; --warn: #fbbf24; --bad: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.55 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { padding: 40px 24px 20px; max-width: 1080px; margin: 0 auto; }
+  h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); }
+  section { max-width: 1080px; margin: 0 auto; padding: 18px 24px; }
+  h2 { font-size: 19px; margin: 10px 0 12px; color: var(--accent); }
+  .pipeline { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+  .step { background: var(--panel); border: 1px solid #334155; border-radius: 10px;
+          padding: 12px 14px; flex: 1 1 150px; min-width: 150px; }
+  .step b { display: block; margin-bottom: 4px; }
+  .step small { color: var(--muted); }
+  .arrow { align-self: center; color: var(--muted); font-size: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .card { background: var(--panel); border: 1px solid #334155; border-radius: 10px; padding: 14px; }
+  .num { font-size: 26px; font-weight: 700; }
+  .label { color: var(--muted); font-size: 13px; }
+  .ok { color: var(--good); } .pending { color: var(--warn); } .gap { color: var(--bad); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel);
+          border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid #334155; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+         background: #0b1220; padding: 1px 5px; border-radius: 4px; }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+  ul { margin: 6px 0 0 18px; padding: 0; }
+  li { margin: 4px 0; }
+  footer { max-width: 1080px; margin: 10px auto 50px; padding: 10px 24px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SYCL-TLA FMHA prefill</h1>
+  <div class="sub">From the IGC assembly of <code>XeFMHAFwdKernel</code> to machine-checked claims &mdash; stages 246&ndash;258.</div>
+</header>
+
+<section>
+  <h2>Pipeline</h2>
+  <div class="pipeline">
+    <div class="step"><b>1. Dump</b><small>oneAPI 2026.1 IGC, BF16, hdim 128, 256&times;256, non-causal</small></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><b>2. Import</b><small><code>RealFmhaPrefill</code>: 1946 instructions / 1965 statements, sha256 pinned</small></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><b>3. Decode</b><small><code>decodedAll</code>: 1965 / 1965 statements, zero unclassified</small></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><b>4. Semantics</b><small>mov/ALU/sel/cmp/bfn/sync/DPAS/math steps with frame laws</small></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><b>5. Algebra</b><small>row softmax, online rescaling, causal mask</small></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><b>6. Phases</b><small>64 DPAS atoms, 32 QK + 32 PV, PV chain slab sum</small></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><b>7. Conform</b><small>axiom audit, hardware LSE run, this page</small></div>
+  </div>
+</section>
+
+<section>
+  <h2>Numbers</h2>
+  <div class="grid">
+    <div class="card"><div class="num ok">1965 / 1965</div><div class="label">statements decoded (100%)</div></div>
+    <div class="card"><div class="num">64</div><div class="label">DPAS atoms &mdash; 4 <code>null</code> acc1, 60 aliased</div></div>
+    <div class="card"><div class="num">33 + 1</div><div class="label"><code>math.exp</code> + <code>math.inv</code>, <code>MufuModel</code> contract</div></div>
+    <div class="card"><div class="num">66 / 8</div><div class="label"><code>sel</code> forms / <code>sync.allwr</code> waits</div></div>
+    <div class="card"><div class="num">32 + 32</div><div class="label">QK^T atoms (<code>r42..r66</code>) + PV atoms (<code>r74..r194</code>)</div></div>
+    <div class="card"><div class="num ok">1.5e-05</div><div class="label">measured LSE max abs error (host reference)</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Stages</h2>
+  <table>
+    <tr><th>Stage</th><th>PR</th><th>Result</th></tr>
+    <tr><td>246</td><td>#248</td><td>gap analysis and proposal</td></tr>
+    <tr><td>247</td><td>#251</td><td>prefill dump imported; coverage census</td></tr>
+    <tr><td>248</td><td>#252</td><td>negated sources and <code>.v</code> immediates</td></tr>
+    <tr><td>249</td><td>#254</td><td><code>sel</code> decode + value semantics</td></tr>
+    <tr><td>250</td><td>#255</td><td>plain <code>cmp</code>, <code>not</code>, <code>bfn</code> mux</td></tr>
+    <tr><td>251</td><td>#256</td><td><code>sync.allwr</code> waits, identity step</td></tr>
+    <tr><td>252</td><td>#257</td><td><code>math.exp</code>/<code>math.inv</code>, MUFU contract</td></tr>
+    <tr><td>253</td><td>#258</td><td>row max + normalised softmax weights</td></tr>
+    <tr><td>254</td><td>#259</td><td>online-softmax fold invariant</td></tr>
+    <tr><td>255</td><td>#260</td><td>causal contribution set</td></tr>
+    <tr><td>256</td><td>#261</td><td>FMHA DPAS atoms, null/alias semantics</td></tr>
+    <tr><td>257</td><td>#262</td><td>PV chain slab sum, epilogue ratio</td></tr>
+    <tr><td>258</td><td>#263</td><td>summary module and this page</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Verified claims</h2>
+  <table>
+    <tr><th>Claim</th><th>Theorem</th></tr>
+    <tr><td>Every statement decodes</td><td><code>fmhaPrefill_decoded_all</code></td></tr>
+    <tr><td>4 null + 60 aliased DPAS</td><td><code>fmhaDpas_null_count</code>, <code>fmhaDpas_alias_count</code></td></tr>
+    <tr><td>QP split 32 + 32</td><td><code>qkDpas_length</code>, <code>pvDpas_length</code></td></tr>
+    <tr><td>Atom slab value and frame</td><td><code>fmhaAtomStep_acc0</code>, <code>fmhaAtomStep_frame</code></td></tr>
+    <tr><td>PV chain = initial + slab sum</td><td><code>fmhaAtomRun_fixed_acc</code>, <code>pv74_sum</code></td></tr>
+    <tr><td>Row max upper bound</td><td><code>rowMax_ge_mem</code></td></tr>
+    <tr><td>Softmax weights sum to one</td><td><code>softmaxWeights_sum_one</code></td></tr>
+    <tr><td>Online fold = two-pass sums</td><td><code>onlineFold_init_den</code>, <code>onlineFold_init_num</code></td></tr>
+    <tr><td>Exact causal contribution set</td><td><code>mem_causalRow_iff</code>, <code>causalWeights_sum</code></td></tr>
+    <tr><td>Epilogue = two-pass ratio</td><td><code>onlineOut_twoPass</code></td></tr>
+    <tr><td>MUFU error budget</td><td><code>MufuModel.exp_bound</code>, <code>MufuModel.inv_bound</code></td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Open gaps</h2>
+  <table>
+    <tr><th>Gap</th><th>Status</th></tr>
+    <tr><td>QK^T chain composition with accumulator-overlapping A/B windows</td><td><span class="tag pending">atom semantics only</span></td></tr>
+    <tr><td>RNE fp32 &rarr; BF16 conversion before PV</td><td><span class="tag pending">packing exists, rounding model pending</span></td></tr>
+    <tr><td>LSE variant <code>math.log</code> (8 forms in the LSE dump)</td><td><span class="tag pending">non-LSE dump imported</span></td></tr>
+    <tr><td>Per-op MUFU samples</td><td><span class="tag pending">end-to-end 1.5e-05 only</span></td></tr>
+    <tr><td>Plain prefill runner <code>--verify=1</code></td><td><span class="tag gap">kErrorInternal on the lab host</span></td></tr>
+    <tr><td>varlen, paged KV, FP8/MXFP, GQA/MQA, decode</td><td><span class="tag gap">out of scope</span></td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Trusted base</h2>
+  <ul>
+    <li>Dump provenance: oneAPI 2026.1 IGC, sha256 <code>f8e2995a&hellip;ae686db</code>, platform/build lines redacted.</li>
+    <li><code>MufuModel</code> contract fields: rational references, <code>expErr</code>/<code>invErr</code>, monotonicity assumptions.</li>
+    <li>Hardware evidence: LSE runner passed full output vs reference; LSE max abs error <code>1.5e-05</code>; plain runner broken.</li>
+    <li>Axiom audit: only <code>Classical.choice</code> beyond the core axioms; every exception documented in <code>Tools/check_axioms.py</code>.</li>
+  </ul>
+</section>
+
+<footer>
+  Generated for the staging fork. Open <code>visualization/verification.html</code> for the GEMM stack and
+  <code>Intel/FMHA_PREFILL_PROPOSAL.md</code> for the full proposal.
+</footer>
+</body>
+</html>
