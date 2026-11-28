@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 181: the full 32-step DPAS sum
+
+`Intel/TlaDpasSum.lean` proves the whole SYCL-TLA DPAS chain with a first-order
+`List.sum` accumulator. `tlaDpasRunSeq_acc0_sum` and `tlaDpasRun_acc0_sum`
+state that the first accumulator block is the initial block plus the ordered
+sum of the 32 slabs, each read from the initial register file.
+`realTlaGemmDpas_acc0_sum` specializes this to the real instruction list.
+The key side conditions are the `r21/r13` accumulator bases and the `r29`
+source lower bound, both proved by census. The same argument applies to
+`r13`; the second-accumulator corollary is the next small step.
+
 ## Stage 180: packed BF16 register halves
 
 `Intel/Bf16Pack.lean` adds the bit-level packing view of a DPAS source
@@ -3163,4 +3174,5 @@ lake build Intel
 177. Stage 177: composing two SYCL-TLA DPAS steps.
 178. Stage 178: BF16 source decode.
 179. Stage 179: BF16 values in the DPAS slab.
-180. Stage 180 (this PR): packed BF16 register halves.
+180. Stage 180: packed BF16 register halves.
+181. Stage 181 (this PR): the full 32-step DPAS sum.
