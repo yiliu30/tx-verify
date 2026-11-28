@@ -25,6 +25,7 @@ structure TlaState where
 
 def readTlaSrcState (st : TlaState) : TlaSrc → Nat → Word
   | .reg g => fun i => st.regs g.num (srcIndex g i)
+  | .negReg g => fun i => -(st.regs g.num (srcIndex g i))
   | .cr n sub => fun _ => st.cr n sub
   | .imm v _ => fun _ => BitVec.ofInt 32 v
 

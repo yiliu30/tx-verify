@@ -80,6 +80,7 @@ inductive Width where
   | q
   | w16
   | ud
+  | v
   deriving Repr, DecidableEq
 
 /-- The decoded instruction. Load and store payloads are bare registers, as
@@ -165,6 +166,7 @@ def parseWidth (s : String) : Option Width :=
   | some ['u', 'd'] => some .ud
   | some ['q'] => some .q
   | some ['w'] => some .w16
+  | some ['v'] => some .v
   | _ => none
 
 def isSpace (c : Char) : Bool := c = ' ' || c = '\t'

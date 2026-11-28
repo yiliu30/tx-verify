@@ -28,6 +28,7 @@ inductive TlaDst where
 /-- A TLA source operand: a GRF region or an immediate. -/
 inductive TlaSrc where
   | reg (g : Grf)
+  | negReg (g : Grf)
   | cr (num sub : Nat)
   | imm (v : Int) (w : Width)
   deriving Repr, DecidableEq
@@ -100,13 +101,35 @@ def parseTlaDst (s : String) : Option TlaDst :=
     | some g => some (.reg g)
     | none => none
 
-def parseTlaSrc (s : String) : Option TlaSrc :=
+/-- A source register operand, including the `<v;w>` shorthand without an
+explicit hstride. -/
+def parseTlaSrcGrfAny (s : String) : Option Grf :=
   match parseTlaSrcGrf s with
-  | some g => some (.reg g)
+  | some g => some g
   | none =>
-      match parseIntLit s, parseTlaWidth s with
-      | some v, some w => some (.imm v w)
-      | _, _ => none
+      match numRuns (operandCore s) with
+      | [n, sub, v, w] => some ⟨n, 0, sub, v, w, 0⟩
+      | _ => none
+
+/-- A negated register source `-rN.M<...>`. -/
+def negatedReg (s : String) : Option TlaSrc :=
+  match s.toList with
+  | '-' :: rest =>
+      match parseTlaSrcGrfAny (String.ofList rest) with
+      | some g => some (.negReg g)
+      | none => none
+  | _ => none
+
+def parseTlaSrc (s : String) : Option TlaSrc :=
+  match negatedReg s with
+  | some g => some g
+  | none =>
+      match parseTlaSrcGrfAny s with
+      | some g => some (.reg g)
+      | none =>
+          match parseIntLit s, parseTlaWidth s with
+          | some v, some w => some (.imm v w)
+          | _, _ => none
 
 /-- Decode a `(W) mov` statement. -/
 def parseTlaMovInstr : TlaInstr → Option TlaMov

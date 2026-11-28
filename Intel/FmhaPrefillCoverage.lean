@@ -13,9 +13,10 @@ public import Intel.TlaDispatch
 instructions, 1965 statements). This module measures how much of it the
 merged GEMM stack already decodes with the total classifier `decodedAll`:
 
-- 1813 of 1965 statements decode (92.3%),
-- the 152 that do not are `sel` 66, negated-source `mad` 40, `math.exp` 33,
-  `sync.allwr` 8, and the singletons `mov`/`cmp`/`not`/`bfn`/`math.inv`,
+- 1854 of 1965 statements decode (94.4%) after the negated-source and `.v`
+  parser extensions of stage 248,
+- the 111 that do not are `sel` 66, `math.exp` 33, `sync.allwr` 8, and the
+  singletons `cmp`/`not`/`bfn`/`math.inv`,
 - 64 `dpas.8x8 (16|M0)` instructions: 4 use `null` as the second
   accumulator and 60 alias it to the first accumulator.
 
@@ -42,6 +43,10 @@ def fmhaForm (i : TlaInstr) : String :=
   | .dpas _ _ _ _ _ _ => "dpas"
   | .label _ => "label"
 
+/-- The parsed instruction at a prefill program counter. -/
+def fmhaParsedAt (n : Nat) : Option TlaInstr :=
+  (fmhaPrefillPc.find? (fun p => p.1 = n)).map (fun p => p.2)
+
 /-- The per-form census of the unclassified statements. -/
 def fmhaFormCensus : List (String × Nat) :=
   [("sel", (fmhaUnclassified.filter (fun p => fmhaForm p.2 = "sel" ||
@@ -63,20 +68,20 @@ set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 8000000 in
 /-- 1813 statements decode with the merged stack. -/
 theorem fmhaPrefill_decoded_count :
-    (fmhaPrefillPc.filter (fun p => decodedAll p.2)).length = 1813 := by decide
+    (fmhaPrefillPc.filter (fun p => decodedAll p.2)).length = 1854 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 8000000 in
-/-- 152 statements do not decode. -/
-theorem fmhaPrefill_unclassified_count : fmhaUnclassified.length = 152 := by decide
+/-- 111 statements do not decode. -/
+theorem fmhaPrefill_unclassified_count : fmhaUnclassified.length = 111 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 16000000 in
 /-- The unclassified forms and their counts. -/
 theorem fmhaPrefill_unclassified_forms :
     fmhaFormCensus =
-      [("sel", 66), ("mad-neg", 40), ("math.exp", 33), ("sync.allwr", 8),
-       ("mov", 1), ("cmp", 1), ("not", 1), ("bfn", 1), ("math.inv", 1)] := by
+      [("sel", 66), ("mad-neg", 0), ("math.exp", 33), ("sync.allwr", 8),
+       ("mov", 0), ("cmp", 1), ("not", 1), ("bfn", 1), ("math.inv", 1)] := by
   decide
 
 set_option maxRecDepth 1000000 in
@@ -97,5 +102,20 @@ theorem fmhaPrefill_dpas_alias_acc1 :
     (fmhaPrefillPc.filter (fun p => match p.2 with
       | .dpas _ acc0 acc1 _ _ _ => acc1 = acc0
       | _ => false)).length = 60 := by decide
+
+set_option maxRecDepth 1000000 in
+/-- PC 1269 is a `mad` with a negated source. -/
+theorem fmhaPrefill_madNeg_parsed :
+    (fmhaParsedAt 1269).bind parseTlaAluPlain =
+      some ⟨.mad, ⟨16, 0, true⟩, .r ⟨22, 0, 0, 1, 1, 1⟩,
+        .negReg ⟨4, 0, 3, 0, 0, 0⟩, .reg ⟨69, 0, 0, 1, 1, 0⟩,
+        some (.reg ⟨9, 0, 2, 0, 1, 0⟩)⟩ := by decide
+
+set_option maxRecDepth 1000000 in
+/-- PC 1165 is a move with a `.v` immediate. -/
+theorem fmhaPrefill_movV_parsed :
+    (fmhaParsedAt 1165).bind parseTlaMovInstr =
+      some ⟨⟨8, 0, true⟩, .reg ⟨4, 0, 0, 1, 1, 1⟩,
+        .imm 1985229328 .v⟩ := by decide
 
 end IntelGpu

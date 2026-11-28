@@ -23,6 +23,7 @@ namespace IntelGpu
 /-- Read a TLA source operand at a lane. -/
 def readTlaSrc (rf : RegFile) : TlaSrc → Nat → Word
   | .reg g => fun i => rf g.num (srcIndex g i)
+  | .negReg g => fun i => -(rf g.num (srcIndex g i))
   | .cr _ _ => fun _ => 0
   | .imm v _ => fun _ => BitVec.ofInt 32 v
 
