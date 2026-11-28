@@ -11,7 +11,7 @@ fork.
 | --- | --- | --- | --- |
 | P0 real assembly import | 62 (#64), 65 (#67), 82 (#84), 83 (#85) | four real dumps (add-one, integer GEMM, loop vector add, straight-line vector add) with sha256 provenance and generated statement lists; the FMHA DPAS line in 79 (#81) | addressed for these kernels |
 | P0 reject unsupported explicitly | 62b (#64), 63 (#65), 82 (#84), 92 | `rejected`, `realGemm_rejectedOps`, `realVectorAdd_rejectedOps`, the fail-closed `parseExec` mask check, `masked_mov_decodes` and `parseExec_rejects_M9` | addressed; all dumps are all-or-nothing |
-| P0 unified semantics | 63-67 (#65-#69), 68-77 (#70-#79), 83-85 (#85-#87) | one `RInstr`/`stepWith` model; `realAddOne_effect`, `realGemm_output`, `realVectorAdd_effect` | addressed for the modeled instructions |
+| P0 unified semantics | 63-67 (#65-#69), 68-77 (#70-#79), 83-85 (#85-#87), 104 | one `RInstr`/`stepWith` model; `realAddOne_effect`, `realGemm_output`, `realVectorAdd_effect`; loop vector-add tables and index preamble | addressed for the modeled slots; the loop body needs a dword/qword view |
 | P0 GRF and SIMD | 64 (#66), 66 (#68), 68 (#70), 83 (#85), 90-98, 103 | regions, aliases, execution sizes in `Grf`/`gemmAlias`; per-lane predicates, predicated `sel`, predicate `and`/`or`, register comparisons, both predicated gotos; M1-M8 masks, all six masked moves, frame laws, a wrong-mask negative test and correct destination `<hstride>` parsing | partial: masked moves execute with lane offsets, but other instructions do not yet; `gotoIf` is still uniform lane 0 and the loop effect is open |
 | P0 SEND and SBID | 78 (#80) | `issueLoad`/`issueStore`/`wait`/`commitLoad`, `loadPipeline_value`, `storePipeline_value`, `addOnePipeline_value` | mechanism modeled; exact SBIDs are not printed and remain assumptions |
 | P1 memory and concurrency | 60, 64 (#66), 67 (#69) | word/byte memory, alignment, `load32LE_store32LE_*`, `realAddOne_byteRangesDisjoint`, per-lane stores and frames | partial: no caches, visibility, synchronization or SLM aliasing |
@@ -34,7 +34,7 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (77 jobs) and `Tools/check_axioms.py --all`
-  (411 theorems, 116 documented exceptions at stage 103).
+  (414 theorems, 119 documented exceptions at stage 104).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
