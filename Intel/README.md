@@ -2605,6 +2605,17 @@ addresses, and `vaLoop_kernel_pc0_mem_of_laneDistinct` discharges the stage-140
 `hdistinct` hypothesis from lane injectivity. The counterexample theorems show
 that injectivity is load-bearing: a constant `localId` makes two lanes alias.
 
+## Stage 153: composing the 32 lane stores
+
+`Intel/WorkgroupEffect.lean` composes the per-lane stores into one workgroup
+result. `laneStoresAt_correct` proves that after applying one
+`C[id] = A[id] + B[id]` store per id, every written word holds its sum and
+every other word keeps its initial value. `laneIds_nodup` derives the required
+duplicate-freedom from launch-id injectivity, and `vaLoop_workgroup_correct`
+instantiates the result to the 32 `vaLoopId` lanes. This is the observable
+workgroup memory once race freedom (stage 152) is known, not a new concurrent
+semantics.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2819,4 +2830,5 @@ lake build Intel
 149. Stage 149: IEEE fp16 addition rounding.
 150. Stage 150: register-level FMHA DPAS execution.
 151. Stage 151: mask-aware execution for the loop body.
-152. Stage 152 (this PR): cross-lane race freedom.
+152. Stage 152: cross-lane race freedom.
+153. Stage 153 (this PR): composing the 32 lane stores.
