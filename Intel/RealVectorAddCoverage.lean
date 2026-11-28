@@ -45,7 +45,7 @@ theorem execMask_M5 : execMaskOffset 5 = some 16 := by decide
 theorem masked_mov_decodes :
     decodeReal (.instruction "mov"
       ["(M5, 16)", "V0062(1,0)<1>", "V0061(2,0)<2;1,0>"]) =
-    some (.mov ⟨16, 16, false⟩ ⟨62, 1, 0, 1, 1, 0⟩ ⟨61, 2, 0, 2, 1, 0⟩) := by
+    some (.movMasked ⟨16, 16, false⟩ ⟨62, 1, 0, 1, 1, 0⟩ ⟨61, 2, 0, 2, 1, 0⟩) := by
   decide
 
 /-- Mask names outside M1-M8 are refused. -/

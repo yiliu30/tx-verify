@@ -145,6 +145,28 @@ def readSrcWith (alias : Nat → Nat) (s : RealState) (g : Grf) (l : Nat) : Addr
 
 abbrev readSrc (s : RealState) (g : Grf) (l : Nat) : Addr := readSrcWith aliasBase s g l
 
+/-- Destination element index for region element `i`. -/
+def Grf.dstIndex (g : Grf) (i : Nat) : Nat :=
+  g.row * 8 + g.col + i * g.hstride
+
+/-- Full source-region index for region element `i`, including vertical and
+horizontal stride. -/
+def srcIndexRegion (g : Grf) (i : Nat) : Nat :=
+  g.row * 8 + g.col +
+    (i / g.width) * g.vstride + (i % g.width) * g.hstride
+
+def readSrcIndexed (alias : Nat → Nat) (s : RealState) (g : Grf) (i : Nat) : Addr :=
+  readRegWith alias s g.num (srcIndexRegion g i)
+
+/-- A mask-enabled hardware lane. -/
+def Exec.laneActive (e : Exec) (l : Nat) : Bool :=
+  if e.noMask then decide (l < e.size)
+  else decide (e.offset ≤ l ∧ l < e.offset + e.size)
+
+/-- The operand element index for a mask-enabled hardware lane. -/
+def Exec.laneIndex (e : Exec) (l : Nat) : Nat :=
+  if e.noMask then l else l - e.offset
+
 def setReg (regs : Nat → Nat → Addr) (r : Nat) (g : Nat → Addr) : Nat → Nat → Addr :=
   fun r' e => if r' = r then g e else regs r' e
 
@@ -157,6 +179,26 @@ def writeVecWith (alias : Nat → Nat) (s : RealState) (r : Nat)
 
 abbrev writeVec (s : RealState) (r : Nat) (f : Nat → Addr) : RealState :=
   writeVecWith aliasBase s r f
+
+/-- Write a destination region only on task-active lanes. Unit and stride-two
+destinations are enough for the real vector add; other strides are preserved
+rather than guessed at. -/
+def writeMaskedWith (alias : Nat → Nat) (s : RealState) (dst : Grf) (e : Exec)
+    (f : Nat → Addr) : RealState :=
+  { s with regs := fun r j =>
+      if r = alias dst.num then
+        let base := dst.row * 8 + dst.col
+        let k := j - base
+        if dst.hstride = 1 ∧ base ≤ j then
+          let i := k
+          let l := if e.noMask then i else e.offset + i
+          if e.laneActive l then f i else s.regs r j
+        else if dst.hstride = 2 ∧ base ≤ j ∧ k % 2 = 0 then
+          let i := k / 2
+          let l := if e.noMask then i else e.offset + i
+          if e.laneActive l then f i else s.regs r j
+        else s.regs r j
+      else s.regs r j }
 
 @[simp] theorem writeVecWith_same (alias : Nat → Nat) (s : RealState) (r : Nat)
     (f : Nat → Addr) (e : Nat) :
@@ -243,6 +285,8 @@ def stepWith (alias : Nat → Nat) (typeOf : Nat → Option RegType) :
           (readSrcWith alias s a l) (readSrcWith alias s b l))
   | s, .mov _ dst src =>
       writeVecWith alias s dst.num (fun l => readSrcWith alias s src l)
+  | s, .movMasked e dst src =>
+      writeMaskedWith alias s dst e (fun i => readSrcIndexed alias s src i)
   | s, .add3 _ dst a b c =>
       writeVecWith alias s dst.num (fun l =>
         add3Wide (isWideOf typeOf dst.num) (readSrcWith alias s a l)
@@ -407,6 +451,7 @@ def RInstr.regionsSimple : RInstr → Bool
   | .prologue => true
   | .mul _ d a b => d.dstSimple && a.simple && b.simple
   | .mov _ d s => d.dstSimple && s.simple
+  | .movMasked _ d s => d.dstSimple && s.simple
   | .add3 _ d a b c => d.dstSimple && a.simple && b.simple && c.simple
   | .shl _ d s _ => d.dstSimple && s.simple
   | .add _ d a b => d.dstSimple && a.simple && b.simple
@@ -492,6 +537,7 @@ def RInstr.dstCountOk : RInstr → Bool
   | .prologue => true
   | .mul n d _ _ => regElems d.num == n && (regType d.num).isSome
   | .mov n d _ => regElems d.num == n && (regType d.num).isSome
+  | .movMasked n d _ => regElems d.num == n && (regType d.num).isSome
   | .add3 n d _ _ _ => regElems d.num == n && (regType d.num).isSome
   | .shl n d _ _ => regElems d.num == n && (regType d.num).isSome
   | .add n d _ _ => regElems d.num == n && (regType d.num).isSome
@@ -721,5 +767,21 @@ theorem sel_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
     (stepWith alias typeOf s (.sel e p dst a b)).regs (alias dst.num) l =
       if s.preds p l then readSrcWith alias s a l else readSrcWith alias s b l := by
   simp [stepWith, writeVecWith, setReg]
+
+/-- A masked move with a unit-stride destination writes each active lane's
+source element at the corresponding destination-region element. -/
+theorem maskedMov_unit_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (dst src : Grf) (l : Nat)
+    (hnm : e.noMask = false) (hdst : dst.hstride = 1)
+    (hactive : e.laneActive l = true) :
+    (stepWith alias typeOf s (.movMasked e dst src)).regs (alias dst.num)
+        (dst.dstIndex (e.laneIndex l)) =
+      readSrcIndexed alias s src (e.laneIndex l) := by
+  have hle : e.offset ≤ l := by
+    have h := hactive
+    simp [Exec.laneActive, hnm] at h
+    exact h.1
+  simp [stepWith, writeMaskedWith, Grf.dstIndex, Exec.laneIndex, hnm, hdst,
+    Nat.add_sub_of_le hle, hactive]
 
 end IntelGpu

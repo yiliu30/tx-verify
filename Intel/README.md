@@ -1965,6 +1965,25 @@ Control flow is still the documented uniform model: `runRealCF` reads lane 0.
 This stage closes decoding, not divergent branch execution; per-lane branch
 masks and re-convergence remain open.
 
+## Stage 96: masked moves
+
+Masked moves now have their own instruction, `movMasked`, rather than sharing
+the total-write `mov` semantics. `writeMaskedWith` uses the mask's channel
+offset and preserves destination elements outside the active window;
+`srcIndexRegion` includes the source region's vertical and horizontal stride.
+
+```lean
+theorem maskedMov_unit_lane : (stepWith ... (.movMasked e dst src)).regs
+  (alias dst.num) (dst.dstIndex (e.laneIndex l)) =
+  readSrcIndexed alias s src (e.laneIndex l)   -- when lane l is active
+```
+
+The theorem is scoped to unit-stride destinations. The real dump also has two
+stride-two destinations (`V0081(2,0)<2>` and `V0081(2,1)<2>`); their write
+logic is present but their lane law is the next refinement. Other instructions
+still use their pre-mask semantics, so this is the first partial execution of
+`(M5, 16)`, not a complete SIMD mask model.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1978,9 +1997,9 @@ masks and re-convergence remain open.
   interprets this kernel's broadcast and dense GRF regions, not the general
   region algebra; stage 66 models one uniform predicate bit for the GEMM's
   control flow; stages 90-93 add per-lane predicates, predicated `sel` and
-  predicate `and`/`or`, register comparisons and predicated gotos; stage 92
-  decodes M1-M8 masks but does not yet apply their lane offset. `gotoIf`
-  remains a uniform lane-0 branch.
+  predicate `and`/`or`, register comparisons and predicated gotos; stages 92
+  and 96 decode masks and apply them to masked moves, but not yet to every
+  instruction. `gotoIf` remains a uniform lane-0 branch.
 - SEND issue/completion/wait and the register scoreboard are stage 78; raw
   message operand layout, EOT details beyond a halted flag, and the exact SBID
   assignments (not printed in the assembly) remain.
@@ -2117,4 +2136,5 @@ lake build Intel
 92. Stage 92: decode M1-M8 execution masks without dropping them.
 93. Stage 93: execute predicate `and` and `or` per lane.
 94. Stage 94: execute register-register `cmp.lt` and `cmp.eq`.
-95. Stage 95 (this PR): decode predicated gotos and close vector-add coverage.
+95. Stage 95: decode predicated gotos and close vector-add coverage.
+96. Stage 96 (this PR): execute masked moves with M5 lane offsets.

@@ -21,6 +21,8 @@ GEMM's control-flow shell, and fails closed on everything else:
   after the colon.
 - `RInstr`: the decoded instruction. `Exec` keeps the execution size, the
   M1-M8 channel offset and the `_NM` flag instead of discarding the mask.
+  A nonzero-offset move is kept as `movMasked` rather than being treated as a
+  full-register write.
   `lsc_load.ugm` and `lsc_store.ugm` name their payload register without a
   region, so those operands are bare register numbers.
 - `decodeReal` / `decodeRealProgram`: the decoder, `Option`-valued. Besides
@@ -85,6 +87,8 @@ IGC prints them. -/
 inductive RInstr where
   | mul (exec : Exec) (dst a b : Grf)
   | mov (exec : Exec) (dst src : Grf)
+  /-- A masked move: only the instruction's active lanes write. -/
+  | movMasked (exec : Exec) (dst src : Grf)
   | add3 (exec : Exec) (dst a b c : Grf)
   | shl (exec : Exec) (dst src : Grf) (amount : Nat)
   | add (exec : Exec) (dst a b : Grf)
@@ -316,7 +320,9 @@ def decodeReal : Stmt → Option RInstr
           match parseExec e, parseGrf d with
           | some n, some x =>
               match parseGrf s with
-              | some y => some (.mov n x y)
+              | some y =>
+                  if n.noMask || n.offset == 0 then some (.mov n x y)
+                  else some (.movMasked n x y)
               | none =>
                   match parseLit s, parseWidth s with
                   | some v, some wd => some (.movImm n x v wd)
