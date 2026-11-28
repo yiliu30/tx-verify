@@ -2044,6 +2044,15 @@ Thus two different logical A, B or C elements cannot alias the same register
 byte in the modelled 16-dword layout. This is a property of the layout, not a
 statement about the compiler's chosen operands or values.
 
+## Stage 101: DPAS register bases from the dump
+
+`parseDpasRegs` reads the register number and optional subregister from each
+DPAS operand. `realFmhaDpas_regs` proves the real line decodes to
+`C = r383, B = r335.0, A = r39`, and
+`fmhaReal_uses_decoded_bases` proves those are exactly the bases used by the
+packed layout. The operand bases are no longer bare numbers in the packing
+module; they are tied back to the instruction text.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2202,4 +2211,5 @@ lake build Intel
 97. Stage 97: prove stride-two masked destinations.
 98. Stage 98: masked-move frames and a load-bearing mask test.
 99. Stage 99: packed DPAS operands for the real FMHA atom.
-100. Stage 100 (this PR): prove the packed DPAS address maps are collision-free.
+100. Stage 100: prove the packed DPAS address maps are collision-free.
+101. Stage 101 (this PR): decode the real DPAS register bases.

@@ -93,6 +93,27 @@ def parseDpasType (s : String) : Option DpasType :=
   | some ['b', 'f', '1', '6'] => some .bf16
   | _ => none
 
+/-- Register number and subregister offset of a DPAS operand such as
+`r335.0:hf8`. -/
+def parseDpasReg (s : String) : Option (Nat × Nat) :=
+  match numRuns (operandCore s) with
+  | [n] => some (n, 0)
+  | [n, sub] => some (n, sub)
+  | _ => none
+
+/-- The four register bases of a DPAS instruction. Src1 is B, Src2 is A. -/
+structure DpasRegs where
+  dst : Nat
+  src1 : Nat
+  src1Sub : Nat
+  src2 : Nat
+  deriving Repr, DecidableEq
+
+def parseDpasRegs (dst src1 src2 : String) : Option DpasRegs :=
+  match parseDpasReg dst, parseDpasReg src1, parseDpasReg src2 with
+  | some (d, _), some (b, bs), some (a, _) => some ⟨d, b, bs, a⟩
+  | _, _, _ => none
+
 /-- Decode a DPAS line: mnemonic, execution size, accumulator destination and
 the two source operands. -/
 def parseDpas (mnemonic exec dst src1 src2 : String) : Option DpasForm :=
@@ -106,6 +127,12 @@ def parseDpas (mnemonic exec dst src1 src2 : String) : Option DpasForm :=
 theorem realFmhaDpas_form :
     parseDpas "dpas.8x8" "(16|M0)" "r383:f" "r39:hf8" "r335.0:hf8" =
       some ⟨.m8n8, 16, .hf8, .f32⟩ := by
+  decide
+
+/-- The real operands keep their bases: C r383, B r335.0, A r39. -/
+theorem realFmhaDpas_regs :
+    parseDpasRegs "r383:f" "r335.0:hf8" "r39:hf8" =
+      some ⟨383, 335, 0, 39⟩ := by
   decide
 
 /-- The compiled FMHA atom is 8x8, not the model's 8x16. -/
