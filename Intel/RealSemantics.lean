@@ -39,8 +39,9 @@ independent inputs here.
 
 ## Predicates and control flow
 
-`RealState.preds` is a uniform predicate file: `cmp.lt` writes lane 0's
-comparison and `gotoIf` reads it. `runRealCF` interprets labels, `goto` and
+`RealState.preds` is indexed by predicate and lane: `cmp.lt` writes the
+per-lane comparison on active lanes, and `gotoIf` reads lane 0 because the
+modeled branch is uniform. `runRealCF` interprets labels, `goto` and
 `gotoIf` with fuel, so a branch target outside the program stops the run. The
 add-one proofs keep using the straight-line `runReal`; label resolution for the
 real GEMM is proved in `Intel.RealGemmCoverage`.
@@ -109,9 +110,9 @@ abbrev isWide (r : Nat) : Bool := isWideOf regType r
 flag. -/
 structure RealState where
   regs : Nat → Nat → Addr
-  /-- Uniform predicate registers, one bit per predicate. `cmp.lt` is read at
-  lane 0; the GEMM's control flow is uniform. -/
-  preds : Nat → Bool
+  /-- Predicate registers, one bit per predicate and lane. `cmp.lt` writes
+  the per-lane comparison; the GEMM's uniform branch reads lane 0. -/
+  preds : Nat → Nat → Bool
   mem : Nat → Word
   halted : Bool
 
@@ -281,12 +282,12 @@ def stepWith (alias : Nat → Nat) (typeOf : Nat → Option RegType) :
       writeVecWith alias s dst.num (fun l =>
         binOpWide (isWideOf typeOf dst.num) (fun x y => x ||| y) (fun x y => x ||| y)
           (readSrcWith alias s a l) (readSrcWith alias s b l))
-  | s, .cmpLt _ p src imm _ =>
+  | s, .cmpLt n p src imm _ =>
       { s with
-        preds := fun p' =>
-          if p' = p then
-            decide (low32 (readSrcWith alias s src 0) < BitVec.ofNat 32 imm)
-          else s.preds p' }
+        preds := fun p' l =>
+          if p' = p ∧ l < n then
+            decide (low32 (readSrcWith alias s src l) < BitVec.ofNat 32 imm)
+          else s.preds p' l }
   | s, .goto _ _ => s
   | s, .gotoIf _ _ _ _ => s
 
@@ -327,7 +328,7 @@ def runRealCFWith (step : RealState → RInstr → RealState) (code : List RInst
           | some pc' => runRealCFWith step code s pc' fuel
           | none => s
       | some (.gotoIf _ p negated l) =>
-          let taken := if negated then !(s.preds p) else s.preds p
+          let taken := if negated then !(s.preds p 0) else s.preds p 0
           if taken then
             match labelIndex code l with
             | some pc' => runRealCFWith step code s pc' fuel
@@ -582,5 +583,24 @@ theorem realAddOne_effect (s : RealState) (base : Addr) (localSize r0 : Word)
     exact storeVec_frame s.mem 32 _ _ w hw
 
 end
+
+/-- `cmp.lt` writes the per-lane comparison on active lanes. -/
+theorem cmpLt_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (n p imm : Nat) (src : Grf) (w : Width) (l : Nat) (hl : l < n) :
+    (stepWith alias typeOf s (.cmpLt n p src imm w)).preds p l =
+      decide (low32 (readSrcWith alias s src l) < BitVec.ofNat 32 imm) := by
+  simp [stepWith, hl]
+
+/-- A different predicate is untouched. -/
+theorem cmpLt_other (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (n p imm : Nat) (src : Grf) (w : Width) (p' l : Nat) (hp : p' ≠ p) :
+    (stepWith alias typeOf s (.cmpLt n p src imm w)).preds p' l = s.preds p' l := by
+  simp [stepWith, hp]
+
+/-- A lane outside the execution size is untouched. -/
+theorem cmpLt_inactive (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (n p imm : Nat) (src : Grf) (w : Width) (l : Nat) (hl : ¬ l < n) :
+    (stepWith alias typeOf s (.cmpLt n p src imm w)).preds p l = s.preds p l := by
+  simp [stepWith, hl]
 
 end IntelGpu
