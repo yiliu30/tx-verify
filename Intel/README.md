@@ -2359,6 +2359,11 @@ size assumption about the post-pack state.
 through `stepLoop`, proving the register contains the low dwords of the next
 IDs for lanes 0..23.
 
+## Stage 126: the increment's high pack
+
+`vaPackIncHigh_value` is the high-half counterpart: the M1+M5 moves from
+`V0074` into `V0076` produce the high dwords of the next IDs for lanes 0..23.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2546,4 +2551,5 @@ lake build Intel
 122. Stage 122: compose both packs into one state.
 123. Stage 123: derive P3 from the executed packs.
 124. Stage 124: derive P3 with preserved size dwords.
-125. Stage 125 (this PR): execute the increment's low pack.
+125. Stage 125: execute the increment's low pack.
+126. Stage 126 (this PR): execute the increment's high pack.
