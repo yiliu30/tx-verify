@@ -16,7 +16,7 @@ fork.
 | P0 SEND and SBID | 78 (#80), 147 | `issueLoad`/`issueStore`/`wait`/`commitLoad`, `loadPipeline_value`, `storePipeline_value`, `addOnePipeline_value`; one transcribed descriptor layout with SBID extraction, distinct-token progression and out-of-range rejection | mechanism modeled; the SBID bit layout is a documented transcription assumption because the dumps do not print the field |
 | P1 memory and concurrency | 60, 64 (#66), 67 (#69), 106, 139, 152, 153, 154, 157, 162 | word/byte memory, alignment, `load32LE_store32LE_*`, `realAddOne_byteRangesDisjoint`, per-lane stores and frames, real loop-body `load/add/store` effect; a per-location visibility model with release/acquire message passing; global/SLM address-space disjointness and workgroup-barrier SLM visibility; cross-lane C-address disjointness from launch-id injectivity, a composed 32-lane store result and a write-through workgroup cache; two-cache broadcast-invalidation traffic; a directory with ownership transfer and sharer invalidation | partial: no request queues, write-back dirty lines, relaxed atomics, bank conflicts or hardware address aliasing |
 | P1 DPAS refinement | 49, 50, 79 (#81), 86 (#88), 99-101, 142, 150 | decoded `dpas.8x8`; `fmhaFp8Atom` 8x8x32 vs `tlaXeF16Atom` 8x16x16; atom counts 1 vs 2; packed A/B/C layouts, collision-free addresses and decoded register bases; value equality with one depth-32 slab, K=16 split, 2x1/2x2 tile composition and register-level execution at the decoded bases | addressed for the coded 8x8x32 layout; physical tile packing remains a model assumption |
-| P1 numerical semantics | 27-31, 43-56, 61, 80 (#82), 149, 156, 159, 164 | fixed-point bounds, NaN payload propagation, `vstepIEEE` with `0 * inf = NaN`; exact-grid fp16 addition, ties-to-even and a single-rounding encode/decode path; total fp16 decode, signed zeros, subnormal crossings, the overflow threshold, NaN/Inf propagation and directed rounding with an exact overflow table; general per-binade RNE for every finite sum below the overflow threshold | partial: not a full IEEE FMA; exception flags and fused multiply-add remain outside the proved class |
+| P1 numerical semantics | 27-31, 43-56, 61, 80 (#82), 149, 156, 159, 164, 166 | fixed-point bounds, NaN payload propagation, `vstepIEEE` with `0 * inf = NaN`; exact-grid fp16 addition, ties-to-even and a single-rounding encode/decode path; total fp16 decode, signed zeros, subnormal crossings, the overflow threshold, NaN/Inf propagation and directed rounding with an exact overflow table; general per-binade RNE for every finite sum below the overflow threshold; sticky exception flags for the fp16 add path | partial: not a full IEEE FMA; hardware traps, sticky lane state, FTZ/DAZ and fused multiply-add remain outside the proved class |
 | P1 hardware conformance | 81 (#83) | GPU vs `gemmDot`: `C00=-2 C11=-5 C6363=4 checksum=4294967290 bad=0`; add-one and vector-add runs | addressed at source level; the GEMM dump was compiled with a different compiler minor version |
 | P2 complex kernels | 79 (#81), 82-85 (#84-#87), 99-102, 148, 150, 155, 163 | real FMHA DPAS decoded, packed and smoke-tested; real straight-line vector add end-to-end; E4M3 decode and an fp8 atom value path | open: full FMHA/SageAttention execution; the decoded atom, a T-step register-level mainloop and a zero-padded tail are modelled, but physical packing, masked/partial DPAS behavior and the rest of the kernel remain |
 
@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (128 jobs) and `Tools/check_axioms.py --all`
-  (1402 theorems, 393 documented exceptions at stage 164).
+  `lake build Intel` (129 jobs) and `Tools/check_axioms.py --all`
+  (1434 theorems, 393 documented exceptions at stage 166).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -90,8 +90,9 @@ from `Classical.choose` in the racing-store model.
   kernel and hardware validation remain;
 - full IEEE semantics: stages 149, 156, 159 and 164 cover exact-grid fp16
   addition, ties-to-even, signed zeros, subnormal crossings, the overflow
-  threshold, NaN/Inf propagation, directed rounding and general per-binade
-  RNE; exception flags and a full IEEE FMA remain;
+  threshold, NaN/Inf propagation, directed rounding, general per-binade RNE
+  and sticky exception flags; hardware traps, FTZ/DAZ and a full IEEE FMA
+  remain;
 - caches: stages 154, 157 and 162 model write-through caches with invalidate,
   broadcast traffic and a directory/ownership protocol; request queues,
   write-back dirty lines and relaxed atomics remain outside it;

@@ -2749,6 +2749,20 @@ and normal binades through exponent 30, and agrees with `addFull` on the
 previously covered classes. The overflow branch stays with stage 156;
 exception flags and FMA remain outside the model.
 
+## Stage 166: fp exception flags
+
+`Intel/FpExceptionFlags.lean` adds a sticky flag set (`invalid`, `divByZero`,
+`overflow`, `underflow`, `inexact`) with union algebra and fold monotonicity.
+`addFlags` classifies fp16 addition: NaN operands and opposite infinities are
+invalid, at/above the stage-156 threshold is overflow, a rounded value that
+differs from the exact sum is inexact, and underflow is tiny-after-rounding
+plus inexact. `addFlags_exact_none`, `addFlags_inexact_iff`,
+`addFlags_overflow` and the invalid cases are proved.
+`finAddFlags_underflow_false` shows a decoded fp16 addition never raises
+underflow (tiny sums are exact on the `2^-24` grid); a finer-grid witness
+exercises the rule. Hardware traps, sticky lane state and FTZ/DAZ are not
+modeled.
+
 ## Stage 165: review stage map
 
 `Intel/REVIEW_63.md` now carries a single stage index for stages 137--164
@@ -2982,4 +2996,5 @@ lake build Intel
 162. Stage 162: directory/ownership coherence.
 163. Stage 163: FMHA tail and partial K.
 164. Stage 164: general fp16 round-to-nearest-even.
-165. Stage 165 (this PR): refresh the review stage map.
+165. Stage 165: refresh the review stage map.
+166. Stage 166 (this PR): fp exception flags.
