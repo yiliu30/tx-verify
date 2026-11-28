@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 225: trusted-base consolidation
+
+`Intel/REVIEW_63.md` now lists the SYCL-TLA modelling assumptions (tile
+memory, register windows, DPAS tile layouts, `mach`/`macl` signedness, the
+`sync` no-op against the separate SLM barrier model, conditional `cmp`,
+`bfn`/`send`) and a verified-claims map from the headline theorems to the
+modules. No Lean declarations change in this stage.
+
 ## Stage 224: 64-bit multiply high/low
 
 `tlaAluFun` and `tlaAluStep?` now execute `mach`/`macl` as the high and low
@@ -3602,4 +3610,5 @@ lake build Intel
 221. Stage 221: bit-field and message execution.
 222. Stage 222: gated conditional comparisons.
 223. Stage 223: unified instruction dispatcher.
-224. Stage 224 (this PR): 64-bit multiply high/low.
+224. Stage 224: 64-bit multiply high/low.
+225. Stage 225 (this PR): trusted-base consolidation.

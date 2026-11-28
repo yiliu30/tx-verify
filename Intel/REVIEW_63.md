@@ -71,6 +71,41 @@ Model assumptions:
 - numerics: the class model (`Fval`) with NaN payload propagation and
   `0 * inf = NaN`, not a full IEEE FMA.
 
+SYCL-TLA stack assumptions (stages 174-224):
+
+- tile memory is keyed by effective base address and carries one word per
+  lane; swizzles, row/column geometry and partial tiles are abstracted
+  (stage 200);
+- a block2d data operand `rN:M` is a window of `M` eight-dword registers with
+  lane `i` at `(N + i/8, i%8)` (stage 210);
+- the DPAS C tile reads `rf (base+m) n`, the A tile `rf (base+k) m`, and the
+  B tile `rf (base+n) (k)` with 16 depth elements per column; the `flat`
+  register view `rf (r + e/8) (e%8)` connects the B layout to the physical
+  windows (stages 176, 216);
+- the DPAS slab is the Word-algebra `dpasSlab`; the BF16 bit decode is a
+  separate bridge and the slab is not a full IEEE BF16 dot product
+  (stages 174-184);
+- `mach`/`macl` are the high/low 32 bits of the unsigned 64-bit product of
+  the two sources; the 14 dump forms are address computations where signed
+  and unsigned agree (stage 224);
+- `sync.nop`, `sync.allrd` and `sync.bar` are no-ops in the TLA state
+  semantics; the SLM/barrier ordering results (stages 139-169) are separate
+  and not yet composed with the mainloop;
+- conditional `cmp` gates the flag write on the guard flag (stage 222);
+- `bfn` computes `(s0 &&& s1) ||| s2` or `s0 ||| s1 ||| s2` per element
+  (stage 221), and `send.gtwy` appends to an abstract message log with the
+  final `EOT` (stages 220-221).
+
+Verified claims (SYCL-TLA stack): every one of the 2252 statements is decoded
+(`realTlaGemm_decoded_all`, `realTlaGemm_classified`) and dispatched
+(`realTlaGemm_step_total`); the mainloop's 32 DPAS instructions are exactly
+`realTlaGemmDpas` and accumulate the ordered slab sum
+(`mainloopDpasRun_acc0_sum`, `mainloopDpasRun_acc1_sum`); the accumulator
+stores write that sum (`store21_dpas_sum`, `store25_dpas_sum`); the loop
+counters and exit condition are `tlaTailLoop_continue`/`tlaTailLoop_exit`,
+and the full three-phase loop is `mainloopLoopFull_continue`/
+`mainloopLoopFull_exit`.
+
 Logical axioms: `propext` and `Quot.sound` for the proofs; the documented
 `Classical.choice` exceptions come from `String.toList` in the decoders and
 from `Classical.choose` in the racing-store model.
