@@ -488,6 +488,25 @@ single hypothesis left is the fp32 accumulator contract, stated explicitly.
 `#print axioms`: `wpDot_toInt` uses none; `wpDot_error` and `dpasWord_error`
 use only `[propext, Quot.sound]`.
 
+## Stage 33: executable smoke tests
+
+Everything here is a `def`, so the machines run. `Intel/Smoke.lean` executes
+the real definitions on tiny inputs and checks the arithmetic in the kernel
+(`decide`, not `native_decide` — the repo forbids the latter):
+
+```lean
+example : (krun smokeGeom (mainloopProg 2) 19 (kHead smokeMem ...)).acc 0 0 = 39
+example : (krun smokeGeom (tailProg 1 1) 4 ...).acc 0 0 = 39          -- full slab + tail
+example : (lrun 0 1 1 (epilogueProg 1) 8 (eHead ...)).mem 0 = 39      -- epilogue store
+example : truncQ 8 37 = 32
+example : roundQ 8 37 = 40
+example : roundEven 8 35 = 32                                          -- tie to even
+```
+
+with `A = [3, 4]`, `B = [5, 6]`, so the expected result is `3*5 + 4*6 = 39`.
+These are evidence the model is not vacuous: staging, barrier, DPAS, the tail
+path, the epilogue and the roundings all compute what the theorems say.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -544,4 +563,5 @@ lake build Intel
 29. Stage 29: concrete truncating rounding, deriving the contract.
 30. Stage 30: round-to-nearest, halving the accumulation bound.
 31. Stage 31: ties-to-even, the hardware tie rule.
-32. Stage 32 (this PR): bridging word arithmetic to the numeric bound.
+32. Stage 32: bridging word arithmetic to the numeric bound.
+33. Stage 33 (this PR): executable smoke tests.
