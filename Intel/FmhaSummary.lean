@@ -119,13 +119,22 @@ def FmhaLseSummary : Prop :=
 theorem fmha_lse_summary : FmhaLseSummary :=
   ⟨lseOut_single, parseTlaMath_log⟩
 
+/-- Every FMHA DPAS operand is BF16. -/
+def FmhaBf16Summary : Prop :=
+  (fmhaPrefillPc.filter (fun p => isDpas p.2)).all (fun p =>
+    match p.2 with
+    | .dpas _ _ _ b a _ => endsWithBf b && endsWithBf a
+    | _ => false) = true
+
+theorem fmha_bf16_summary : FmhaBf16Summary := fmhaPrefill_dpas_bf16
+
 /-- The headline checklist. -/
 theorem fmha_prefill_summary :
     FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary ∧
     FmhaConvertSummary ∧ FmhaExecSummary ∧ FmhaPvCensusSummary ∧
-    FmhaScheduleSummary ∧ FmhaLseSummary :=
+    FmhaScheduleSummary ∧ FmhaLseSummary ∧ FmhaBf16Summary :=
   ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary,
    fmha_convert_summary, fmha_exec_summary, fmha_pv_census_summary,
-   fmha_schedule_summary, fmha_lse_summary⟩
+   fmha_schedule_summary, fmha_lse_summary, fmha_bf16_summary⟩
 
 end IntelGpu

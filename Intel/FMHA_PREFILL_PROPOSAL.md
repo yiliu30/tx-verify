@@ -170,7 +170,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247-267 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265, #266, #267, #268, #269, #270, #271, #272, #273).
+Stages 247-268 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265, #266, #267, #268, #269, #270, #271, #272, #273).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |

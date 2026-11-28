@@ -495,6 +495,9 @@ KNOWN = {
     "IntelGpu.MufuModel.log_bound": {"Classical.choice"},
     "IntelGpu.lseOut_single": {"Classical.choice"},
     "IntelGpu.fmha_lse_summary": {"Classical.choice"},
+    # Stage 268: BF16 operand types.
+    "IntelGpu.fmhaPrefill_dpas_bf16": {"Classical.choice"},
+    "IntelGpu.fmha_bf16_summary": {"Classical.choice"},
     # Stage 258: the FMHA prefill summary.
     "IntelGpu.fmha_decode_summary": {"Classical.choice"},
     "IntelGpu.fmha_scalar_summary": {"Classical.choice"},
@@ -2865,6 +2868,8 @@ THEOREMS = [
     ("Intel.TlaMath", "IntelGpu.parseTlaMath_log"),
     ("Intel.TlaEpilogue", "IntelGpu.lseOut_single"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_lse_summary"),
+    ("Intel.FmhaPrefillCoverage", "IntelGpu.fmhaPrefill_dpas_bf16"),
+    ("Intel.FmhaSummary", "IntelGpu.fmha_bf16_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_decode_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_scalar_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_phase_summary"),
