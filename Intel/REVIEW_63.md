@@ -121,25 +121,33 @@ from `Classical.choose` in the racing-store model.
 - FMHA/SageAttention execution: the 8x8x32 DPAS value path, the fp8 E4M3
   element path, one register-level DPAS step and a T-step register-level
   mainloop and a zero-padded tail are modelled (stages 142, 148, 150, 155,
-  163); physical tile packing, masked/partial DPAS behavior, the rest of the
-  kernel and hardware validation remain;
+  163); the SYCL-TLA physical tile packing is bridged by the flat register
+  view and the A/B window loads (stages 216, 226), and hardware validation is
+  stages 231-232; masked/partial DPAS behavior and the rest of the kernel
+  remain;
 - full IEEE semantics: stages 149, 156, 159 and 164 cover exact-grid fp16
   addition, ties-to-even, signed zeros, subnormal crossings, the overflow
   threshold, NaN/Inf propagation, directed rounding, general per-binade RNE
   sticky exception flags, sticky per-lane flag accumulation and a fused
   multiply-add and directed-rounding FMA; stage 229 adds explicit FTZ/DAZ
-  models, stage 230 exception masks and abstract trap delivery, stage 233 the architectural halting effect, and the
-  before-rounding tininess convention is modelled with a counterexample
-  against the after-rounding rule; hardware trap sequencing and timing
-  remain;
+  models, stage 230 exception masks and abstract trap delivery, stage 233 the
+  architectural halting effect, and the before-rounding tininess convention is
+  modelled with a counterexample against the after-rounding rule; the FP32
+  exponent-relative quantum and the rounding-aware DPAS accumulator are
+  stages 236-238; hardware trap sequencing and timing remain;
 - caches: stages 154, 157 and 162 model write-through caches with invalidate,
   broadcast traffic and a directory/ownership protocol; stage 167 models
   relaxed/release/acquire/seq_cst store buffers; stage 168 adds write-back
   dirty lines, eviction and request queues; stage 169 models SLM bank
-  conflicts and XOR swizzling; hardware address aliasing and arbitration
-  effects remain;
+  conflicts and XOR swizzling; the TLA tile and register-window aliasing laws
+  are stage 227; hardware address aliasing and arbitration effects remain;
 - SBID assignments are a documented transcription assumption (stage 147),
-  because the dumps do not print the field.
+  because the dumps do not print the field;
+- SYCL-TLA GEMM: all 2252 statements are decoded and classified (stages
+  219-220, 239), the mainloop runs end-to-end with both accumulator sums and
+  their stores (stages 200-241), and the binary behind the four bit-exact
+  hardware runs re-dumps to the imported sha256 (stages 231-232); the SBID
+  field and the hardware FP32 product rounding remain.
 
 ## Stage index 137-172
 
@@ -250,6 +258,7 @@ from `Classical.choose` in the racing-store model.
 | 239 | #241 | refined instruction classification |
 | 240 | #242 | jump predicate evaluation |
 | 241 | #243 | second accumulator block output store |
+| 242 | #244 | remaining-work review pass |
 
-The stack is intentionally one PR per stage (#64-#243), as requested. The
+The stack is intentionally one PR per stage (#64-#244), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
