@@ -322,6 +322,20 @@ for t in 0 .. T:
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 26: one tile, fully executed
+
+`Intel/TilePipeline.lean` runs the stage-25 mainloop and the stage-22 epilogue
+back to back, so a single output tile goes from global memory to its C block in
+one executed pipeline.
+
+- `mainloop_epilogue`: `T` staged slabs, `T` barriers, `T` DPAS steps, then the
+  strided epilogue — halting with `dotMat` in the tile's C block.
+- `tileSpec_of_mainloop`: the same fact as `TileSpec`, so the stage-15/23
+  assembly applies to the executed pipeline.
+
+`#print axioms` on `mainloop_epilogue` reports only `[propext, Quot.sound]`;
+`tileSpec_of_mainloop` uses no axioms.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -369,4 +383,5 @@ lake build Intel
 22. Stage 22: epilogue leading dimension.
 23. Stage 23: assembling executed tiles into `GemmSpecW`.
 24. Stage 24: operand staging from global memory into SLM.
-25. Stage 25 (this PR): the composed mainloop (stage, sync, DPAS).
+25. Stage 25: the composed mainloop (stage, sync, DPAS).
+26. Stage 26 (this PR): the full tile pipeline (mainloop + epilogue).
