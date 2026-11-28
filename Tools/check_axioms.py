@@ -28,6 +28,9 @@ ALLOWED = {"propext", "Quot.sound"}
 # data only, so the dependency is benign but visible.
 KNOWN = {
     "IntelGpu.decode_gemmLoop": {"Classical.choice"},
+    # These go through `decodeInstr`, hence through `String.toList`.
+    "IntelGpu.realAddOne_rejected": {"Classical.choice"},
+    "IntelGpu.realAddOne_unsupported": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -49,6 +52,7 @@ THEOREMS = [
     ("Intel.Divergence", "IntelGpu.barrier_needs_all_lanes"),
     ("Intel.Simd", "IntelGpu.add_one_simd"),
     ("Intel.MemoryLaws", "IntelGpu.store32_store32_commute"),
+    ("Intel.RealCoverage", "IntelGpu.realAddOne_unsupported"),
     ("Intel.GemmSlmCompute", "IntelGpu.gemmTile_executed"),
     ("Intel.Dpas", "IntelGpu.dpasRun_correct"),
     ("Intel.GemmDpasLoop", "IntelGpu.dpasProg_correct"),
