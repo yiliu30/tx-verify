@@ -91,5 +91,8 @@ lake build Intel
 8. Stage 8: GEMM body through data/control.
 9. Stage 9: dot-product loop invariant.
 10. Stage 10: memory body with pointer advance.
-11. Stage 11 (this PR): word-indexed memory GEMM loop.
-12. Stage 12: matrix tiling and SYCL-TLA GEMM instance.
+11. Stage 11: word-indexed memory GEMM loop.
+12. Stage 12 (this PR): matrix GEMM specification.
+13. Stage 13: matrix tiling and tile scheduler.
+14. Stage 14: SLM/barrier semantics.
+15. Stage 15: DPAS and SYCL-TLA GEMM instance.
