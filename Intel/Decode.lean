@@ -22,7 +22,9 @@ inductive IInstr where
   | add (dst src1 src2 : Nat)
   | mul (dst src1 src2 : Nat)
   | addImm (dst src : Nat) (imm : Word)
+  | cmpLt (dst src : Nat) (rhs : Word)
   | jmpi (label : String)
+  | jmpiIf (pred : Nat) (label : String)
   deriving Repr, Inhabited
 
 def isDigit (c : Char) : Bool := '0' ≤ c && c ≤ '9'
@@ -71,7 +73,15 @@ def decodeInstr : Stmt → Option IInstr
             match parseReg dst, parseReg a, parseImm b with
             | some d, some x, some v => some (IInstr.addImm d x v)
             | _, _, _ => none
+      | "cmp.lt", [dst, src, rhs] =>
+          match parseReg dst, parseReg src, parseImm rhs with
+          | some d, some x, some v => some (IInstr.cmpLt d x v)
+          | _, _, _ => none
       | "jmpi", [label] => some (IInstr.jmpi label)
+      | "jmpi.cond", [pred, label] =>
+          match parseReg pred with
+          | some p => some (IInstr.jmpiIf p label)
+          | none => none
       | _, _ => none
 
 def decodeStmts : List Stmt → Option (List IInstr)

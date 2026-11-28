@@ -15,7 +15,8 @@ def gemmLoopExpected : List IInstr :=
    IInstr.mul 32 22 30,
    IInstr.add 14 14 32,
    IInstr.addImm 3 3 1,
-   IInstr.jmpi "_0_004"]
+   IInstr.cmpLt 40 3 64,
+   IInstr.jmpiIf 40 "_0_004"]
 
 theorem decode_gemmLoop : decodeProgram gemmLoop = some gemmLoopExpected := by
   rfl
