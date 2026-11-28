@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 267: LSE model support
+
+`Intel/TlaMath.lean` adds `math.log` to the MUFU model (`logFun`, `logRef`,
+`logErr`, `log_bound`), and `Intel/TlaEpilogue.lean` adds
+`lseOut = m + log(l)` with `lseOut_single`: a one-element row recovers the
+logit when log inverts exp. The LSE kernel dump is still needed to verify the
+8 `math.log` forms against the real assembly; this stage is model support
+only.
+
 ## Stage 266: packed-BF16 DPAS atom semantics
 
 `Intel/TlaFmhaDpasBase.lean` now executes each FMHA atom with
@@ -4040,4 +4049,5 @@ lake build Intel
 263. Stage 263: pipeline order.
 264. Stage 264: verification-scope correction.
 265. Stage 265: RNE structural bound.
-266. Stage 266 (this PR): packed-BF16 DPAS atom semantics.
+266. Stage 266: packed-BF16 DPAS atom semantics.
+267. Stage 267 (this PR): LSE model support.

@@ -107,12 +107,25 @@ theorem fmha_schedule_summary : FmhaScheduleSummary :=
   ⟨qkDpasPcs_length, pvDpasPcs_length, expPcs_length, qkDpasPcs_before_exp,
    expPcs_range, pvDpasPcs_range, invPcs_eq⟩
 
+/-- LSE model support: `math.log` parses and log inverts exp in the epilogue. -/
+def FmhaLseSummary : Prop :=
+  (∀ (logRef e : Rat → Rat), (∀ x, logRef (e x) = x) →
+    ∀ m x, lseOut logRef m (e (x - m)) = x) ∧
+  parseTlaMath (.plain "math.log"
+    ["(16|M0)", "r4.0<1>:f", "r4.0<1;1,0>:f", "{F@1}"]) =
+    some ⟨.log, ⟨16, 0, true⟩, ⟨4, 0, 0, 1, 1, 1⟩,
+      .reg ⟨4, 0, 0, 1, 1, 0⟩⟩
+
+theorem fmha_lse_summary : FmhaLseSummary :=
+  ⟨lseOut_single, parseTlaMath_log⟩
+
 /-- The headline checklist. -/
 theorem fmha_prefill_summary :
     FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary ∧
-    FmhaConvertSummary ∧ FmhaExecSummary ∧ FmhaPvCensusSummary ∧ FmhaScheduleSummary :=
+    FmhaConvertSummary ∧ FmhaExecSummary ∧ FmhaPvCensusSummary ∧
+    FmhaScheduleSummary ∧ FmhaLseSummary :=
   ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary,
    fmha_convert_summary, fmha_exec_summary, fmha_pv_census_summary,
-   fmha_schedule_summary⟩
+   fmha_schedule_summary, fmha_lse_summary⟩
 
 end IntelGpu

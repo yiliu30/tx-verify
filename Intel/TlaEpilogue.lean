@@ -20,6 +20,16 @@ namespace IntelGpu
 /-- The normalised output of a running softmax state. -/
 def onlineOut (st : OnlineState) : Rat := st.acc / st.l
 
+/-- The LSE epilogue: the running maximum plus the log of the denominator. -/
+def lseOut (logRef : Rat → Rat) (m l : Rat) : Rat := m + logRef l
+
+/-- A one-element row recovers the logit exactly when log inverts exp. -/
+theorem lseOut_single (logRef e : Rat → Rat) (h : ∀ x, logRef (e x) = x)
+    (m x : Rat) : lseOut logRef m (e (x - m)) = x := by
+  unfold lseOut
+  rw [h, Rat.sub_eq_add_neg, ← Rat.add_assoc, Rat.add_comm m x, Rat.add_assoc,
+    Rat.add_neg_cancel, Rat.add_zero]
+
 /-- The running output is the two-pass ratio at the running maximum. -/
 theorem onlineOut_twoPass (e : Rat → Rat) (st : OnlineState)
     (ps : List (Rat × Rat)) (hinv : OnlineInv e st ps) :

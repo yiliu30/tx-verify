@@ -490,6 +490,11 @@ KNOWN = {
     "IntelGpu.pv74_sources": {"Classical.choice"},
     "IntelGpu.pv74_sum": {"Classical.choice"},
     "IntelGpu.onlineOut_twoPass": {"Classical.choice"},
+    # Stage 267: LSE model.
+    "IntelGpu.parseTlaMath_log": {"Classical.choice"},
+    "IntelGpu.MufuModel.log_bound": {"Classical.choice"},
+    "IntelGpu.lseOut_single": {"Classical.choice"},
+    "IntelGpu.fmha_lse_summary": {"Classical.choice"},
     # Stage 258: the FMHA prefill summary.
     "IntelGpu.fmha_decode_summary": {"Classical.choice"},
     "IntelGpu.fmha_scalar_summary": {"Classical.choice"},
@@ -2857,6 +2862,9 @@ THEOREMS = [
     ("Intel.TlaFmhaPv", "IntelGpu.pv74_sources"),
     ("Intel.TlaFmhaPv", "IntelGpu.pv74_sum"),
     ("Intel.TlaEpilogue", "IntelGpu.onlineOut_twoPass"),
+    ("Intel.TlaMath", "IntelGpu.parseTlaMath_log"),
+    ("Intel.TlaEpilogue", "IntelGpu.lseOut_single"),
+    ("Intel.FmhaSummary", "IntelGpu.fmha_lse_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_decode_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_scalar_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_phase_summary"),
