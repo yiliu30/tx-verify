@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 209: loop structure and mainloop iteration
+
+`Intel/TlaLoopStructure.lean` records the loop skeleton: the exit jump at
+PC 1401 targets `_0_118` at PC 1405, the block starts at the `_0_119` label at
+PC 959, and the back-edge is exactly `959 + 445 = 1404`. `mainloopLoop`
+iterates `mainloopIteration`; `mainloopLoop_continue` and `mainloopLoop_exit`
+lift the tail-iteration theorems to the full iteration, using the DPAS frame
+that keeps `r1.15` fixed.
+
 ## Stage 208: mainloop iteration
 
 `Intel/TlaMainloopIterate.lean` composes the DPAS phase and the loop tail into
@@ -3438,4 +3447,5 @@ lake build Intel
 205. Stage 205: loop-exit comparison.
 206. Stage 206: loop tail.
 207. Stage 207: loop iteration.
-208. Stage 208 (this PR): mainloop iteration.
+208. Stage 208: mainloop iteration.
+209. Stage 209 (this PR): loop structure and mainloop iteration.

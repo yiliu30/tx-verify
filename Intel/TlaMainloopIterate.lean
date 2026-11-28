@@ -66,9 +66,13 @@ theorem mainloopDpasRun_frame (rf : RegFile) (r j : Nat)
   rw [blockDpasSeq_eq, tlaDpasRunSeq_eq]
   exact realTlaGemmDpasRun_frame rf r j hr
 
+/-- The state after the mainloop DPAS phase. -/
+def dpasState (st : TlaState) : TlaState :=
+  { st with regs := mainloopDpasRun st.regs }
+
 /-- One mainloop iteration: the DPAS phase followed by the loop tail. -/
 def mainloopIteration (st : TlaState) : Option (TlaState × TlaTail) :=
-  tlaTailStep { st with regs := mainloopDpasRun st.regs }
+  tlaTailStep (dpasState st)
 
 set_option maxRecDepth 100000 in
 /-- A continuing iteration advances both scalar counters. -/
