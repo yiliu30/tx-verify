@@ -2787,6 +2787,19 @@ and that a flush ignoring dirty lines leaves global stale. Assumptions:
 write-back, write-allocate, one line per address, synchronous eviction; no
 directory traffic, bank conflicts or hardware aliasing in this module.
 
+## Stage 169: SLM banks and swizzling
+
+`Intel/SlmBanks.lean` models 32 word-addressed SLM banks. `bankOf`, `banksOf`,
+`maxConflict` and `transactionCount` give the conflict/cost model;
+`consecutive_conflictFree` shows a warp's consecutive words are conflict-free,
+`maxConflict_stride2_zero` gives the 2-way stride-2 conflict, and
+`broadcast_transactionCount` covers broadcast. The XOR swizzle
+`swizzleRow_conflictFree`/`swizzleColumn_conflictFree` removes both row and
+column conflicts, with exact bank sets and costs; `maxConflict_naiveColumn`
+and `naiveColumn_transactionCount` are the negative baseline. Assumptions: 32
+banks, one request per lane group, no dual-porting, bank-width or arbitration
+effects.
+
 ## Stage 165: review stage map
 
 `Intel/REVIEW_63.md` now carries a single stage index for stages 137--164
@@ -3023,4 +3036,5 @@ lake build Intel
 165. Stage 165: refresh the review stage map.
 166. Stage 166: fp exception flags.
 167. Stage 167: relaxed atomics and store buffers.
-168. Stage 168 (this PR): write-back caches and request queues.
+168. Stage 168: write-back caches and request queues.
+169. Stage 169 (this PR): SLM banks and swizzling.
