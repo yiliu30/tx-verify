@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 188: decoding the predicated ALU forms
+
+`Intel/TlaAlu.lean` gives the register-destination predicated ALU forms a
+structured representation: operation (`and`/`add`/`mul`/`shr`/`shl`/`or`/
+`asr`/`mad`/`mach`/`macl`), execution control, destination, two sources and an
+optional third `mad` source. `parseTlaSrcAlu` handles the `<v;h>` shorthand.
+The census proves 4 `and`, 31 `add` and 1 `mad` forms with `r` destinations,
+and the prologue `and`/`add`/`mad` examples are worked out. Non-`r`
+destinations (`acc0`, `a0`, `cr0`) remain outside this parser.
+
 ## Stage 187: sequencing moves and the entry effect
 
 `Intel/TlaMovRun.lean` sequences decoded moves on the register file.
@@ -3235,4 +3245,5 @@ lake build Intel
 184. Stage 184: the DPAS chain over BF16 values.
 185. Stage 185: decoding the predicated moves.
 186. Stage 186: executing the predicated moves.
-187. Stage 187 (this PR): sequencing moves and the entry effect.
+187. Stage 187: sequencing moves and the entry effect.
+188. Stage 188 (this PR): decoding the predicated ALU forms.
