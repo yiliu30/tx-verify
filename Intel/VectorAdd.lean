@@ -154,6 +154,141 @@ theorem realVectorAddFlat_decoded_length :
   unfold decodeRealProgram decodeRealStmts realVectorAddFlat
   decide
 
+
+/-- The preamble leaves the three pointer registers untouched. -/
+theorem vaPreamble_pointers (s : RealState) :
+    (runVA s vaPreamble).regs 35 0 = s.regs 35 0 ∧
+    (runVA s vaPreamble).regs 36 0 = s.regs 36 0 ∧
+    (runVA s vaPreamble).regs 34 0 = s.regs 34 0 := by
+  unfold vaPreamble runVA
+  simp [runRealWith, stepVA, stepWith, writeVecWith, setReg, readRegWith,
+    readSrcWith, srcIndex, vaAlias, isWideOf, vaRegType, RegType.is64,
+    binOpWide, add3Wide]
+
+/-- The preamble does not write memory. -/
+theorem vaPreamble_mem (s : RealState) :
+    (runVA s vaPreamble).mem = s.mem := by
+  unfold vaPreamble runVA
+  simp [runRealWith, stepVA, stepWith, writeVecWith]
+
+/-- The word index of a scaled address. -/
+def vaWord (base : Addr) (idx : Word) : Nat :=
+  (base + (zext idx) <<< 2).toNat / 4
+
+theorem vaWord_eq (base : Addr) (idx : Word) (hbase : base.toNat % 4 = 0)
+    (hbound : base.toNat + 4 * idx.toNat < 2 ^ 64) :
+    vaWord base idx = base.toNat / 4 + idx.toNat := by
+  unfold vaWord
+  rw [BitVec.toNat_add, BitVec.toNat_shiftLeft]
+  have hz : (zext idx).toNat = idx.toNat := by bv_omega
+  rw [hz, Nat.shiftLeft_eq]
+  omega
+
+theorem vaWordNat (base idx : Nat) (hbase : base % 4 = 0)
+    (hbound : base + 4 * idx < 2 ^ 64) :
+    ((base + ((idx % 2 ^ 64) <<< 2)) % 2 ^ 64) / 4 = base / 4 + idx := by
+  have hidx : idx % 2 ^ 64 = idx := Nat.mod_eq_of_lt (by omega)
+  rw [hidx, Nat.shiftLeft_eq]
+  rw [Nat.mod_eq_of_lt (by omega : base + idx * 4 < 2 ^ 64)]
+  omega
+
+/-- The tail of the vector add: two scaled loads, add, scaled store, return. -/
+def vaTail : List RInstr :=
+  [ .loadScaled 32 57 .d32 56 55,
+    .loadScaled 32 59 .d32 58 55,
+    .add 32 ⟨60, 0, 0, 1, 1, 0⟩ ⟨57, 0, 0, 1, 1, 0⟩ ⟨59, 0, 0, 1, 1, 0⟩,
+    .storeScaled 32 61 55 .d32 60,
+    .ret 1 ]
+
+/-- The decoded program is the preamble followed by the tail. -/
+theorem realVectorAddFlat_decoded_eq :
+    decodeRealProgram realVectorAddFlat = some (vaPreamble ++ vaTail) := by
+  unfold decodeRealProgram decodeRealStmts realVectorAddFlat vaPreamble vaTail
+  decide
+
+theorem vaLoadA (s : RealState) (aPtr bPtr cPtr : Addr)
+    (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16)
+    (h : VaLaunch s aPtr bPtr cPtr localSize r0 globalOffset localId)
+    (l : Nat) (ha : aPtr.toNat % 4 = 0)
+    (hab : aPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l).toNat < 2 ^ 64) :
+    (runVA s (vaPreamble ++ vaTail)).regs 57 l =
+      zext (s.mem (aPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat)) := by
+  have hp := vaPreamble_pointers s
+  have hid := vaPreamble_id s aPtr bPtr cPtr localSize r0 globalOffset localId h l
+  have hp35 : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 35 0 = aPtr := by
+    simpa [runVA, runRealWith, stepVA, h.aReg] using hp.1
+  have hid' : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 55 l =
+      zext (vaId localSize r0 globalOffset localId l) := by
+    simpa [runVA, runRealWith, stepVA] using hid
+  have hmem' : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).mem = s.mem := by
+    simpa [runVA, runRealWith, stepVA] using vaPreamble_mem s
+  unfold vaTail runVA
+  rw [runRealWith_append]
+  simp [runRealWith, stepVA, stepWith, writeVecWith, setReg, readScalarWith,
+    readRegWith, readSrcWith, srcIndex, vaAlias, isWideOf, vaRegType,
+    RegType.is64, binOpWide, load32, hp35, hid', hmem']
+  rw [vaWordNat aPtr.toNat (vaId localSize r0 globalOffset localId l).toNat ha hab]
+
+
+theorem vaLoadB (s : RealState) (aPtr bPtr cPtr : Addr)
+    (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16)
+    (h : VaLaunch s aPtr bPtr cPtr localSize r0 globalOffset localId)
+    (l : Nat) (hb : bPtr.toNat % 4 = 0)
+    (hbb : bPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l).toNat < 2 ^ 64) :
+    (runVA s (vaPreamble ++ vaTail)).regs 59 l =
+      zext (s.mem (bPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat)) := by
+  have hp := vaPreamble_pointers s
+  have hid := vaPreamble_id s aPtr bPtr cPtr localSize r0 globalOffset localId h l
+  have hp36 : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 36 0 = bPtr := by
+    simpa [runVA, runRealWith, stepVA, h.bReg] using hp.2.1
+  have hid' : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 55 l =
+      zext (vaId localSize r0 globalOffset localId l) := by
+    simpa [runVA, runRealWith, stepVA] using hid
+  have hmem' : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).mem = s.mem := by
+    simpa [runVA, runRealWith, stepVA] using vaPreamble_mem s
+  unfold vaTail runVA
+  rw [runRealWith_append]
+  simp [runRealWith, stepVA, stepWith, writeVecWith, setReg, readScalarWith,
+    readRegWith, readSrcWith, srcIndex, vaAlias, isWideOf, vaRegType,
+    RegType.is64, binOpWide, load32, hp36, hid', hmem']
+  rw [vaWordNat bPtr.toNat (vaId localSize r0 globalOffset localId l).toNat hb hbb]
+
+theorem vaAdd (s : RealState) (aPtr bPtr cPtr : Addr)
+    (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16)
+    (h : VaLaunch s aPtr bPtr cPtr localSize r0 globalOffset localId)
+    (l : Nat) (ha : aPtr.toNat % 4 = 0) (hb : bPtr.toNat % 4 = 0)
+    (hab : aPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l).toNat < 2 ^ 64)
+    (hbb : bPtr.toNat + 4 * (vaId localSize r0 globalOffset localId l).toNat < 2 ^ 64) :
+    (runVA s (vaPreamble ++ vaTail)).regs 60 l =
+      zext (s.mem (aPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat) +
+        s.mem (bPtr.toNat / 4 + (vaId localSize r0 globalOffset localId l).toNat)) := by
+  have hp := vaPreamble_pointers s
+  have hid := vaPreamble_id s aPtr bPtr cPtr localSize r0 globalOffset localId h l
+  have hp35 : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 35 0 = aPtr := by
+    simpa [runVA, runRealWith, stepVA, h.aReg] using hp.1
+  have hp36 : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 36 0 = bPtr := by
+    simpa [runVA, runRealWith, stepVA, h.bReg] using hp.2.1
+  have hid' : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).regs 55 l =
+      zext (vaId localSize r0 globalOffset localId l) := by
+    simpa [runVA, runRealWith, stepVA] using hid
+  have hmem' : (List.foldl (stepWith vaAlias vaRegType) s vaPreamble).mem = s.mem := by
+    simpa [runVA, runRealWith, stepVA] using vaPreamble_mem s
+  unfold vaTail runVA
+  rw [runRealWith_append]
+  simp [runRealWith, stepVA, stepWith, writeVecWith, setReg, readScalarWith,
+    readRegWith, readSrcWith, srcIndex, vaAlias, isWideOf, vaRegType,
+    RegType.is64, binOpWide, load32, hp35, hp36, hid', hmem']
+  rw [vaWordNat aPtr.toNat (vaId localSize r0 globalOffset localId l).toNat ha hab,
+    vaWordNat bPtr.toNat (vaId localSize r0 globalOffset localId l).toNat hb hbb]
+
+
+theorem vaTail_halted (s : RealState) :
+    (runVA s vaTail).halted = true := by
+  unfold vaTail runVA
+  simp [runRealWith, stepVA, stepWith, writeVecWith, setReg, readScalarWith,
+    readRegWith, readSrcWith, srcIndex, vaAlias, isWideOf, vaRegType,
+    RegType.is64, binOpWide]
+
 end
 
 end IntelGpu

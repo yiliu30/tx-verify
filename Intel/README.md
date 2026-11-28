@@ -1773,6 +1773,25 @@ predicated `goto`s. The hardware run of the `nd_range` source is `bad=0`.
 Next: the load/add/store effect for this kernel, giving
 `c[id] = a[id] + b[id]` per lane.
 
+## Stage 84: the vector add's loads and sum
+
+With the scaled address decoded, the straight-line vector add's data path is
+proved:
+
+```lean
+theorem vaLoadA : V0057 = zeroExtend (mem (aWord + id))
+theorem vaLoadB : V0059 = zeroExtend (mem (bWord + id))
+theorem vaAdd   : V0060 = zeroExtend (mem (aWord + id) + mem (bWord + id))
+theorem vaTail_halted : (runVA s (vaPreamble ++ vaTail)).halted = true
+```
+
+`vaWordNat` turns the scaled address `base + 4*index` into the word index
+`base/4 + index`; `vaPreamble_pointers` and `vaPreamble_mem` carry the pointer
+and memory frame through the preamble.
+
+The remaining piece is the scaled store and its frame: `c[id] = a[id] + b[id]`
+at each lane, with unrelated words unchanged.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1909,5 +1928,5 @@ lake build Intel
 81. Stage 81: differential hardware conformance for the real GEMM.
 82. Stage 82: import a real SIMD vector add and measure the decoder gap, with
     a fail-closed mask check.
-83. Stage 83 (this PR): decode scaled memory and prove the vector-add index
-    preamble.
+83. Stage 83: decode scaled memory and prove the vector-add index preamble.
+84. Stage 84 (this PR): prove the vector-add loads and sum.
