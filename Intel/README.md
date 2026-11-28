@@ -2841,6 +2841,18 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 257: PV chain and epilogue ratio
+
+`Intel/TlaFmhaPv.lean` proves the fixed-accumulator chain theorem
+(`fmhaAtomRun_fixed_acc`): when every atom in a chain writes the same
+accumulator and its A/B sources sit entirely above or below that block, the
+fold is the initial block plus the ordered slab sum. The 32 PV atoms satisfy
+this (`pvDpas_sources_below`), and the first group `r74` is worked out
+(`pv74_sum`, two atoms). `Intel/TlaEpilogue.lean` defines `onlineOut = acc/l`
+and proves `onlineOut_twoPass`, the two-pass ratio at the running maximum.
+The RNE P→BF16 conversion and the LSE `math.log` path remain for the
+conformance stage.
+
 ## Stage 256: FMHA DPAS atoms
 
 `Intel/TlaFmhaDpas.lean` decodes the 64 prefill DPAS atoms, whose second
@@ -3932,4 +3944,5 @@ lake build Intel
 253. Stage 253: row softmax algebra.
 254. Stage 254: online softmax invariant.
 255. Stage 255: causal mask.
-256. Stage 256 (this PR): FMHA DPAS atoms.
+256. Stage 256: FMHA DPAS atoms.
+257. Stage 257 (this PR): PV chain and epilogue ratio.
