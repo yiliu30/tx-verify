@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 195: control and scoreboard forms
+
+`Intel/TlaControlDecode.lean` decodes the predicated `jmpi` labels and the
+`sync.nop`/`sync.allrd`/`sync.bar` scoreboard forms. The census proves 58
+jumps and 284 syncs (243 `sync.nop`, 40 `sync.allrd`, 1 `sync.bar`), with
+worked parse examples. This is the control-flow inventory for reconstructing
+the mainloop.
+
 ## Stage 194: block2d memory forms
 
 `Intel/TlaBlock2d.lean` decodes the predicated `load.ugm.*` and `store.ugm.*`
@@ -3304,4 +3312,5 @@ lake build Intel
 191. Stage 191: all ALU destinations.
 192. Stage 192: more register-destination ALU ops.
 193. Stage 193: multi-bank ALU state.
-194. Stage 194 (this PR): block2d memory forms.
+194. Stage 194: block2d memory forms.
+195. Stage 195 (this PR): control and scoreboard forms.

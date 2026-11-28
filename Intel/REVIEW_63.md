@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (154 jobs) and `Tools/check_axioms.py --all`
-  (1883 theorems, 443 documented exceptions at stage 194).
+  `lake build Intel` (155 jobs) and `Tools/check_axioms.py --all`
+  (1889 theorems, 448 documented exceptions at stage 195).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -165,6 +165,7 @@ from `Classical.choose` in the racing-store model.
 | 192 | #194 | more register-destination ALU ops |
 | 193 | #195 | multi-bank ALU state |
 | 194 | #196 | block2d memory forms |
+| 195 | #197 | control and scoreboard forms |
 
-The stack is intentionally one PR per stage (#64-#196), as requested. The
+The stack is intentionally one PR per stage (#64-#197), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
