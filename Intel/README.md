@@ -2595,6 +2595,16 @@ agreement lemmas show that full 32-lane controls reproduce `stepWith`, and the
 records the footprint caveats: an inactive-store frame needs address
 disjointness, and offset masks compress destinations by lane index.
 
+## Stage 152: cross-lane race freedom
+
+`Intel/KernelRaceFree.lean` proves that the kernel's lane writes are disjoint
+when the launch ids are distinct. `vaLoopId_injective` and
+`vaLoopId_pairwise_distinct` follow from `BitVec` addition cancellation,
+`vaLoopKernel_cAddress_ne` and `vaLoopKernel_writes_disjoint` give the C-word
+addresses, and `vaLoop_kernel_pc0_mem_of_laneDistinct` discharges the stage-140
+`hdistinct` hypothesis from lane injectivity. The counterexample theorems show
+that injectivity is load-bearing: a constant `localId` makes two lanes alias.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2808,4 +2818,5 @@ lake build Intel
 148. Stage 148: fp8 E4M3 decode for the FMHA atom.
 149. Stage 149: IEEE fp16 addition rounding.
 150. Stage 150: register-level FMHA DPAS execution.
-151. Stage 151 (this PR): mask-aware execution for the loop body.
+151. Stage 151: mask-aware execution for the loop body.
+152. Stage 152 (this PR): cross-lane race freedom.
