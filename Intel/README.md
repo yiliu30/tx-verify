@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 201: mainloop operand-window loads
+
+`Intel/TlaBlock2dPlain.lean` decodes the 27 unprefixed `load_block2d.ugm.*`
+forms (7 of them in the mainloop block) into the same `TlaBlock2d` structure
+and proves all their addresses parse. The block loads `r64:16`, `r80:16`,
+`r96:16`, `r112:16` and `r30:31`; `dpasB_window_cover` and
+`dpasA_window_cover` show that these windows cover all eight B bases
+`64, 72, ..., 120` and all eight A bases `30, 34, ..., 58` used by the 32 DPAS
+instructions.
+
 ## Stage 200: block2d address semantics
 
 `Intel/TlaBlock2dExec.lean` turns the parsed address operands into effective
@@ -3358,4 +3368,5 @@ lake build Intel
 197. Stage 197: mainloop bounds.
 198. Stage 198: mainloop block census.
 199. Stage 199: block2d address operands.
-200. Stage 200 (this PR): block2d address semantics.
+200. Stage 200: block2d address semantics.
+201. Stage 201 (this PR): mainloop operand-window loads.
