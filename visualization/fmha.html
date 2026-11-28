@@ -73,7 +73,8 @@
     <div class="card"><div class="num">33 + 1</div><div class="label"><code>math.exp</code> + <code>math.inv</code>, <code>MufuModel</code> contract</div></div>
     <div class="card"><div class="num">66 / 8</div><div class="label"><code>sel</code> forms / <code>sync.allwr</code> waits</div></div>
     <div class="card"><div class="num">32 + 32</div><div class="label">QK^T atoms (<code>r42..r66</code>) + PV atoms (<code>r74..r194</code>)</div></div>
-    <div class="card"><div class="num ok">1.5e-05</div><div class="label">measured LSE max abs error (host reference)</div></div>
+    <div class="card"><div class="num ok">1.52588e-05</div><div class="label">measured LSE max abs error (host reference)</div></div>
+    <div class="card"><div class="num ok">2694 / 2694</div><div class="label">LSE dump statements decoded and executed</div></div>
   </div>
 </section>
 
@@ -105,6 +106,7 @@
     <tr><td>267</td><td>#273</td><td>LSE model support (`math.log`, `lseOut`)</td></tr>
     <tr><td>268</td><td>#274</td><td>BF16 operand check</td></tr>
     <tr><td>269</td><td>#275</td><td>PV load &rarr; BF16 operand bridge</td></tr>
+    <tr><td>270</td><td>#276</td><td>LSE prefill dump imported and verified</td></tr>
   </table>
 </section>
 
@@ -136,7 +138,7 @@
   <h2>Open gaps</h2>
   <table>
     <tr><th>Gap</th><th>Status</th></tr>
-    <tr><td>LSE variant <code>math.log</code> (8 forms in the LSE dump)</td><td><span class="tag pending">model ready, dump pending</span></td></tr>
+    <tr><td>LSE variant <code>math.log</code></td><td><span class="tag ok">imported, 2694/2694 decoded, hardware Passed</span></td></tr>
     <tr><td>Program-level DPAS composition with the A/B reload schedule and loop</td><td><span class="tag pending">first PV load bridge (PC 1543) proved</span></td></tr>
     <tr><td>Float-valued half-ulp bound of the RNE conversion</td><td><span class="tag pending">structural bound proved</span></td></tr>
     <tr><td>Per-op MUFU samples</td><td><span class="tag pending">end-to-end 1.5e-05 only</span></td></tr>

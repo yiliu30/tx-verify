@@ -184,6 +184,7 @@ def decodedAll (i : TlaInstr) : Bool :=
      | .plain "sync.nop" _ => true
      | .plain "sync.allrd" _ => true
      | .predicated "(W) sync.bar" _ => true
+     | .plain "join" _ => true
      | _ => false)
 
 set_option maxRecDepth 1000000 in

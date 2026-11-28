@@ -50,6 +50,18 @@ def parseTlaMath : TlaInstr → Option TlaMath
       match parseTlaExec e, parseTlaDst dst, parseTlaSrc src with
       | some ex, some (.reg g), some s => some ⟨.log, ex, g, s⟩
       | _, _, _ => none
+  | .predicated "(W) math.exp" (e :: dst :: src :: _) =>
+      match parseTlaExec e, parseTlaDst dst, parseTlaSrc src with
+      | some ex, some (.reg g), some s => some ⟨.exp, ex, g, s⟩
+      | _, _, _ => none
+  | .predicated "(W) math.inv" (e :: dst :: src :: _) =>
+      match parseTlaExec e, parseTlaDst dst, parseTlaSrc src with
+      | some ex, some (.reg g), some s => some ⟨.inv, ex, g, s⟩
+      | _, _, _ => none
+  | .predicated "(W) math.log" (e :: dst :: src :: _) =>
+      match parseTlaExec e, parseTlaDst dst, parseTlaSrc src with
+      | some ex, some (.reg g), some s => some ⟨.log, ex, g, s⟩
+      | _, _, _ => none
   | _ => none
 
 /-- The hardware MUFU model: bit functions plus rational references. -/
