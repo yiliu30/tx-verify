@@ -304,6 +304,8 @@ def RInstr.gemmDstOk : RInstr → Bool
   | .movImm n d _ _ => gemmRegElems d.num == n && (gemmRegType d.num).isSome
   | .or n d _ _ => gemmRegElems d.num == n && (gemmRegType d.num).isSome
   | .cmpLt _ _ _ _ _ => true
+  | .cmpLtReg _ _ _ _ => true
+  | .cmpEqReg _ _ _ _ => true
   | .predAnd _ _ _ _ => true
   | .predOr _ _ _ _ => true
   | .goto _ _ => true

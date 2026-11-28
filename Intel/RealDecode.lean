@@ -101,6 +101,10 @@ inductive RInstr where
   | or (exec : Exec) (dst a b : Grf)
   /-- `cmp.lt` into a predicate register. -/
   | cmpLt (exec : Exec) (pred : Nat) (src : Grf) (imm : Nat) (w : Width)
+  /-- Register-register `cmp.lt` into a predicate register. -/
+  | cmpLtReg (exec : Exec) (pred : Nat) (a b : Grf)
+  /-- Register-register `cmp.eq` into a predicate register. -/
+  | cmpEqReg (exec : Exec) (pred : Nat) (a b : Grf)
   /-- Predicate `and`: `dst = a && b` per lane. -/
   | predAnd (exec : Exec) (dst a b : Nat)
   /-- Predicate `or`: `dst = a || b` per lane. -/
@@ -354,7 +358,14 @@ def decodeReal : Stmt → Option RInstr
       | "cmp.lt", [e, p, a, b] =>
           match parseExec e, parsePred p, parseGrf a, parseLit b, parseWidth b with
           | some n, some q, some x, some v, some wd => some (.cmpLt n q x v wd)
-          | _, _, _, _, _ => none
+          | _, _, _, _, _ =>
+              match parseExec e, parsePred p, parseGrf a, parseGrf b with
+              | some n, some q, some x, some y => some (.cmpLtReg n q x y)
+              | _, _, _, _ => none
+      | "cmp.eq", [e, p, a, b] =>
+          match parseExec e, parsePred p, parseGrf a, parseGrf b with
+          | some n, some q, some x, some y => some (.cmpEqReg n q x y)
+          | _, _, _, _ => none
       | "goto", [e, l] =>
           match parseExec e with
           | some n => some (.goto n l)
