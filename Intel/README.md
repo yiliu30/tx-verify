@@ -2841,6 +2841,13 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 196: control-flow targets
+
+`Intel/TlaCfg.lean` provides `tlaLabelPc` for the decoded program and proves
+that the 58 predicated jumps all target one of the 87 decoded labels.
+`realTlaGemmJmps_first_target` resolves the first jump to PC 27. This is the
+control-flow sanity check needed before reconstructing the mainloop.
+
 ## Stage 195: control and scoreboard forms
 
 `Intel/TlaControlDecode.lean` decodes the predicated `jmpi` labels and the
@@ -3313,4 +3320,5 @@ lake build Intel
 192. Stage 192: more register-destination ALU ops.
 193. Stage 193: multi-bank ALU state.
 194. Stage 194: block2d memory forms.
-195. Stage 195 (this PR): control and scoreboard forms.
+195. Stage 195: control and scoreboard forms.
+196. Stage 196 (this PR): control-flow targets.
