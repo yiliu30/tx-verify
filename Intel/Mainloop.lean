@@ -124,6 +124,12 @@ inductive KInstr where
   | cmpGe (T : Nat)
   | jmpiIf (target : Nat)
   | jmpi (target : Nat)
+  /-- Stage the `r`-deep tail columns of slab `t` of A. -/
+  | stageATail (t r : Nat)
+  /-- Stage the `r`-deep tail rows of slab `t` of B. -/
+  | stageBTail (t r : Nat)
+  /-- Accumulate the `r`-deep tail slab. -/
+  | dpasTail (r : Nat)
   deriving Repr
 
 /-- SLM contents after staging slab `t0`. -/
@@ -154,6 +160,21 @@ def kstep (g : Geom) (prog : List KInstr) (s : KState) : KState :=
   | some (.cmpGe T) => { s with pred := decide (T ≤ s.t), pc := s.pc + 1 }
   | some (.jmpiIf target) => { s with pc := if s.pred then target else s.pc + 1 }
   | some (.jmpi target) => { s with pc := target }
+  | some (.stageATail t r) =>
+      { s with
+        slm := copyStrided s.slm s.mem 0 (g.aBase + g.i * g.ldA + t * g.d) g.ldA r g.M,
+        pc := s.pc + 1 }
+  | some (.stageBTail t r) =>
+      { s with
+        slm := copyStrided s.slm s.mem (g.M * r)
+          (g.bBase + t * g.d * g.ldB + g.j) g.ldB g.N r,
+        pc := s.pc + 1 }
+  | some (.dpasTail r) =>
+      { s with
+        acc := fun m n =>
+          s.acc m n + dpasSlab r (fun k m' => s.slm (m' * r + k))
+            (fun k n' => s.slm (g.M * r + k * g.N + n')) m n,
+        pc := s.pc + 1 }
 
 def krun (g : Geom) (prog : List KInstr) : Nat → KState → KState
   | 0, s => s
