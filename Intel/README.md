@@ -639,6 +639,29 @@ theorem epilogueLd_frame ... :
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 40: one output buffer for all tiles
+
+`Intel/SharedBuffer.lean` starts the shared-buffer story now that the epilogue
+has a frame law.
+
+```lean
+def sliceAddr ...        -- address of element (m, n) of tile p's block
+def tileEpilogue ...     -- run tile p's epilogue on a memory
+def writeTiles ...       -- fold the per-tile epilogues over a list of origins
+def Separated ...        -- different origins never share a block address
+theorem writeTiles_frame ... :
+    -- a word outside every block is left alone by the whole fold
+    ... a = mem a
+```
+
+So writing tiles in sequence cannot disturb any word outside their blocks. Two
+things are deliberately **not** claimed yet, and the module says so: that
+`Separated` follows from the tile arithmetic (it needs the matrix width,
+`p.2 * BN + BN ≤ N ≤ ldC`), and that a word *inside* a block ends up holding
+that tile's accumulator. Those are the remaining half.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -703,4 +726,5 @@ lake build Intel
 36. Stage 36: axiom audit over the whole stack.
 37. Stage 37: distributed staging across lanes.
 38. Stage 38: fp16-shaped values on a shared grid.
-39. Stage 39 (this PR): the epilogue is a frame-preserving write.
+39. Stage 39: the epilogue is a frame-preserving write.
+40. Stage 40 (this PR): one output buffer for all tiles (frame law).
