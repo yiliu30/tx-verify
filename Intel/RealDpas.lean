@@ -163,4 +163,23 @@ theorem tla_f16_k32_atoms : atomsPerTile tlaXeF16Atom.k 32 = 2 := by
 theorem fmha_atom_not_tla : fmhaFp8Atom.n ≠ tlaXeF16Atom.n := by
   decide
 
+
+/-- The 8x8x32 fp8 atom as a mathematical operation: accumulate the depth-32
+dot into an 8x8 C tile at `(i, j)`. -/
+def fmhaAtom (A B C : Nat → Nat → Word) (i j : Nat) : Nat → Nat → Word :=
+  fun m n => C (i + m) (j + n) +
+    dpasSlab 32 (fun k m' => A (i + m') k) (fun k n' => B k (j + n')) m n
+
+/-- The atom is exactly the depth-32 matrix dot product. -/
+theorem fmhaAtom_correct (A B C : Nat → Nat → Word) (i j m n : Nat) :
+    fmhaAtom A B C i j m n =
+      C (i + m) (j + n) + dotMatFrom A B (i + m) (j + n) 0 32 := by
+  unfold fmhaAtom
+  simpa using dpasSlab_eq_dotMatFrom A B i j 0 32 m n
+
+/-- The atom's shape and depth, matching the decoded 8x8x32 form. -/
+theorem fmhaAtom_shape :
+    fmhaFp8Atom.m = 8 ∧ fmhaFp8Atom.n = 8 ∧ fmhaFp8Atom.k = 32 :=
+  ⟨rfl, rfl, rfl⟩
+
 end IntelGpu

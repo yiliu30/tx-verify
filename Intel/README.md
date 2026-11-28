@@ -1839,6 +1839,23 @@ SYCL-TLA fp16 path issues two 8x16x16 DPAS instructions — the existing
 artifacts that address it, lists the acceptance criteria, and separates the
 trusted base from the remaining open work.
 
+## Stage 88: the 8x8x32 atom's dataflow
+
+`fmhaAtom` gives the decoded FMHA fp8 atom a mathematical operation: accumulate
+a depth-32 dot into an 8x8 C tile at `(i, j)`.
+
+```lean
+theorem fmhaAtom_correct :
+    fmhaAtom A B C i j m n =
+      C (i + m) (j + n) + dotMatFrom A B (i + m) (j + n) 0 32
+theorem fmhaAtom_shape : fmhaFp8Atom.m = 8 ∧ ... .n = 8 ∧ ... .k = 32
+```
+
+So the decoded 8x8x32 form is tied both to its operand types (stage 79/86)
+and to the depth-32 matrix dot (via `dpasSlab_eq_dotMatFrom`). Register packing
+and the operand layout of the real `r39:hf8`/`r335.0:hf8` pair, and the FMHA
+kernel execution, remain open.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1979,4 +1996,5 @@ lake build Intel
 84. Stage 84: prove the vector-add loads and sum.
 85. Stage 85: the real vector add end-to-end.
 86. Stage 86: record and quantify the real DPAS atom shapes.
-87. Stage 87 (this PR): consolidate the issue #63 response and trusted base.
+87. Stage 87: consolidate the issue #63 response and trusted base.
+88. Stage 88 (this PR): prove the 8x8x32 DPAS atom's dataflow.
