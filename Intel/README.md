@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 250: plain `cmp`, `not` and the `bfn` mux
+
+The three remaining scalar singletons now decode and execute. The plain
+`cmp` at PC 1169 writes `f3.1` from `r4.0 < r2.6` (`plainCmp`,
+`plainCmp_holds`, `plainCmp_step`); `(W) not` is a unary ALU op
+(`tlaAluStateStep?_not`); and `bfn.(s0&s1|~s0&s2)` is a bit mux, added as
+`TlaBfnOp.mux` with `TlaBfn.value_mux` and the `(W)`-predicated parser form.
+FMHA prefill coverage rises from 1920/1965 to **1923/1965 (97.9%)**; the
+remaining 42 are `math.exp` 33, `sync.allwr` 8 and `math.inv`.
+
 ## Stage 249: the select instruction
 
 `Intel/TlaSel.lean` decodes the three `sel` spellings in the FMHA prefill
@@ -3852,4 +3862,5 @@ lake build Intel
 246. Stage 246: FMHA prefill gap analysis and proposal.
 247. Stage 247: FMHA prefill dump coverage.
 248. Stage 248: negated sources and `.v` immediates.
-249. Stage 249 (this PR): the select instruction.
+249. Stage 249: the select instruction.
+250. Stage 250 (this PR): plain `cmp`, `not` and the `bfn` mux.

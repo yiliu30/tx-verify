@@ -13,10 +13,10 @@ public import Intel.TlaDispatch
 instructions, 1965 statements). This module measures how much of it the
 merged GEMM stack already decodes with the total classifier `decodedAll`:
 
-- 1920 of 1965 statements decode (97.7%) after the `sel` decoder of stage
-  249 (and the negated-source and `.v` extensions of stage 248),
-- the 45 that do not are `math.exp` 33, `sync.allwr` 8, and the singletons
-  `cmp`/`not`/`bfn`/`math.inv`,
+- 1923 of 1965 statements decode (97.9%) after the `sel` decoder of stage
+  249 and the plain `cmp`/`not`/`bfn` mux forms of stage 250 (and the
+  negated-source and `.v` extensions of stage 248),
+- the 42 that do not are `math.exp` 33, `sync.allwr` 8, and `math.inv`,
 - 64 `dpas.8x8 (16|M0)` instructions: 4 use `null` as the second
   accumulator and 60 alias it to the first accumulator.
 
@@ -66,14 +66,14 @@ theorem fmhaPrefillCode_length : fmhaPrefillCode.length = 1965 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 8000000 in
-/-- 1920 statements decode with the merged stack. -/
+/-- 1923 statements decode with the merged stack. -/
 theorem fmhaPrefill_decoded_count :
-    (fmhaPrefillPc.filter (fun p => decodedAll p.2)).length = 1920 := by decide
+    (fmhaPrefillPc.filter (fun p => decodedAll p.2)).length = 1923 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 8000000 in
-/-- 45 statements do not decode. -/
-theorem fmhaPrefill_unclassified_count : fmhaUnclassified.length = 45 := by decide
+/-- 42 statements do not decode. -/
+theorem fmhaPrefill_unclassified_count : fmhaUnclassified.length = 42 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 16000000 in
@@ -81,7 +81,7 @@ set_option maxHeartbeats 16000000 in
 theorem fmhaPrefill_unclassified_forms :
     fmhaFormCensus =
       [("sel", 0), ("mad-neg", 0), ("math.exp", 33), ("sync.allwr", 8),
-       ("mov", 0), ("cmp", 1), ("not", 1), ("bfn", 1), ("math.inv", 1)] := by
+       ("mov", 0), ("cmp", 0), ("not", 0), ("bfn", 0), ("math.inv", 1)] := by
   decide
 
 set_option maxRecDepth 1000000 in
@@ -143,5 +143,48 @@ set_option maxRecDepth 1000000 in
 /-- 66 prefill statements are `sel`. -/
 theorem fmhaPrefill_sel_count :
     (fmhaPrefillPc.filter (fun p => (parseTlaSelInstr p.2).isSome)).length = 66 := by decide
+
+set_option maxRecDepth 1000000 in
+/-- PC 23 is the `bfn` mux form. -/
+theorem fmhaPrefill_bfnMux_parsed :
+    (fmhaParsedAt 23).bind parseTlaBfn =
+      some ⟨⟨1, 0, true⟩, .reg ⟨1, 0, 11, 1, 1, 1⟩,
+        .reg ⟨1, 0, 10, 0, 0, 0⟩, .reg ⟨6, 0, 7, 0, 0, 0⟩,
+        .reg ⟨1, 0, 11, 0, 1, 0⟩, .mux⟩ := by decide
+
+set_option maxRecDepth 1000000 in
+/-- PC 24 is the plain `not`. -/
+theorem fmhaPrefill_not_parsed :
+    (fmhaParsedAt 24).bind parseTlaAluInstr =
+      some ⟨.not, ⟨1, 0, true⟩, .r ⟨1, 0, 10, 1, 1, 1⟩,
+        .reg ⟨6, 0, 6, 0, 1, 0⟩, .imm 0 .d32, none⟩ := by decide
+
+set_option maxRecDepth 1000000 in
+/-- PC 1169 is the plain `cmp`. -/
+theorem fmhaPrefill_plainCmp_parsed :
+    (fmhaParsedAt 1169).bind parseTlaCmpInstr =
+      some ⟨"", ⟨16, 0, true⟩, "lt", 3, 1,
+        .reg ⟨4, 0, 0, 1, 1, 0⟩, .reg ⟨2, 0, 6, 0, 1, 0⟩⟩ := by decide
+
+set_option maxRecDepth 1000000 in
+/-- Exactly one prefill statement is the `bfn` mux form. -/
+theorem fmhaPrefill_bfnMux_count :
+    (fmhaPrefillPc.filter (fun p => match p.2 with
+      | .predicated "(W) bfn.(s0&s1|~s0&s2)" _ => true
+      | _ => false)).length = 1 := by decide
+
+set_option maxRecDepth 1000000 in
+/-- Exactly one prefill statement is a plain `not`. -/
+theorem fmhaPrefill_not_count :
+    (fmhaPrefillPc.filter (fun p => match p.2 with
+      | .predicated "(W) not" _ => true
+      | _ => false)).length = 1 := by decide
+
+set_option maxRecDepth 1000000 in
+/-- Exactly one prefill statement is a plain `cmp`. -/
+theorem fmhaPrefill_plainCmp_count :
+    (fmhaPrefillPc.filter (fun p => match p.2 with
+      | .plain "cmp" _ => true
+      | _ => false)).length = 1 := by decide
 
 end IntelGpu

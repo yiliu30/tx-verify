@@ -22,13 +22,20 @@ destination, source, payload and the EOT flag (the last message carries
 
 namespace IntelGpu
 
+/-- The three printed bit-field forms. -/
+inductive TlaBfnOp where
+  | andOr
+  | or3
+  | mux
+  deriving Repr, DecidableEq
+
 structure TlaBfn where
   exec : Exec
   dst : TlaDst
   src0 : TlaSrc
   src1 : TlaSrc
   src2 : TlaSrc
-  andOr : Bool
+  op : TlaBfnOp
   deriving Repr, DecidableEq
 
 /-- The bfn source forms include `<v;w>` without an explicit hstride. -/
@@ -40,17 +47,27 @@ def parseBfnSrc (s : String) : Option TlaSrc :=
       | [n, sub, v, w] => some (.reg ⟨n, 0, sub, v, w, 0⟩)
       | _ => parseTlaSrc s
 
-/-- A plain `bfn.(s0&s1|s2)` / `bfn.(s0|s1|s2)` form. -/
+/-- A plain `bfn.(s0&s1|s2)`, `bfn.(s0|s1|s2)` or `bfn.(s0&s1|~s0&s2)` form. -/
 def parseTlaBfn : TlaInstr → Option TlaBfn
   | .plain "bfn.(s0&s1|s2)" (e :: dst :: s0 :: s1 :: s2 :: _) =>
       match parseTlaExec e, parseTlaDst dst, parseBfnSrc s0, parseBfnSrc s1,
         parseBfnSrc s2 with
-      | some ex, some d, some a, some b, some c => some ⟨ex, d, a, b, c, true⟩
+      | some ex, some d, some a, some b, some c => some ⟨ex, d, a, b, c, .andOr⟩
       | _, _, _, _, _ => none
   | .plain "bfn.(s0|s1|s2)" (e :: dst :: s0 :: s1 :: s2 :: _) =>
       match parseTlaExec e, parseTlaDst dst, parseBfnSrc s0, parseBfnSrc s1,
         parseBfnSrc s2 with
-      | some ex, some d, some a, some b, some c => some ⟨ex, d, a, b, c, false⟩
+      | some ex, some d, some a, some b, some c => some ⟨ex, d, a, b, c, .or3⟩
+      | _, _, _, _, _ => none
+  | .plain "bfn.(s0&s1|~s0&s2)" (e :: dst :: s0 :: s1 :: s2 :: _) =>
+      match parseTlaExec e, parseTlaDst dst, parseBfnSrc s0, parseBfnSrc s1,
+        parseBfnSrc s2 with
+      | some ex, some d, some a, some b, some c => some ⟨ex, d, a, b, c, .mux⟩
+      | _, _, _, _, _ => none
+  | .predicated "(W) bfn.(s0&s1|~s0&s2)" (e :: dst :: s0 :: s1 :: s2 :: _) =>
+      match parseTlaExec e, parseTlaDst dst, parseBfnSrc s0, parseBfnSrc s1,
+        parseBfnSrc s2 with
+      | some ex, some d, some a, some b, some c => some ⟨ex, d, a, b, c, .mux⟩
       | _, _, _, _, _ => none
   | _ => none
 
@@ -62,7 +79,17 @@ def TlaBfn.value (rf : RegFile) (b : TlaBfn) (l : Nat) : Word :=
   let x := readTlaSrc rf b.src0 l
   let y := readTlaSrc rf b.src1 l
   let z := readTlaSrc rf b.src2 l
-  if b.andOr then (x &&& y) ||| z else x ||| y ||| z
+  match b.op with
+  | .andOr => (x &&& y) ||| z
+  | .or3 => x ||| y ||| z
+  | .mux => (x &&& y) ||| (~~~x &&& z)
+
+/-- The mux form selects bits of `s1`/`s2` under the `s0` mask. -/
+theorem TlaBfn.value_mux (rf : RegFile) (b : TlaBfn) (h : b.op = .mux) (l : Nat) :
+    b.value rf l =
+      (readTlaSrc rf b.src0 l &&& readTlaSrc rf b.src1 l) |||
+        (~~~readTlaSrc rf b.src0 l &&& readTlaSrc rf b.src2 l) := by
+  simp [TlaBfn.value, h]
 
 def TlaBfn.step (rf : RegFile) (b : TlaBfn) : RegFile :=
   match b.dst with
@@ -86,7 +113,7 @@ theorem parseTlaBfn_72 :
     (progInstrAt 72).bind parseTlaBfn =
       some ⟨⟨16, 0, true⟩, .reg ⟨62, 0, 0, 1, 1, 1⟩,
         .reg ⟨16, 0, 0, 1, 0, 0⟩, .reg ⟨2, 0, 3, 0, 0, 0⟩,
-        .reg ⟨2, 0, 9, 0, 1, 0⟩, true⟩ := by
+        .reg ⟨2, 0, 9, 0, 1, 0⟩, .andOr⟩ := by
   decide
 
 structure TlaSend where

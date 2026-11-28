@@ -55,9 +55,13 @@ def tlaAluFun : TlaAluOp → (Nat → Word) → (Nat → Word) → (Nat → Word
   | .shl, f, g, _ => some (fun i => f i <<< (g i).toNat)
   | .shr, f, g, _ => some (fun i => f i >>> (g i).toNat)
   | .asr, f, g, _ => some (fun i => (f i).sshiftRight (g i).toNat)
+  | .not, f, _, _ => some (fun i => ~~~ f i)
   | .mad, f, g, h => some (fun i => f i * g i + h i)
   | .mach, f, g, _ => some (fun i => BitVec.ofNat 32 ((f i).toNat * (g i).toNat >>> 32))
   | .macl, f, g, _ => some (fun i => BitVec.ofNat 32 ((f i).toNat * (g i).toNat))
+
+theorem tlaAluFun_not (f g h : Nat → Word) :
+    tlaAluFun .not f g h = some (fun i => ~~~ f i) := rfl
 
 def tlaAluStateStep? (st : TlaState) (a : TlaAlu) : Option TlaState :=
   let f := readTlaSrcState st a.src1
@@ -74,6 +78,13 @@ def tlaAluStateStep? (st : TlaState) (a : TlaAlu) : Option TlaState :=
       | .addr n sub => some { st with addr := writeBank st.addr n sub (r 0) }
       | .cr n sub => some { st with cr := writeBank st.cr n sub (r 0) }
       | .flag n sub => some { st with flags := writeBank st.flags n sub (r 0) }
+
+/-- `not` complements the first source elementwise. -/
+theorem tlaAluStateStep?_not (st : TlaState) (ex : Exec) (g : Grf) (s : TlaSrc) :
+    tlaAluStateStep? st ⟨.not, ex, .r g, s, .imm 0 .d32, none⟩ =
+      some { st with regs :=
+        writeTlaMasked st.regs g ex (fun i => ~~~ readTlaSrcState st s i) } := by
+  simp [tlaAluStateStep?, tlaAluFun]
 
 /-- `mul acc0, r1.13, r1.20`. -/
 def mulAcc : TlaAlu :=

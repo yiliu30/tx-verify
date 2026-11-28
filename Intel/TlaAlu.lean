@@ -21,7 +21,7 @@ not executed yet.
 namespace IntelGpu
 
 inductive TlaAluOp where
-  | and | add | mul | shr | shl | or | asr | mad | mach | macl
+  | and | add | mul | shr | shl | or | asr | not | mad | mach | macl
   deriving Repr, DecidableEq
 
 /-- An ALU destination: a GRF, an accumulator, an address register or a
@@ -51,6 +51,7 @@ def parseTlaAluOp : String → Option TlaAluOp
   | "(W) shl" => some .shl
   | "(W) or" => some .or
   | "(W) asr" => some .asr
+  | "(W) not" => some .not
   | "(W) mad" => some .mad
   | "(W) mach" => some .mach
   | "(W) macl" => some .macl
@@ -100,6 +101,10 @@ def parseTlaAluDst (s : String) : Option TlaAluDst :=
   | _ => none
 
 def parseTlaAluInstr : TlaInstr → Option TlaAlu
+  | .predicated "(W) not" (e :: dst :: s1 :: _) =>
+      match parseTlaExec e, parseTlaAluDst dst, parseTlaSrcAlu s1 with
+      | some ex, some d, some a => some ⟨.not, ex, d, a, .imm 0 .d32, none⟩
+      | _, _, _ => none
   | .predicated "(W) mad" (e :: dst :: s1 :: s2 :: s3 :: _) =>
       match parseTlaExec e, parseTlaAluDst dst, parseTlaSrcAlu s1, parseTlaSrcAlu s2,
         parseTlaSrcAlu s3 with

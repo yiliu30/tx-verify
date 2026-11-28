@@ -38,7 +38,7 @@ theorem TlaBfn.step_frame (rf : RegFile) (b : TlaBfn) (g : Grf)
 /-- The `bfn` form at PC 72. -/
 def bfn72 : TlaBfn :=
   ⟨⟨16, 0, true⟩, .reg ⟨62, 0, 0, 1, 1, 1⟩, .reg ⟨16, 0, 0, 1, 0, 0⟩,
-    .reg ⟨2, 0, 3, 0, 0, 0⟩, .reg ⟨2, 0, 9, 0, 1, 0⟩, true⟩
+    .reg ⟨2, 0, 3, 0, 0, 0⟩, .reg ⟨2, 0, 9, 0, 1, 0⟩, .andOr⟩
 
 /-- PC 72 computes `(r16[l] &&& r2.3) ||| r2.9`. -/
 theorem bfn72_value (rf : RegFile) (l : Nat) :

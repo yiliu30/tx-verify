@@ -42,6 +42,7 @@ def parseTlaAluOpPlain : String → Option TlaAluOp
   | "shl" => some .shl
   | "or" => some .or
   | "asr" => some .asr
+  | "not" => some .not
   | "mad" => some .mad
   | "mach" => some .mach
   | "macl" => some .macl
