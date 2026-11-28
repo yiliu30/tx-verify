@@ -512,6 +512,9 @@ KNOWN = {
     "IntelGpu.lse_classified": {"Classical.choice"},
     "IntelGpu.lse_step_total": {"Classical.choice"},
     "IntelGpu.fmha_lse_dump_summary": {"Classical.choice"},
+    # Stage 271: measured MUFU samples.
+    "IntelGpu.labMufuSamples_fields": {"Classical.choice"},
+    "IntelGpu.fmha_mufu_summary": {"Classical.choice"},
     # Stage 269: FMHA load -> BF16 operand bridge.
     "IntelGpu.loadWindow_feeds_bf16ReadB": {"Classical.choice"},
     "IntelGpu.loadWindow_feeds_bf16ReadA": {"Classical.choice"},
@@ -2906,6 +2909,8 @@ THEOREMS = [
     ("Intel.FmhaLseCoverage", "IntelGpu.lse_classified"),
     ("Intel.FmhaLseCoverage", "IntelGpu.lse_step_total"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_lse_dump_summary"),
+    ("Intel.MufuSamples", "IntelGpu.labMufuSamples_fields"),
+    ("Intel.FmhaSummary", "IntelGpu.fmha_mufu_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_decode_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_scalar_summary"),
     ("Intel.FmhaSummary", "IntelGpu.fmha_phase_summary"),

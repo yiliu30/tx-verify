@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 271: measured MUFU samples
+
+`Intel/MufuSamples.lean` records the 2^20-point lab-GPU sweep for the three
+math instructions: `exp` max rel `1.984444714e-07`, `inv` max rel
+`1.153888151e-07`, `log` max rel `7.661312768e-08` (absolute columns are
+recorded too). The dumped microbenchmark contains `math.exp`, `math.inv` and
+`math.log`, so these values instantiate `MufuModel.expErr`/`invErr`/`logErr`.
+Source and results: `Tools/conformance/mufu_samples.md`.
+
 ## Stage 270: the FMHA prefill LSE dump
 
 `Intel/Examples/RealFmhaLse.lean` imports the LSE prefill kernel (2581
@@ -4078,4 +4087,5 @@ lake build Intel
 267. Stage 267: LSE model support.
 268. Stage 268: BF16 operand check.
 269. Stage 269: PV load -> BF16 operand bridge.
-270. Stage 270 (this PR): the FMHA prefill LSE dump.
+270. Stage 270: the FMHA prefill LSE dump.
+271. Stage 271 (this PR): measured MUFU samples.
