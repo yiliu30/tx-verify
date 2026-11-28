@@ -2841,6 +2841,13 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 268: BF16 operand check
+
+`endsWithBf` checks the `:bf` source suffix, and `parseFmhaDpas` now rejects
+DPAS instructions whose A/B operands are not BF16. `fmhaPrefill_dpas_bf16`
+proves that all 64 prefill DPAS operands are `:bf`, so the packed-BF16 slab
+semantics applies to every atom.
+
 ## Stage 267: LSE model support
 
 `Intel/TlaMath.lean` adds `math.log` to the MUFU model (`logFun`, `logRef`,
@@ -4050,4 +4057,5 @@ lake build Intel
 264. Stage 264: verification-scope correction.
 265. Stage 265: RNE structural bound.
 266. Stage 266: packed-BF16 DPAS atom semantics.
-267. Stage 267 (this PR): LSE model support.
+267. Stage 267: LSE model support.
+268. Stage 268 (this PR): BF16 operand check.

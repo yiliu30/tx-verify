@@ -26,6 +26,12 @@ structure FmhaDpas where
   srcA : Nat
   deriving Repr, DecidableEq
 
+/-- Does an operand end in the `:bf` BF16 type suffix? -/
+def endsWithBf (s : String) : Bool :=
+  match s.toList.reverse with
+  | 'f' :: 'b' :: ':' :: _ => true
+  | _ => false
+
 /-- Parse either a register base or `null` for the second accumulator. -/
 def parseDpasRegOpt (s : String) : Option (Option Nat) :=
   if isNullOperand s then some none
@@ -36,10 +42,12 @@ def parseDpasRegOpt (s : String) : Option (Option Nat) :=
 
 def parseFmhaDpas : TlaInstr → Option FmhaDpas
   | .dpas _ d0 d1 b a _ =>
-      match parseDpasReg d0, parseDpasRegOpt d1, parseDpasReg b, parseDpasReg a with
-      | some (r0, _), some r1, some (rb, _), some (ra, _) =>
-          some ⟨r0, r1, rb, ra⟩
-      | _, _, _, _ => none
+      if endsWithBf b && endsWithBf a then
+        match parseDpasReg d0, parseDpasRegOpt d1, parseDpasReg b, parseDpasReg a with
+        | some (r0, _), some r1, some (rb, _), some (ra, _) =>
+            some ⟨r0, r1, rb, ra⟩
+        | _, _, _, _ => none
+      else none
   | _ => none
 
 /-- The packed-BF16 slab of one FMHA atom. -/

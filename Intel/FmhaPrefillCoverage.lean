@@ -201,6 +201,14 @@ theorem fmhaPrefill_inv_parsed :
         .reg ⟨4, 0, 0, 1, 1, 0⟩⟩ := by decide
 
 set_option maxRecDepth 1000000 in
+/-- Every prefill DPAS has BF16 A/B operands. -/
+theorem fmhaPrefill_dpas_bf16 :
+    (fmhaPrefillPc.filter (fun p => isDpas p.2)).all (fun p =>
+      match p.2 with
+      | .dpas _ _ _ b a _ => endsWithBf b && endsWithBf a
+      | _ => false) = true := by decide
+
+set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 8000000 in
 /-- Every prefill statement is decoded. -/
 theorem fmhaPrefill_decoded_all :

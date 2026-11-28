@@ -103,6 +103,7 @@
     <tr><td>265</td><td>#271</td><td>RNE structural bound</td></tr>
     <tr><td>266</td><td>#272</td><td>packed-BF16 DPAS atom semantics</td></tr>
     <tr><td>267</td><td>#273</td><td>LSE model support (`math.log`, `lseOut`)</td></tr>
+    <tr><td>268</td><td>#274</td><td>BF16 operand check</td></tr>
   </table>
 </section>
 
@@ -117,6 +118,7 @@
     <tr><td>QP split 32 + 32</td><td><code>qkDpas_length</code>, <code>pvDpas_length</code></td></tr>
     <tr><td>Atom slab value and frame</td><td><code>fmhaAtomStep_acc0</code>, <code>fmhaAtomStep_frame</code></td></tr>
     <tr><td>BF16 atom semantics (`fmhaBf16Slab`)</td><td><code>fmhaAtomStep_acc0</code></td></tr>
+    <tr><td>All 64 DPAS operands are `:bf`</td><td><code>fmhaPrefill_dpas_bf16</code></td></tr>
     <tr><td>QK^T DPAS-only chain = 8 slabs per block</td><td><code>qk42_sum</code>, <code>qk50_sum</code>, <code>qk58_sum</code>, <code>qk66_sum</code></td></tr>
     <tr><td>PV DPAS-only chain = initial + slab sum (all 16 groups)</td><td><code>fmhaAtomRun_fixed_acc</code>, <code>pvGroup_sum_of_mem</code></td></tr>
     <tr><td>RNE P&rarr;BF16: idempotent, packed, truncate-or-one-ulp</td><td><code>bf16RoundWord_idempotent</code>, <code>bf16RoundWord_trunc_or_succ</code></td></tr>
