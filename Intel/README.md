@@ -2377,6 +2377,19 @@ preserves `V0075`, and the low pack preserves the `V0074` source register.
 the second guard. The P6 path therefore does not need a post-pack size
 assumption.
 
+## Stage 129: full P6 from executed increment packs
+
+`vaLoopP6_packed_full` composes the executed increment packs, preserved size
+dwords and the second guard:
+
+```lean
+theorem vaLoopP6_packed_full :
+  P6 = vaLoopGuard nextId globalSize
+```
+
+Both continuation predicates are now derived from the actual executed packs
+and launch size facts.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2567,4 +2580,5 @@ lake build Intel
 125. Stage 125: execute the increment's low pack.
 126. Stage 126: execute the increment's high pack.
 127. Stage 127: compose both increment packs.
-128. Stage 128 (this PR): prove increment packs preserve the size dwords.
+128. Stage 128: prove increment packs preserve the size dwords.
+129. Stage 129 (this PR): derive full P6 from executed increment packs.
