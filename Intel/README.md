@@ -66,8 +66,11 @@ on a silent assumption.
    Lives in `Intel/Asm.lean`. Not discharged.
 2. **One lane per data/control step** — SIMD masks and GRF regions are not
    modelled. `Intel/Asm.lean`. Not discharged.
-3. **Uniform control flow** across the workgroup. `Intel/WControl.lean`. Not
-   discharged.
+3. **Uniform control flow** — `Intel/WControl.lean` gets it for free via a
+   single predicate. Stage 58 states what it buys (`Intel/Divergence.lean`): a
+   barrier retires only when every lane has parked, so one diverged lane leaves
+   the workgroup stuck. Discharged in part — the hazard is proved, the masks
+   themselves are not modelled.
 4. **SLM visibility** — `Intel/Slm.lean` makes writes visible at retire, so the
    barrier only orders phases there. Stage 55 adds the minimal hazard model
    (`Intel/SlmLatency.lean`) and proves the barrier is *necessary*: reading
@@ -1086,6 +1089,25 @@ Every failure was one of these five, and each cost an iteration because I fixed
 it at the use site instead of understanding it first. `#eval` on the definition
 (stage 55) ruled out the definition being wrong.
 
+## Stage 58: what uniform control flow buys
+
+Assumption 3 gives the workgroup one predicate, so lanes never diverge. This
+stage states the hazard that rules out divergence:
+
+```lean
+def arrive (w : Parked) : Option Parked    -- retires only if all lanes parked
+theorem barrier_needs_all_lanes :
+    -- one lane missing ⇒ arrive w = none
+theorem barrier_retires :
+    -- every lane parked ⇒ the phase advances
+```
+
+A lane that took the other branch leaves the barrier stuck rather than letting
+the workgroup proceed with a half-synchronised SLM. That is why the kernel's
+control flow has to be uniform, and why stages 16/17 model it that way.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -1176,4 +1198,5 @@ lake build Intel
 54. Stage 54: the headline table regenerates itself.
 55. Stage 55: why the barrier is necessary.
 56. Stage 56: the two scales agree.
-57. Stage 57 (this PR): interleaved staging, covered.
+57. Stage 57: interleaved staging, covered.
+58. Stage 58 (this PR): what uniform control flow buys.
