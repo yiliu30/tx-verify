@@ -17,9 +17,8 @@ public import Intel.TlaControlDecode
 binding table and message log.
 
 Every class has a projection theorem saying the dispatcher agrees with the
-class semantics. The only instructions without a step are the 14 `mach`/`macl`
-forms (high/low 32 bits of a 64-bit multiply), which are parsed but not yet
-executed.
+class semantics, and with the `mach`/`macl` forms executed, every instruction
+of the dump has a step.
 -/
 
 namespace IntelGpu
@@ -177,17 +176,16 @@ theorem realTlaGemm_classified :
     withPc.all (fun p => (match classifyOp p.2 with | .other => false | _ => true)) = true := by
   decide
 
+/-- A canonical all-zero machine. -/
+def canonMachine : TlaFullMachine :=
+  ⟨⟨fun _ _ => 0, fun _ _ => 0, fun _ _ => 0, fun _ _ => 0, fun _ _ => 0⟩,
+    ⟨fun _ _ => 0⟩, fun _ => 0, []⟩
+
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 2000000 in
-/-- The only instructions whose classified form has no execution are the 14
-`mach`/`macl` forms (the block2d addresses all parse, so their steps exist). -/
-theorem realTlaGemm_classify_residue :
-    (withPc.filter (fun p =>
-      match classifyOp p.2 with
-      | .other => true
-      | .alu a => a.op = .mach || a.op = .macl
-      | _ => false)).map (fun p => p.1) =
-      [34, 36, 38, 53, 55, 57, 1458, 1460, 1462, 1504, 1506, 1508, 1535, 1555] := by
+/-- Every statement of the dump has a dispatcher step. -/
+theorem realTlaGemm_step_total :
+    withPc.all (fun p => (tlaStep? canonMachine p.2).isSome) = true := by
   decide
 
 end IntelGpu
