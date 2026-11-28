@@ -263,6 +263,21 @@ theorem epilogueLd_correct ... :
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 23: assembling the tiles
+
+`Intel/GemmAssembly.lean` puts the tiles back together.
+
+- `gemmTile_end_to_end_ld`: one tile's DPAS mainloop plus strided epilogue
+  leaves `dotMat` in memory at the tile's block.
+- `gemmSpecW_of_tilesExecuted`: if every scheduled tile's block holds `dotMat`,
+  the stitched matrix `fun x y => memOf (x / BM) (y / BN) (base + x * ldC + y)`
+  satisfies `GemmSpecW`. Each element is read from the memory of its owning
+  tile, which the stage-15 scheduler shows exists.
+- `tlaXeF16_gemm_executed`: the same statement at the SYCL-TLA `256 x 256`
+  workgroup shape.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -273,8 +288,9 @@ theorem epilogueLd_correct ... :
 - Atomics and the launch ABI.
 - fp16/bf16 rounding and instruction-level DPAS dispatch (the atom is modeled
   as a tile operation).
-- Multi-tile composition into one output buffer: each tile is verified with
-  its own epilogue run.
+- The staging path from global memory into the DPAS operands: the workgroup
+  SLM model is the two-lane stage-16/17 example, not yet connected to the
+  `256 x 256` tile's operand loads.
 
 ## Build
 
@@ -307,4 +323,5 @@ lake build Intel
 19. Stage 19: the SYCL-TLA Xe GEMM instance.
 20. Stage 20: partial K tail, so the instance holds for every K.
 21. Stage 21: executed epilogue store and the end-to-end tile.
-22. Stage 22 (this PR): epilogue leading dimension.
+22. Stage 22: epilogue leading dimension.
+23. Stage 23 (this PR): assembling executed tiles into `GemmSpecW`.
