@@ -736,6 +736,29 @@ bound stage 38 needs, so the hypotheses are load-bearing rather than decorative.
 `#eval decode 0x7C00` is `none` (+inf). `#print axioms` on each reports only
 `[propext, Quot.sound]`.
 
+## Stage 44: a value domain with NaN and infinities
+
+Stage 43 decoded the finite fragment and returned `none` for everything else.
+`Intel/Fp16Value.lean` gives those classes values and proves how they behave.
+
+```lean
+inductive Fval                    -- nan | inf sign | fin v
+def vstep ...                     -- NaN absorbs, infinities follow sign rules
+def foldVal / foldFixed ...       -- value-depth and finite accumulation
+theorem foldVal_fin ... :         -- all-finite operands give exactly foldFixed
+    foldVal ... (.fin acc) n = .fin (foldFixed ... acc n)
+theorem vstep_ne_fin_acc ...      -- non-finite accumulator stays non-finite
+theorem foldVal_ne_fin ...        -- so does the whole fold
+```
+
+So the finite fragment is *closed*: finite operands produce exactly the
+fixed-point result, and a non-finite accumulator never becomes finite again.
+
+Not modeled: NaN payloads and subnormal values. Those are classes here, not
+numbers, and the README says so.
+
+`#print axioms` on each reports only `[propext]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -744,9 +767,9 @@ bound stage 38 needs, so the hypotheses are load-bearing rather than decorative.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
-- IEEE-754 value semantics: stage 43 decodes the real 16-bit layout, but NaN,
-  infinities, subnormals and fractional values all decode to `none` rather than
-  to a value with those semantics.
+- IEEE-754 value semantics: stages 43/44 give NaN and infinities a value domain
+  and prove the finite fragment is closed, but NaN payloads and subnormal
+  *values* are still classes, not numbers.
 - Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
 - Strided per-thread staging as SYCL-TLA's copy atoms use it: stage 37 models
   a block distribution (lane `l` owns a contiguous chunk), not the interleaved
@@ -804,4 +827,5 @@ lake build Intel
 40. Stage 40: one output buffer for all tiles (frame law).
 41. Stage 41: blocks are separated.
 42. Stage 42: the shared buffer is complete.
-43. Stage 43 (this PR): a bit-level fp16 encoding.
+43. Stage 43: a bit-level fp16 encoding.
+44. Stage 44 (this PR): a value domain with NaN and infinities.
