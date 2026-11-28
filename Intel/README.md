@@ -2841,6 +2841,12 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 173: review stage map refresh
+
+`Intel/REVIEW_63.md` now indexes stages 137--172 with their PR numbers and
+one-line results, and the stack range is updated to `#64-#174`. The build and
+audit counts are refreshed. No Lean declarations change in this stage.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -3075,4 +3081,5 @@ lake build Intel
 169. Stage 169: SLM banks and swizzling.
 170. Stage 170: fp16 fused multiply-add.
 171. Stage 171: sticky per-lane flags.
-172. Stage 172 (this PR): directed-rounding FMA.
+172. Stage 172: directed-rounding FMA.
+173. Stage 173 (this PR): review stage map refresh.
