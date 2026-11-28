@@ -99,6 +99,8 @@
     <tr><td>261</td><td>#267</td><td>total classification and execution</td></tr>
     <tr><td>262</td><td>#268</td><td>PV phase census (16 groups)</td></tr>
     <tr><td>263</td><td>#269</td><td>pipeline order (QK &rarr; exp &rarr; PV &rarr; inv)</td></tr>
+    <tr><td>264</td><td>#270</td><td>verification-scope correction</td></tr>
+    <tr><td>265</td><td>#271</td><td>RNE structural bound</td></tr>
   </table>
 </section>
 
@@ -114,7 +116,7 @@
     <tr><td>Atom slab value and frame</td><td><code>fmhaAtomStep_acc0</code>, <code>fmhaAtomStep_frame</code></td></tr>
     <tr><td>QK^T DPAS-only chain = 8 slabs per block</td><td><code>qk42_sum</code>, <code>qk50_sum</code>, <code>qk58_sum</code>, <code>qk66_sum</code></td></tr>
     <tr><td>PV DPAS-only chain = initial + slab sum (all 16 groups)</td><td><code>fmhaAtomRun_fixed_acc</code>, <code>pvGroup_sum_of_mem</code></td></tr>
-    <tr><td>RNE P&rarr;BF16: idempotent, packed, boundaries</td><td><code>bf16RoundWord_idempotent</code>, <code>bf16Round_tie_even_up</code></td></tr>
+    <tr><td>RNE P&rarr;BF16: idempotent, packed, truncate-or-one-ulp</td><td><code>bf16RoundWord_idempotent</code>, <code>bf16RoundWord_trunc_or_succ</code></td></tr>
     <tr><td>Row max upper bound</td><td><code>rowMax_ge_mem</code></td></tr>
     <tr><td>Softmax weights sum to one</td><td><code>softmaxWeights_sum_one</code></td></tr>
     <tr><td>Online fold = two-pass sums</td><td><code>onlineFold_init_den</code>, <code>onlineFold_init_num</code></td></tr>
@@ -130,6 +132,7 @@
     <tr><th>Gap</th><th>Status</th></tr>
     <tr><td>LSE variant <code>math.log</code> (8 forms in the LSE dump)</td><td><span class="tag pending">non-LSE dump imported</span></td></tr>
     <tr><td>Program-level DPAS composition with the A/B reload schedule and loop</td><td><span class="tag pending">DPAS-only chains proved</span></td></tr>
+    <tr><td>Float-valued half-ulp bound of the RNE conversion</td><td><span class="tag pending">structural bound proved</span></td></tr>
     <tr><td>Per-op MUFU samples</td><td><span class="tag pending">end-to-end 1.5e-05 only</span></td></tr>
     <tr><td>Plain prefill runner <code>--verify=1</code></td><td><span class="tag gap">kErrorInternal on the lab host</span></td></tr>
     <tr><td>varlen, paged KV, FP8/MXFP, GQA/MQA, decode</td><td><span class="tag gap">out of scope</span></td></tr>
