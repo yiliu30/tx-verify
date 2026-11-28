@@ -298,6 +298,30 @@ theorem dpas_from_staged ...        -- the staged tile is the DPAS operand slab
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 25: the composed mainloop
+
+`Intel/Mainloop.lean` runs staging and DPAS as one loop, which is the shape of
+the SYCL-TLA mainloop:
+
+```
+for t in 0 .. T:
+  stage A slab t   (strided copy, global -> SLM)
+  stage B slab t   (strided copy, global -> SLM)
+  barrier
+  dpas             (accumulate the slab into the C tile)
+```
+
+- `copyStrided` / `copyStrided_value` / `copyStrided_frame`: strided copies with
+  the value and frame laws.
+- `dpasSlab_congr`: the slab only reads its own operand row/column, so
+  pointwise agreement on depth slots is enough.
+- `staged_A` / `staged_B`: after staging, the SLM tiles are exactly the A and B
+  slabs at the right offsets.
+- `mainloop_correct`: `8 * T + 3` steps halt with `phase = T` and
+  `acc = dotMat` at depth `T * d`.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -308,8 +332,8 @@ theorem dpas_from_staged ...        -- the staged tile is the DPAS operand slab
 - Atomics and the launch ABI.
 - fp16/bf16 rounding and instruction-level DPAS dispatch (the atom is modeled
   as a tile operation).
-- Per-work-item staging schedules: the bulk copy is modeled as one
-  workgroup-wide instruction rather than a per-lane distribution.
+- Per-work-item staging schedules: the copies are workgroup-wide
+  instructions rather than a per-lane distribution.
 
 ## Build
 
@@ -344,4 +368,5 @@ lake build Intel
 21. Stage 21: executed epilogue store and the end-to-end tile.
 22. Stage 22: epilogue leading dimension.
 23. Stage 23: assembling executed tiles into `GemmSpecW`.
-24. Stage 24 (this PR): operand staging from global memory into SLM.
+24. Stage 24: operand staging from global memory into SLM.
+25. Stage 25 (this PR): the composed mainloop (stage, sync, DPAS).
