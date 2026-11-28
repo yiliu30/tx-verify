@@ -127,6 +127,10 @@ def aliasBase : Nat → Nat
 def readRegWith (alias : Nat → Nat) (s : RealState) (r e : Nat) : Addr :=
   s.regs (alias r) e
 
+/-- A scalar register (one declared element) reads element zero. -/
+def readScalarWith (alias : Nat → Nat) (s : RealState) (r : Nat) : Addr :=
+  s.regs (alias r) 0
+
 abbrev readReg (s : RealState) (r e : Nat) : Addr := readRegWith aliasBase s r e
 
 /-- Element index selected by a source region at lane `l`. All regions here
@@ -260,6 +264,15 @@ def stepWith (alias : Nat → Nat) (typeOf : Nat → Option RegType) :
       { s with
         mem := storeVec s.mem n (fun l => readRegWith alias s addrReg l)
           (fun l => low32 (readRegWith alias s src l)) }
+  | s, .loadScaled _ dst _ base idx =>
+      writeVecWith alias s dst (fun l =>
+        zext (load32 s.mem
+          (readScalarWith alias s base + ((readRegWith alias s idx l) <<< 2)).toNat))
+  | s, .storeScaled n base idx _ src =>
+      { s with
+        mem := storeVec s.mem n
+          (fun l => readScalarWith alias s base + ((readRegWith alias s idx l) <<< 2))
+          (fun l => low32 (readRegWith alias s src l)) }
   | s, .ret _ => { s with halted := true }
   | s, .label _ => s
   | s, .movImm _ dst imm _ =>
@@ -383,6 +396,8 @@ def RInstr.regionsSimple : RInstr → Bool
   | .cmpLt _ _ _ _ _ => true
   | .goto _ _ => true
   | .gotoIf _ _ _ _ => true
+  | .loadScaled _ _ _ _ _ => true
+  | .storeScaled _ _ _ _ _ => true
 
 /-- The region interpretation used by `stepReal` is exactly what this kernel
 prints: dense destinations at `(0,0)`, width 1, horizontal stride 0. -/
@@ -461,6 +476,8 @@ def RInstr.dstCountOk : RInstr → Bool
   | .cmpLt _ _ _ _ _ => true
   | .goto _ _ => true
   | .gotoIf _ _ _ _ => true
+  | .loadScaled n d _ _ _ => regElems d == n && (regType d).isSome
+  | .storeScaled _ _ _ _ _ => true
 
 /-- Every destination has a declared type and exactly as many elements as the
 execution size writes, so writing the whole register is exact. -/

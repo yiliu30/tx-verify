@@ -71,3 +71,8 @@ the end-to-end theorem for this kernel is `IntelGpu.realGemm_output`.
 `vector_add.cpp` is the source used for the vector-add dump: `c[i] = a[i] + b[i]`
 over 1024 `int`s, with `a[i] = i%7 - 3`, `b[i] = i%5 - 2`. Build and run with
 oneAPI as above. Recorded result: `bad=0 sum=4294967289`.
+
+# Hardware conformance: the straight-line vector add
+
+`vector_add_nd.cpp` is the `nd_range<1>(1024, 64)` source whose dump is
+`Intel/Examples/RealVectorAddFlat.lean`. Recorded run: `bad=0`.

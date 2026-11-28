@@ -11,7 +11,9 @@ public import Intel.Examples.RealVectorAdd
 
 The vector-add dump introduces masked and predicated forms: `(M5, 16)` moves,
 `cmp` against a register, predicate `and`/`or`, `sel`, and scaled
-`flat(base)[0x4*index]` memory operands. This module measures the gap.
+`flat(base)[0x4*index]` memory operands. After the scaled-memory extension the
+loads and store decode; the remaining refusals are the masks, predicate ops,
+`sel` and the predicated `goto`s.
 -/
 
 namespace IntelGpu
@@ -19,15 +21,15 @@ namespace IntelGpu
 theorem realVectorAdd_accepted :
     acceptedReal realVectorAdd =
       ["or", "mov", "mul", "mov", "add", "mov", "add", "mov", "mov", "mov",
-       "add", "add", "mov", "mov", "mov", "mov", "goto", "ret"] := by
+       "lsc_load.ugm", "lsc_load.ugm", "add", "lsc_store.ugm", "add", "mov",
+       "mov", "mov", "mov", "goto", "ret"] := by
   unfold acceptedReal realVectorAdd
   decide
 
 theorem realVectorAdd_rejectedOps :
     rejectedOps realVectorAdd =
       ["mov", "mov", "cmp.lt", "cmp.eq", "and", "cmp.lt", "or", "(!P3) goto",
-       "lsc_load.ugm", "lsc_load.ugm", "lsc_store.ugm", "mov", "mov",
-       "cmp.lt", "cmp.eq", "and", "cmp.lt", "or", "(!P6) goto",
+       "mov", "mov", "cmp.lt", "cmp.eq", "and", "cmp.lt", "or", "(!P6) goto",
        "(P6) sel", "(P6) sel", "mov", "mov"] := by
   unfold rejectedOps realVectorAdd
   decide
