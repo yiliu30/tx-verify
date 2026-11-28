@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 180: packed BF16 register halves
+
+`Intel/Bf16Pack.lean` adds the bit-level packing view of a DPAS source
+register: `bf16Lo`/`bf16Hi` extract the two BF16 halves, `bf16Pair` packs
+them, and `bf16Lo_pair`, `bf16Hi_pair` and `bf16Pair_lo_hi` prove the two views
+are inverse. `tlaSlabBf16Packed` reads a slab directly from packed 32-bit
+words, with a packed `1.0 * 1.0` example over depth 16.
+
 ## Stage 179: BF16 values in the DPAS slab
 
 `Intel/Bf16Dpas.lean` embeds a decoded BF16 value into the `Word` model via
@@ -3154,4 +3162,5 @@ lake build Intel
 176. Stage 176: register-level execution of the SYCL-TLA DPAS chain.
 177. Stage 177: composing two SYCL-TLA DPAS steps.
 178. Stage 178: BF16 source decode.
-179. Stage 179 (this PR): BF16 values in the DPAS slab.
+179. Stage 179: BF16 values in the DPAS slab.
+180. Stage 180 (this PR): packed BF16 register halves.
