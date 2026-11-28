@@ -2841,6 +2841,25 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 256: FMHA DPAS atoms
+
+`Intel/TlaFmhaDpas.lean` decodes the 64 prefill DPAS atoms, whose second
+accumulator is either `null` (4) or aliased to the first (60). `fmhaAtomStep`
+accumulates once into `acc0`; the second accumulator is irrelevant
+(`fmhaAtomStep_acc1_irrelevant`), and the step has its slab value
+(`fmhaAtomStep_acc0`) and frame (`fmhaAtomStep_frame`). The atoms split into
+32 QK^T atoms (`r42..r66`) and 32 PV atoms (`r74..r194`). The chained slab
+sum over the phase is the next stage, where the register dataflow is
+composed.
+
+## Stage 255: causal mask
+
+`Intel/TlaMask.lean` proves the causal contribution set: `causalKeep q k` is
+`k ≤ q`, `mem_causalRow_iff` characterizes exactly the kept `(k, logit)`
+pairs, the diagonal pair is kept and the first pair beyond it is dropped, and
+`causalWeights_sum` shows that zeroing the dropped weights equals summing the
+kept sublist.
+
 ## Stage 254: online softmax invariant
 
 `Intel/TlaOnlineSoftmax.lean` proves the running-state invariant for the
@@ -3911,4 +3930,6 @@ lake build Intel
 251. Stage 251: `sync.allwr` waits.
 252. Stage 252: `math.exp` and `math.inv`.
 253. Stage 253: row softmax algebra.
-254. Stage 254 (this PR): online softmax invariant.
+254. Stage 254: online softmax invariant.
+255. Stage 255: causal mask.
+256. Stage 256 (this PR): FMHA DPAS atoms.
