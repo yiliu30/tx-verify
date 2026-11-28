@@ -2846,7 +2846,7 @@ with their PR numbers and one-line results, and the stack range is updated to
 `Intel/FMHA_PREFILL_PROPOSAL.md` scopes the next kernel family: the SYCL-TLA
 FMHA prefill (`XeFMHAFwdKernel`, BF16, head dim 128). The measured decoder
 gap on the prefill dump is 152 of 1965 statements (7.7%): `sel` 66, negated
-`mad` sources 40, `math.exp` 33, `sync.allwr` 8 and four singletons. The
+`mad` sources 40, `math.exp` 33, `sync.allwr` 8 and five singletons. The
 proposal lists the semantic gaps (softmax, online rescaling, causal mask,
 P→BF16, epilogue/LSE, DPAS `null`/`Atomic`) and a twelve-stage plan
 (247-258) with acceptance criteria and risks. No Lean declarations change.
