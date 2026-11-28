@@ -4,8 +4,9 @@ Status: proposal for stages 247+. The GEMM stack (stages 174–245) is merged
 on `main`; this document scopes the next kernel family: the SYCL-TLA FMHA
 prefill (`XeFMHAFwdKernel`, BF16, head dim 128). Stages 247 and 248 are
 merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261,
-#262); decoding is total, and the MUFU contract, softmax pipeline, causal
-mask, DPAS atoms, PV chain and epilogue ratio are proved.
+#262, #263); decoding is total, and the MUFU contract, softmax pipeline,
+causal mask, DPAS atoms, PV chain and epilogue ratio are proved. The
+remaining gaps are listed in section 8.
 
 ## 1. Scope
 
@@ -167,7 +168,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247-257 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262).
+Stages 247-258 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |
@@ -201,3 +202,30 @@ Stages 247-257 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #
   reference computed from the same deterministic inputs).
 - **Shape coverage**: start with 256x256, hdim 128, batch 1, 1 head; extend to
   512/1024 context and causal/non-causal after the core composition.
+
+
+## 8. Status after stage 258 and remaining gaps
+
+Proved on the imported dump: total decoding (1965/1965), the `sel`/`cmp`/
+`not`/`bfn`/`sync.allwr`/`math` step semantics, the MUFU contract, row
+softmax normalisation, the online-softmax fold invariant, the causal
+contribution set, the 64 DPAS atoms with null/aliased second accumulators,
+the fixed-accumulator PV chain and the epilogue ratio.
+
+Still open:
+
+- **QK^T chain composition**: the QK atoms read A/B windows that overlap the
+  accumulator blocks, so the fixed-accumulator chain theorem does not apply
+  directly. The atom semantics and phase split are proved; the composed
+  windowed sum needs a register-lifetime model.
+- **RNE P→BF16**: the packing views exist, but the rounding conversion from
+  FP32 softmax values to BF16 is not modelled yet.
+- **LSE variant**: the imported dump is the non-LSE prefill; the LSE build
+  adds 8 `math.log` instructions and needs a `log` model plus the `log2(l)`
+  epilogue.
+- **Per-op MUFU samples**: the end-to-end LSE error (1.5e-05) is recorded;
+  the per-op `expErr`/`invErr` budgets still need a microbenchmark.
+- **Plain runner**: its `--verify=1` path is broken on the lab host
+  (`kErrorInternal`, zero reference); the LSE runner is the pinned harness.
+- **Shapes and variants**: 256x256 only; varlen, paged KV, FP8/MXFP, GQA/MQA
+  and decode remain out of scope.

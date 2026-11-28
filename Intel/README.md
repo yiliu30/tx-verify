@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 258: verification summary and FMHA page
+
+`Intel/FmhaSummary.lean` collects the headline facts into
+`fmha_prefill_summary`: 1965/1965 decoded, 33 `exp` + 1 `inv`, 66 `sel`,
+8 `sync.allwr` waits, 64 DPAS atoms (4 `null` + 60 aliased), the 32 + 32
+phase split and the 2-atom PV group. The new `visualization/fmha.html` renders
+the pipeline, the stage timeline, the verified claims and the open gaps: the
+QK chain with accumulator-overlapping windows, RNE P→BF16, the LSE
+`math.log` variant, per-op MUFU samples and the broken plain runner.
+
 ## Stage 257: PV chain and epilogue ratio
 
 `Intel/TlaFmhaPv.lean` proves the fixed-accumulator chain theorem
@@ -3945,4 +3955,5 @@ lake build Intel
 254. Stage 254: online softmax invariant.
 255. Stage 255: causal mask.
 256. Stage 256: FMHA DPAS atoms.
-257. Stage 257 (this PR): PV chain and epilogue ratio.
+257. Stage 257: PV chain and epilogue ratio.
+258. Stage 258 (this PR): verification summary and FMHA page.
