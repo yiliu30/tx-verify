@@ -2241,6 +2241,22 @@ theorem vaLoop_second_exit   : P6 lane = false -> pc 35 jumps to 44
 These are the decoded per-lane branch paths. The remaining composition is to
 show the predicates are the proved guard/termination values.
 
+## Stage 114: the first guard predicate
+
+`Intel/LoopGuard.lean` proves that the five instructions at PCs 12-16 compute
+the 64-bit guard from the packed low/high halves:
+
+```lean
+theorem vaLoopP3_guard :
+  (runVAL s vaGuardBlock).preds 3 lane =
+    vaLoopGuard (vaLoopSize lo hi) (vaLoopSize sizeLo sizeHi)
+```
+
+The proof reduces the compare/and/compare/or sequence and uses a bitvector
+lemma equating the lexicographic low/high comparison with the assembled
+64-bit comparison. The remaining connection is to derive the low/high
+register facts from the pack moves.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2416,4 +2432,5 @@ lake build Intel
 110. Stage 110: prove the loop exits after one body.
 111. Stage 111: connect global-size dwords to the continuation guard.
 112. Stage 112: add per-lane control flow and branch lemmas.
-113. Stage 113 (this PR): materialize the decoded loop and branch sites.
+113. Stage 113: materialize the decoded loop and branch sites.
+114. Stage 114 (this PR): prove the first guard predicate from packed halves.
