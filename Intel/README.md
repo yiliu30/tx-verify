@@ -2628,6 +2628,17 @@ invalidate, and the negative test shows a stale line is observable without it.
 The docstring lists the assumptions: write-through, no write-allocate, one
 cache per workgroup, no coherence traffic, full-barrier fences.
 
+## Stage 155: register-level FMHA mainloop
+
+`Intel/FmhaMainloop.lean` iterates stage 150's DPAS step over T depth slabs.
+`fmhaMainloopStepAt_zero` and `_succ` are the recurrence,
+`fmhaMainloopStepAt_c` states the C-block result as `dpasRun`,
+`fmhaMainloopStepAt_c_dotMat` gives the K = T*32 dot product, and
+`fmhaMainloopStepAt_frame` fixes everything outside the C block. The T=2
+specializations match the two-atom and K=16-half decompositions, and the pair
+theorems show disjoint C blocks compose. The logical packing is the same model
+assumption as stage 150; tail/partial K and hardware layout remain open.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2844,4 +2855,5 @@ lake build Intel
 151. Stage 151: mask-aware execution for the loop body.
 152. Stage 152: cross-lane race freedom.
 153. Stage 153: composing the 32 lane stores.
-154. Stage 154 (this PR): write-through cache coherence.
+154. Stage 154: write-through cache coherence.
+155. Stage 155 (this PR): register-level FMHA mainloop.
