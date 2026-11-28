@@ -3,7 +3,8 @@
 Status: proposal for stages 247+. The GEMM stack (stages 174–245) is merged
 on `main`; this document scopes the next kernel family: the SYCL-TLA FMHA
 prefill (`XeFMHAFwdKernel`, BF16, head dim 128). Stages 247 and 248 are
-merged (PRs #251, #252, #254); the `sel` stage is complete.
+merged (PRs #251, #252, #254, #255); the `sel`, plain `cmp`/`not`/`bfn`
+stage is complete.
 
 ## 1. Scope
 
@@ -43,17 +44,14 @@ Verification harness:
 `Tools/parse_igc.py` on the prefill dump, then the merged classifier
 (`decodedAll`) over the 1965 statements:
 
-- **1920 statements decode (97.7%)** with the stack as it stands after the
-  `sel` stage;
-- **45 statements (2.3%) do not**:
+- **1923 statements decode (97.9%)** with the stack as it stands after the
+  plain `cmp`/`not`/`bfn` stage;
+- **42 statements (2.1%) do not**:
 
 | Form | Count | Why it fails today |
 | --- | --- | --- |
 | `math.exp` | 33 | no MUFU decoder (stage 252) |
 | `sync.allwr` | 8 | `sync` classifier knows nop/allrd/bar only (stage 251) |
-| `cmp` (plain) | 1 | only predicated `cmp` is decoded (stage 250) |
-| `not` (plain) | 1 | no `not` opcode (stage 250) |
-| `bfn.(s0&s1\|~s0&s2)` | 1 | third bfn mask form (stage 250) |
 | `math.inv` | 1 | no MUFU decoder (stage 252) |
 
 Everything else — 878 mov, 273 mul, 159 add, 49 mad, the predicated and plain
@@ -61,7 +59,8 @@ block2d loads/stores (`d32t`, `d16v`, `d16`, `d32x16t`, `d32x32t`, `d32x64t`),
 `jmpi`, `send.gtwy`, `bfn`, `mach`/`macl` and the DPAS forms — already
 decodes. The stage-247 snapshot had 152 unclassified statements; stage 248
 closed the 40 negated-source `mad` forms and the single `.v` immediate, and
-stage 249 closed all 66 `sel` forms.
+stage 249 closed all 66 `sel` forms, and stage 250 closed the plain
+`cmp`/`not`/`bfn` singletons.
 
 These counts are machine-checked in `Intel/FmhaPrefillCoverage.lean`
 (`fmhaPrefill_decoded_count`, `fmhaPrefill_unclassified_count`,
@@ -170,7 +169,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247-249 are merged (PRs #251, #252, #254).
+Stages 247-250 are merged (PRs #251, #252, #254, #255).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |

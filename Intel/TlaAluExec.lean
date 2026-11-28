@@ -10,9 +10,9 @@ public import Intel.TlaMovExec
 # Executing the predicated SYCL-TLA ALU forms
 
 `Intel/TlaAlu` decodes the `and`/`add`/`mad` forms. This module executes the
-register-destination subset on the logical register file: `and`, `add` and
-`mad` write their active destination elements, and every other operation is
-left unmodelled (`none`).
+register-destination subset on the logical register file: `and`, `add`,
+`not` and `mad` write their active destination elements, and every other
+operation is left unmodelled (`none`).
 
 The three prologue ALU instructions are worked out:
 `r127.2 = r0.0 & 0xFFFFFFC0`, `r127.2 = r127.2 + 0x280`, and
@@ -36,6 +36,7 @@ def tlaAluStep? (rf : RegFile) (a : TlaAlu) : Option RegFile :=
       | .shr => some (writeTlaMasked rf d a.exec (fun i => f i >>> (g i).toNat))
       | .asr => some (writeTlaMasked rf d a.exec
           (fun i => (f i).sshiftRight (g i).toNat))
+      | .not => some (writeTlaMasked rf d a.exec (fun i => ~~~ f i))
       | .mad =>
           match a.src3 with
           | some s3 =>

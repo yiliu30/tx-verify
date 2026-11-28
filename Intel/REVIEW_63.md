@@ -34,7 +34,7 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (200 jobs) and `Tools/check_axioms.py --all`
-  (2241 theorems, 688 documented exceptions at stage 249).
+  (2253 theorems, 696 documented exceptions at stage 250).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -272,6 +272,7 @@ from `Classical.choose` in the racing-store model.
 | 247 | #251 | FMHA prefill dump coverage |
 | 248 | #252 | negated sources and `.v` immediates |
 | 249 | #254 | the select instruction |
+| 250 | #255 | plain `cmp`, `not` and the `bfn` mux |
 
-The stack is intentionally one PR per stage (#64-#254), as requested. The
+The stack is intentionally one PR per stage (#64-#255), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.

@@ -51,6 +51,11 @@ def endsWithCmp (op : String) : Bool :=
 The full predicate text is kept in `cond`; conditional forms are recorded but
 their flag write is not yet gated. -/
 def parseTlaCmpInstr : TlaInstr → Option TlaCmp
+  | .plain "cmp" (e :: dst :: _null :: a :: b :: _) =>
+      match parseTlaExec e, parseCmpFlag dst, parseTlaSrc a, parseTlaSrc b with
+      | some ex, some (p, n, sub), some l, some r =>
+          some ⟨"", ex, p, n, sub, l, r⟩
+      | _, _, _, _ => none
   | .predicated op (e :: dst :: _null :: a :: b :: _) =>
       if endsWithCmp op then
         match parseTlaExec e, parseCmpFlag dst, parseTlaSrc a, parseTlaSrc b with
@@ -115,6 +120,27 @@ theorem TlaCmp.step_cond_clear (st : TlaState) (c : TlaCmp) (n m : Nat)
   unfold TlaCmp.step
   rw [h]
   simp [hclear]
+
+/-- The plain `cmp` of the FMHA prefill prologue (`(lt)f3.1`). -/
+def plainCmp : TlaCmp :=
+  ⟨"", ⟨16, 0, true⟩, "lt", 3, 1,
+    .reg ⟨4, 0, 0, 1, 1, 0⟩, .reg ⟨2, 0, 6, 0, 1, 0⟩⟩
+
+/-- The plain comparison is unconditional. -/
+theorem plainCmp_condFlag : plainCmp.condFlag = none := by
+  decide
+
+/-- The plain comparison compares the two source elements. -/
+theorem plainCmp_holds (st : TlaState) :
+    plainCmp.holds st = decide (st.regs 4 0 < st.regs 2 6) := by
+  simp [plainCmp, TlaCmp.holds, TlaCmp.valL, TlaCmp.valR, readTlaSrcState, srcIndex]
+
+/-- The plain comparison writes `f3.1` unconditionally. -/
+theorem plainCmp_step (st : TlaState) :
+    TlaCmp.step st plainCmp =
+      { st with flags := writeBank st.flags 3 1 (if plainCmp.holds st then 1 else 0) } := by
+  rw [TlaCmp.step_unconditional st plainCmp plainCmp_condFlag]
+  simp [TlaCmp.writeFlag, plainCmp]
 
 /-- The loop-exit comparison at PC 1400. -/
 def loopCmp : TlaCmp where
