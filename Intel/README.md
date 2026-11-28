@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 272: hardware conformance breadth
+
+The LSE runner passes Full / LSE / SP-combined at 256, 512 and 1024 (max abs
+error `1.52588e-05` each), and at batch 2 and 2 Q/KV heads. The LSE example
+rejects `--is_causal`, and the plain prefill reference still returns
+`kErrorInternal`, so causal hardware conformance needs an independent host
+reference. The matrix is in `Tools/conformance/sycl_tla_fmha.md`.
+
 ## Stage 271: measured MUFU samples
 
 `Intel/MufuSamples.lean` records the 2^20-point lab-GPU sweep for the three
@@ -4088,4 +4096,5 @@ lake build Intel
 268. Stage 268: BF16 operand check.
 269. Stage 269: PV load -> BF16 operand bridge.
 270. Stage 270: the FMHA prefill LSE dump.
-271. Stage 271 (this PR): measured MUFU samples.
+271. Stage 271: measured MUFU samples.
+272. Stage 272 (this PR): hardware conformance breadth.

@@ -52,3 +52,23 @@ same lab GPU family:
 The assembly of this binary is imported in `Intel/Examples/RealFmhaLse.lean`
 (2581 instructions / 2694 statements, sha256 provenance there) and
 `Intel/FmhaLseCoverage.lean` proves 2694/2694 decode and execution.
+
+
+## LSE conformance matrix
+
+The LSE runner was verified at the following problem sizes (batch 1, one Q/KV
+head unless noted); each row reports Full / LSE / SP-combined Passed and the
+LSE max abs error:
+
+| batch | heads q/kv | seq qo = kv | causal | result | LSE max abs err |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 1 / 1 | 256 | no | Passed | 1.52588e-05 |
+| 1 | 1 / 1 | 512 | no | Passed | 1.52588e-05 |
+| 1 | 1 / 1 | 1024 | no | Passed | 1.52588e-05 |
+| 2 | 1 / 1 | 256 | no | Passed | 1.52588e-05 |
+| 1 | 2 / 2 | 256 | no | Passed | 1.52588e-05 |
+
+The sequence-parallel LSE example rejects `--is_causal`, and the plain
+prefill example's built-in `--verify=1` path still returns `kErrorInternal`
+with a zero reference on both lab hosts. Causal hardware conformance
+therefore needs an independent host reference.
