@@ -2257,6 +2257,13 @@ lemma equating the lexicographic low/high comparison with the assembled
 64-bit comparison. The remaining connection is to derive the low/high
 register facts from the pack moves.
 
+## Stage 115: the second guard predicate
+
+`vaGuardBlock2` covers the symmetric five instructions at PCs 30-34.
+`vaLoopP6` and `vaLoopP6_guard` prove that the second continuation predicate
+is the same lexicographic/64-bit guard, now from the increment's packed halves
+in `V0075`/`V0076`. Both real guard blocks are therefore covered.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2433,4 +2440,5 @@ lake build Intel
 111. Stage 111: connect global-size dwords to the continuation guard.
 112. Stage 112: add per-lane control flow and branch lemmas.
 113. Stage 113: materialize the decoded loop and branch sites.
-114. Stage 114 (this PR): prove the first guard predicate from packed halves.
+114. Stage 114: prove the first guard predicate from packed halves.
+115. Stage 115 (this PR): prove the second guard predicate.

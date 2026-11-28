@@ -58,5 +58,35 @@ theorem vaLoopP3_guard (s : RealState) (lane : Nat) (lo hi sizeLo sizeHi : Word)
       vaLoopGuard (vaLoopSize lo hi) (vaLoopSize sizeLo sizeHi) := by
   rw [vaLoopP3 s lane lo hi sizeLo sizeHi hl hlo hhi hslo hshi, vaGuard32_eq]
 
+/-- The five guard instructions after the second pack. -/
+def vaGuardBlock2 : List RInstr :=
+  [ .cmpLtReg 32 4 ⟨77, 0, 0, 1, 1, 0⟩ ⟨65, 0, 0, 0, 1, 0⟩,
+    .cmpEqReg 32 5 ⟨76, 0, 0, 1, 1, 0⟩ ⟨49, 0, 1, 0, 1, 0⟩,
+    .predAnd 32 5 5 4,
+    .cmpLtReg 32 6 ⟨78, 0, 0, 1, 1, 0⟩ ⟨65, 0, 1, 0, 1, 0⟩,
+    .predOr 32 6 6 5 ]
+
+theorem vaLoopP6 (s : RealState) (lane : Nat) (lo hi sizeLo sizeHi : Word)
+    (hl : lane < 32)
+    (hlo : low32 (s.regs 75 lane) = lo)
+    (hhi : low32 (s.regs 76 lane) = hi)
+    (hslo : low32 (s.regs 49 0) = sizeLo)
+    (hshi : low32 (s.regs 49 1) = sizeHi) :
+    (runVAL s vaGuardBlock2).preds 6 lane = vaGuard32 lo hi sizeLo sizeHi := by
+  unfold vaGuardBlock2 runVAL stepVAL
+  have h32 : (32 : Exec).size = 32 := rfl
+  simp [runRealWith, stepWith, h32, hl, readRegWith, readSrcWith, srcIndex,
+    vaLoopAlias, vaGuard32, hlo, hhi, hslo, hshi]
+
+theorem vaLoopP6_guard (s : RealState) (lane : Nat) (lo hi sizeLo sizeHi : Word)
+    (hl : lane < 32)
+    (hlo : low32 (s.regs 75 lane) = lo)
+    (hhi : low32 (s.regs 76 lane) = hi)
+    (hslo : low32 (s.regs 49 0) = sizeLo)
+    (hshi : low32 (s.regs 49 1) = sizeHi) :
+    (runVAL s vaGuardBlock2).preds 6 lane =
+      vaLoopGuard (vaLoopSize lo hi) (vaLoopSize sizeLo sizeHi) := by
+  rw [vaLoopP6 s lane lo hi sizeLo sizeHi hl hlo hhi hslo hshi, vaGuard32_eq]
+
 end
 end IntelGpu
