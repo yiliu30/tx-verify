@@ -3,7 +3,7 @@
 Status: proposal for stages 247+. The GEMM stack (stages 174–245) is merged
 on `main`; this document scopes the next kernel family: the SYCL-TLA FMHA
 prefill (`XeFMHAFwdKernel`, BF16, head dim 128). Stages 247 and 248 are
-merged (PRs #251, #252); stage 249 (`sel`) is in progress.
+merged (PRs #251, #252, #254); the `sel` stage is complete.
 
 ## 1. Scope
 
@@ -43,13 +43,12 @@ Verification harness:
 `Tools/parse_igc.py` on the prefill dump, then the merged classifier
 (`decodedAll`) over the 1965 statements:
 
-- **1854 statements decode (94.4%)** with the GEMM stack as it stands after
-  stage 248;
-- **111 statements (5.6%) do not**:
+- **1920 statements decode (97.7%)** with the stack as it stands after the
+  `sel` stage;
+- **45 statements (2.3%) do not**:
 
 | Form | Count | Why it fails today |
 | --- | --- | --- |
-| `sel` (plain, `(W) sel`, `(f3.1) sel`) | 66 | no `sel` decoder (stage 249) |
 | `math.exp` | 33 | no MUFU decoder (stage 252) |
 | `sync.allwr` | 8 | `sync` classifier knows nop/allrd/bar only (stage 251) |
 | `cmp` (plain) | 1 | only predicated `cmp` is decoded (stage 250) |
@@ -61,7 +60,8 @@ Everything else — 878 mov, 273 mul, 159 add, 49 mad, the predicated and plain
 block2d loads/stores (`d32t`, `d16v`, `d16`, `d32x16t`, `d32x32t`, `d32x64t`),
 `jmpi`, `send.gtwy`, `bfn`, `mach`/`macl` and the DPAS forms — already
 decodes. The stage-247 snapshot had 152 unclassified statements; stage 248
-closed the 40 negated-source `mad` forms and the single `.v` immediate.
+closed the 40 negated-source `mad` forms and the single `.v` immediate, and
+stage 249 closed all 66 `sel` forms.
 
 These counts are machine-checked in `Intel/FmhaPrefillCoverage.lean`
 (`fmhaPrefill_decoded_count`, `fmhaPrefill_unclassified_count`,
@@ -106,7 +106,7 @@ number rather than prose.
 Decoding is only 7.7% of the work; the new semantics are:
 
 1. **Select and predicates**: `sel` with `(ge)f0.0`-style conditions and plain
-   selects, on `d`/`ud` operands (stage 249, in progress).
+   selects, on `d`/`ud` operands (done in stage 249 as `TlaSel`).
 2. **Negated sources**: `-rN.M<...>` as `0 - rN.M` (and `-imm`), used 40 times
    (done in stage 248 as `TlaSrc.negReg`).
 3. **Scalar math**: `math.exp`, `math.inv` (and `math.log` in the LSE variant).
@@ -170,7 +170,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247 and 248 are merged (PRs #251, #252); stage 249 is in progress.
+Stages 247-249 are merged (PRs #251, #252, #254).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |
