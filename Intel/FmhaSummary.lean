@@ -74,11 +74,20 @@ theorem fmha_convert_summary : FmhaConvertSummary :=
   ⟨bf16RoundWord_packed, bf16Round_tie_even_down,
    bf16Round_tie_even_up, bf16Round_above_half⟩
 
+/-- Every statement is classified and has a dispatcher step. -/
+def FmhaExecSummary : Prop :=
+  fmhaPrefillPc.all (fun p =>
+    (match classifyFmha p.2 with | .other => false | _ => true)) = true ∧
+  fmhaPrefillPc.all (fun p => (tlaStepFmha? canonMachine p.2).isSome) = true
+
+theorem fmha_exec_summary : FmhaExecSummary :=
+  ⟨fmhaPrefill_classified, fmhaPrefill_step_total⟩
+
 /-- The headline checklist. -/
 theorem fmha_prefill_summary :
     FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary ∧
-    FmhaConvertSummary :=
+    FmhaConvertSummary ∧ FmhaExecSummary :=
   ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary,
-   fmha_convert_summary⟩
+   fmha_convert_summary, fmha_exec_summary⟩
 
 end IntelGpu

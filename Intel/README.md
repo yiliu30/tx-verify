@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 261: total classification and execution
+
+`Intel/TlaFmhaDpasBase.lean` splits the null-tolerant DPAS shape from the
+dump list, and `Intel/TlaFmhaDispatch.lean` adds `classifyFmha` (FMHA DPAS
+first, generic classes otherwise) and `tlaStepFmha?`; the dispatcher is now
+parameterized over the classifier (`tlaStepWith`). `fmhaPrefill_classified`
+proves that none of the 1965 statements is `.other`, and
+`fmhaPrefill_step_total` proves that every one has a step. This closes the
+execution-totality gap for the FMHA dump.
+
 ## Stage 260: RNE FP32 -> BF16 conversion
 
 `Intel/TlaBf16Rne.lean` adds `bf16Round` (round-to-nearest-even on the high
@@ -3976,4 +3986,5 @@ lake build Intel
 257. Stage 257: PV chain and epilogue ratio.
 258. Stage 258: verification summary and FMHA page.
 259. Stage 259: QK^T chain composition.
-260. Stage 260 (this PR): RNE FP32 -> BF16 conversion.
+260. Stage 260: RNE FP32 -> BF16 conversion.
+261. Stage 261 (this PR): total classification and execution.

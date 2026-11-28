@@ -5,6 +5,7 @@ public import Intel.TlaCmpGate
 public import Intel.TlaSel
 public import Intel.TlaSyncAllwr
 public import Intel.TlaMath
+public import Intel.TlaFmhaDpasBase
 public import Intel.TlaBfnExec
 public import Intel.TlaLoadPhase
 public import Intel.TlaControlDecode
@@ -49,6 +50,7 @@ inductive TlaOp where
   | sel (s : TlaSel)
   | syncAllwr (s : TlaSyncAllwr)
   | math (m : TlaMath)
+  | fmhaDpas (d : FmhaDpas)
   | bfn (b : TlaBfn)
   | send (s : TlaSend)
   | sync
@@ -111,9 +113,10 @@ def classifyOp (i : TlaInstr) : TlaOp :=
   | .predicated "(W) sync.bar" _ => .sync
   | _ => .other
 
-/-- Execute one instruction over the machine. -/
-def tlaStep? (m : TlaFullMachine) (i : TlaInstr) : Option (TlaFullMachine × TlaCtl) :=
-  match classifyOp i with
+/-- Execute one instruction over the machine with an explicit classifier. -/
+def tlaStepWith (classify : TlaInstr → TlaOp) (m : TlaFullMachine) (i : TlaInstr) :
+    Option (TlaFullMachine × TlaCtl) :=
+  match classify i with
   | .dpas d =>
       some ({ m with state := { m.state with regs := tlaDpasStepOf d m.state.regs } }, .next)
   | .mov mv =>
@@ -132,59 +135,65 @@ def tlaStep? (m : TlaFullMachine) (i : TlaInstr) : Option (TlaFullMachine × Tla
   | .syncAllwr _ => some (m, .next)
   | .math t =>
       some ({ m with state := { m.state with regs := t.step m.mufu m.state.regs } }, .next)
+  | .fmhaDpas d =>
+      some ({ m with state := { m.state with regs := fmhaAtomStep m.state.regs d } }, .next)
   | .jmp j => some (m, .jump j.target)
   | .label => some (m, .next)
   | .other => none
+
+/-- Execute one instruction with the generic classifier. -/
+def tlaStep? (m : TlaFullMachine) (i : TlaInstr) : Option (TlaFullMachine × TlaCtl) :=
+  tlaStepWith classifyOp m i
 
 theorem tlaStep?_dpas (m : TlaFullMachine) (i : TlaInstr) (d : TlaDpas)
     (h : classifyOp i = .dpas d) :
     tlaStep? m i =
       some ({ m with state := { m.state with regs := tlaDpasStepOf d m.state.regs } }, .next) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_mov (m : TlaFullMachine) (i : TlaInstr) (mv : TlaMov)
     (h : classifyOp i = .mov mv) :
     tlaStep? m i =
       some ({ m with state := { m.state with regs := tlaMovStep m.state.regs mv } }, .next) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_alu (m : TlaFullMachine) (i : TlaInstr) (a : TlaAlu)
     (h : classifyOp i = .alu a) :
     tlaStep? m i =
       (tlaAluStateStep? m.state a).map (fun st => ({ m with state := st }, .next)) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_b2d (m : TlaFullMachine) (i : TlaInstr) (b : TlaBlock2d)
     (h : classifyOp i = .b2d b) :
     tlaStep? m i =
       (TlaBlock2d.loadStoreStep m.state m.mem m.bti b).map
         (fun p => ({ m with state := p.1, mem := p.2 }, .next)) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_cmp (m : TlaFullMachine) (i : TlaInstr) (c : TlaCmp)
     (h : classifyOp i = .cmp c) :
     tlaStep? m i = some ({ m with state := c.step m.state }, .next) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_sel (m : TlaFullMachine) (i : TlaInstr) (s : TlaSel)
     (h : classifyOp i = .sel s) :
     tlaStep? m i = some ({ m with state := s.step m.state }, .next) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_bfn (m : TlaFullMachine) (i : TlaInstr) (b : TlaBfn)
     (h : classifyOp i = .bfn b) :
     tlaStep? m i = some ({ m with state := { m.state with regs := b.step m.state.regs } }, .next) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_send (m : TlaFullMachine) (i : TlaInstr) (s : TlaSend)
     (h : classifyOp i = .send s) :
     tlaStep? m i = some ({ m with log := tlaSendStep m.log s }, .next) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_syncAllwr (m : TlaFullMachine) (i : TlaInstr) (s : TlaSyncAllwr)
     (h : classifyOp i = .syncAllwr s) :
     tlaStep? m i = some (m, .next) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 /-- A wait leaves the machine, including memory, untouched. -/
 theorem tlaStep?_syncAllwr_mem (m : TlaFullMachine) (i : TlaInstr) (s : TlaSyncAllwr)
@@ -195,22 +204,28 @@ theorem tlaStep?_syncAllwr_mem (m : TlaFullMachine) (i : TlaInstr) (s : TlaSyncA
 
 theorem tlaStep?_sync (m : TlaFullMachine) (i : TlaInstr) (h : classifyOp i = .sync) :
     tlaStep? m i = some (m, .next) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_math (m : TlaFullMachine) (i : TlaInstr) (t : TlaMath)
     (h : classifyOp i = .math t) :
     tlaStep? m i =
       some ({ m with state := { m.state with regs := t.step m.mufu m.state.regs } }, .next) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
+
+theorem tlaStep?_fmhaDpas (m : TlaFullMachine) (i : TlaInstr) (d : FmhaDpas)
+    (h : classifyOp i = .fmhaDpas d) :
+    tlaStep? m i =
+      some ({ m with state := { m.state with regs := fmhaAtomStep m.state.regs d } }, .next) := by
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_jmp (m : TlaFullMachine) (i : TlaInstr) (j : TlaJmp)
     (h : classifyOp i = .jmp j) :
     tlaStep? m i = some (m, .jump j.target) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 theorem tlaStep?_label (m : TlaFullMachine) (i : TlaInstr) (h : classifyOp i = .label) :
     tlaStep? m i = some (m, .next) := by
-  simp [tlaStep?, h]
+  simp [tlaStep?, tlaStepWith, h]
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 2000000 in

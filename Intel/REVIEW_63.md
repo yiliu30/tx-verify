@@ -33,8 +33,8 @@ fork.
 - Reproducible hardware/model comparison and negative tests:
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
-  `lake build Intel` (211 jobs) and `Tools/check_axioms.py --all`
-  (2339 theorems, 759 documented exceptions at stage 260).
+  `lake build Intel` (213 jobs) and `Tools/check_axioms.py --all`
+  (2345 theorems, 765 documented exceptions at stage 261).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -283,6 +283,7 @@ from `Classical.choose` in the racing-store model.
 | 258 | #263 | verification summary and FMHA page |
 | 259 | #265 | QK^T chain composition |
 | 260 | #266 | RNE FP32 -> BF16 conversion |
+| 261 | #267 | total classification and execution |
 
-The stack is intentionally one PR per stage (#64-#266), as requested. The
+The stack is intentionally one PR per stage (#64-#267), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
