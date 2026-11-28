@@ -4,7 +4,7 @@ Status: proposal for stages 247+. The GEMM stack (stages 174–245) is merged
 on `main`; this document scopes the next kernel family: the SYCL-TLA FMHA
 prefill (`XeFMHAFwdKernel`, BF16, head dim 128). Stages 247 and 248 are
 merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261,
-#262, #263, #265, #266, #267, #268, #269, #270, #271, #272, #273, #274, #275, #276); decoding and execution are total,
+#262, #263, #265, #266, #267, #268, #269, #270, #271, #272, #273, #274, #275, #276, #277); decoding and execution are total,
 and the MUFU contract, softmax pipeline, causal mask, DPAS atoms, QK/PV
 chains, RNE conversion, epilogue ratio and pipeline order are proved. The
 remaining gaps are listed in section 8.
@@ -170,7 +170,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247-270 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265, #266, #267, #268, #269, #270, #271, #272, #273, #274, #275, #276).
+Stages 247-271 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265, #266, #267, #268, #269, #270, #271, #272, #273, #274, #275, #276, #277).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |
@@ -225,8 +225,9 @@ Still open:
 - **LSE variant**: the imported dump is the non-LSE prefill; the LSE build
   adds 8 `math.log` instructions and needs a `log` model plus the `log2(l)`
   epilogue.
-- **Per-op MUFU samples**: the end-to-end LSE error (1.5e-05) is recorded;
-  the per-op `expErr`/`invErr` budgets still need a microbenchmark.
+- **Per-op MUFU samples**: closed in stage 271. The 2^20-point lab-GPU
+  sweep gives max relative errors `1.98e-07` (exp), `1.15e-07` (inv) and
+  `7.66e-08` (log), recorded in `Intel/MufuSamples.lean`.
 - **Plain runner**: its `--verify=1` path is broken on the lab host
   (`kErrorInternal`, zero reference); the LSE runner is the pinned harness.
 - **Shapes and variants**: 256x256 only; varlen, paged KV, FP8/MXFP, GQA/MQA

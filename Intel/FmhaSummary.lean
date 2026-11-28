@@ -8,6 +8,7 @@ public import Intel.TlaBf16Rne
 public import Intel.TlaFmhaPvCensus
 public import Intel.TlaFmhaSchedule
 public import Intel.FmhaLseCoverage
+public import Intel.MufuSamples
 public import Intel.TlaEpilogue
 public import Intel.TlaMask
 
@@ -143,14 +144,26 @@ theorem fmha_lse_dump_summary : FmhaLseDumpSummary :=
   ⟨lseCode_length, lse_decoded_count, lse_unclassified_count, lse_dpas_count,
    lse_log_count, lse_step_total⟩
 
+/-- Measured MUFU budgets. -/
+def FmhaMufuSummary : Prop :=
+  labMufuSamples.expMaxAbs = 1170085644 / 10000000000000000 ∧
+  labMufuSamples.expMaxRel = 1984444714 / 10000000000000000 ∧
+  labMufuSamples.invMaxAbs = 1495941174 / 100000000000000 ∧
+  labMufuSamples.invMaxRel = 1153888151 / 10000000000000000 ∧
+  labMufuSamples.logMaxAbs = 2737414819 / 10000000000000000 ∧
+  labMufuSamples.logMaxRel = 7661312768 / 100000000000000000
+
+theorem fmha_mufu_summary : FmhaMufuSummary := labMufuSamples_fields
+
 /-- The headline checklist. -/
 theorem fmha_prefill_summary :
     FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary ∧
     FmhaConvertSummary ∧ FmhaExecSummary ∧ FmhaPvCensusSummary ∧
-    FmhaScheduleSummary ∧ FmhaLseSummary ∧ FmhaBf16Summary ∧ FmhaLseDumpSummary :=
+    FmhaScheduleSummary ∧ FmhaLseSummary ∧ FmhaBf16Summary ∧
+    FmhaLseDumpSummary ∧ FmhaMufuSummary :=
   ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary,
    fmha_convert_summary, fmha_exec_summary, fmha_pv_census_summary,
    fmha_schedule_summary, fmha_lse_summary, fmha_bf16_summary,
-   fmha_lse_dump_summary⟩
+   fmha_lse_dump_summary, fmha_mufu_summary⟩
 
 end IntelGpu
