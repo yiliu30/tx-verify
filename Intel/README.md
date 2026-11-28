@@ -133,6 +133,44 @@ theorem gemmTile_executed ... :      -- staging + barrier + loop, end to end
 
 `#print axioms` on each of these reports only `[propext, Quot.sound]`.
 
+## Stage 18: DPAS / XMX tiled accumulation
+
+`Intel/Dpas.lean` models the XMX systolic instruction. One `dpas` updates a
+whole output tile:
+
+```
+C[m][n] += Σ_{k < d} A[k][m] * B[k][n]
+```
+
+with systolic depth `d` (`systolicDepth = 8` on Xe-HPC). A GEMM tile of depth
+`K` is `T = K / d` instructions, each fed the next depth slab:
+
+```lean
+def dpasSlab ...                    -- systolic dot over one slab
+def dpas (d) (A B) (C) ...          -- one instruction
+def dpasRun ... (T) (C) ...         -- T back-to-back instructions
+theorem dotMatFrom_append ...       -- split the spec at a depth boundary
+theorem dpasSlab_eq_dotMatFrom ...  -- one slab is a slice of the spec
+theorem dpasRun_correct ... :
+    dpasRun A B i j d T (fun _ _ => 0) m n = dotMat A B (i + m) (j + n) (T * d)
+theorem dpasRun_systolic ...        -- the depth-8 specialization
+```
+
+`Intel/GemmDpasLoop.lean` makes it executable. `dpasProg T` is the mainloop
+(`cmpGe`, `jmpiIf`, load A slab, load B slab, `dpas`, `incT`, `jmpi`), and
+
+```lean
+theorem dpasProg_correct ... :
+    let s' := xrun ... (dpasProg T) (7 * T + 3) s
+    s'.halted = true ∧
+      ∀ m n, s'.acc m n = dotMat Ag Bg (i + m) (j + n) (T * d)
+```
+
+The depth remainder (`K` not a multiple of `d`) is handled at the kernel
+instance stage, where the last slab is masked.
+
+`#print axioms` on each of these reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -168,5 +206,7 @@ lake build Intel
 14. Stage 14: tile scheduler enumeration.
 15. Stage 15: scheduled-tile correctness and global composition.
 16. Stage 16: SLM staging and workgroup barriers.
-17. Stage 17 (this PR): workgroup control flow and the SLM GEMM compute loop.
-18. Stage 18: DPAS/XMX and the SYCL-TLA GEMM instance.
+17. Stage 17: workgroup control flow and the SLM GEMM compute loop.
+18. Stage 18 (this PR): DPAS/XMX tiled accumulation and its executed mainloop.
+19. Stage 19: the SYCL-TLA GEMM instance (source manifest, spec, and
+    refinement statement).
