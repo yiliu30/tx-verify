@@ -207,6 +207,24 @@ modeled as 32-bit words so fp16/bf16 rounding is out of scope.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 20: partial K tail
+
+`Intel/DpasMask.lean` removes the "K is a multiple of the atom depth"
+assumption. The last K tile has only `r` live depth slots, which on Xe is the
+same instruction with the remaining slots masked, i.e. a `dpas` of live depth
+`r`:
+
+```lean
+def dpasTail ...                    -- T full slabs plus one r-deep slab
+theorem dpasTail_correct ... :
+    dpasTail A B i j d T r (fun _ _ => 0) m n = dotMat A B (i + m) (j + n) (T * d + r)
+theorem tileSpec_of_dpasTail ...    -- TileSpec for K = T * d + r
+theorem tla_gemm_spec_tail ... : GemmSpecW A B C M N K
+theorem tlaXeF16_gemm_spec_tail ... -- every K: K / 16 full slabs, K % 16 tail
+```
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -215,8 +233,10 @@ modeled as 32-bit words so fp16/bf16 rounding is out of scope.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
-- fp16/bf16 rounding, masking of the last K slab, and instruction-level DPAS
-  dispatch (the atom is modeled as a tile operation).
+- fp16/bf16 rounding and instruction-level DPAS dispatch (the atom is modeled
+  as a tile operation).
+- The epilogue store path: tiles are assumed to land in C as the accumulator
+  tile.
 
 ## Build
 
@@ -246,4 +266,5 @@ lake build Intel
 16. Stage 16: SLM staging and workgroup barriers.
 17. Stage 17: workgroup control flow and the SLM GEMM compute loop.
 18. Stage 18 (this PR): DPAS/XMX tiled accumulation and its executed mainloop.
-19. Stage 19 (this PR): the SYCL-TLA Xe GEMM instance.
+19. Stage 19: the SYCL-TLA Xe GEMM instance.
+20. Stage 20 (this PR): partial K tail, so the instance holds for every K.
