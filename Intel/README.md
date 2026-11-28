@@ -68,8 +68,11 @@ on a silent assumption.
    modelled. `Intel/Asm.lean`. Not discharged.
 3. **Uniform control flow** across the workgroup. `Intel/WControl.lean`. Not
    discharged.
-4. **SLM visibility** — writes are visible when they retire; the barrier orders
-   phases, it does not model latency. `Intel/Slm.lean`. Not discharged.
+4. **SLM visibility** — `Intel/Slm.lean` makes writes visible at retire, so the
+   barrier only orders phases there. Stage 55 adds the minimal hazard model
+   (`Intel/SlmLatency.lean`) and proves the barrier is *necessary*: reading
+   before it sees stale data. Discharged in part — write latency is a single
+   pending buffer, not a pipeline.
 5. **DPAS as a tile operation** — `Intel/Dpas.lean`. Discharged in part by
    stage 49: a depth-`d` slab is a chain of atom-depth instructions over
    shifted operands (`dpasSlab_split`, `dpasSlab_two_atoms`), so the tile
@@ -1012,6 +1015,29 @@ layer — and says so; the numbers are table entries, not stage numbers, which t
 caption also says because my first version labelled them "Stage" and would have
 misled a reader.
 
+## Stage 55: why the barrier is necessary
+
+Stages 13-17 model SLM writes as visible at retire, which makes the barrier an
+ordering annotation. `Intel/SlmLatency.lean` adds the minimal hazard — a write
+lands in a pending buffer, reads see the committed copy, the barrier commits —
+and proves the two facts that earn the barrier:
+
+```lean
+theorem stale_without_barrier :   -- no axioms: definitional
+    stagedRead (stagedWrite s a v) a = s.committed a
+theorem fresh_with_barrier :
+    stagedRead (stagedBarrier (stagedWrite s a v)) a = v
+theorem cross_lane_after_barrier :
+    -- the barrier commits every pending write, not just this lane's
+    stagedRead (stagedBarrier (stagedWrite s a v)) b = s.pending b
+```
+
+Skipping the barrier is a correctness bug, not a style choice.
+
+I first wrote the cross-lane statement as `= s.committed b` and `simp` refused
+it: the barrier exposes the whole pending buffer, so a *different* address reads
+its pending value. The module records both the statement and the mistake.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -1098,4 +1124,5 @@ lake build Intel
 51. Stage 51: residue classes for interleaved lanes.
 52. Stage 52: the audit covers every theorem.
 53. Stage 53: known-answer tests for an fp16 dot.
-54. Stage 54 (this PR): the headline table regenerates itself.
+54. Stage 54: the headline table regenerates itself.
+55. Stage 55 (this PR): why the barrier is necessary.

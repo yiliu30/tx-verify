@@ -45,6 +45,7 @@ THEOREMS = [
     ("Intel.GemmScheduler", "IntelGpu.mem_tileSchedule_of_lt"),
     ("Intel.GemmScheduleProof", "IntelGpu.gemmSpecW_of_schedule"),
     ("Intel.GemmSlm", "IntelGpu.gemmTile_slm_correct"),
+    ("Intel.SlmLatency", "IntelGpu.fresh_with_barrier"),
     ("Intel.GemmSlmCompute", "IntelGpu.gemmTile_executed"),
     ("Intel.Dpas", "IntelGpu.dpasRun_correct"),
     ("Intel.GemmDpasLoop", "IntelGpu.dpasProg_correct"),
