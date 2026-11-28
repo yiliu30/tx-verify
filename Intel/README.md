@@ -2841,6 +2841,13 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 197: mainloop bounds
+
+`Intel/TlaMainloop.lean` records the decoded mainloop skeleton. The 32 DPAS
+instructions lie at PCs 1018--1393, inside the single back-edge block whose
+target label `_0_119` is at PC 959 and whose jump is at PC 1404.
+`dpasPcs_in_block` proves every DPAS is inside `[959, 1404)`.
+
 ## Stage 196: control-flow targets
 
 `Intel/TlaCfg.lean` provides `tlaLabelPc` for the decoded program and proves
@@ -3321,4 +3328,5 @@ lake build Intel
 193. Stage 193: multi-bank ALU state.
 194. Stage 194: block2d memory forms.
 195. Stage 195: control and scoreboard forms.
-196. Stage 196 (this PR): control-flow targets.
+196. Stage 196: control-flow targets.
+197. Stage 197 (this PR): mainloop bounds.
