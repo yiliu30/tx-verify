@@ -4,6 +4,7 @@ module
 public import Intel.FmhaPrefillCoverage
 public import Intel.TlaFmhaPv
 public import Intel.TlaFmhaQk
+public import Intel.TlaBf16Rne
 public import Intel.TlaEpilogue
 public import Intel.TlaMask
 
@@ -62,9 +63,22 @@ def FmhaQkSummary : Prop :=
 theorem fmha_qk_summary : FmhaQkSummary :=
   ⟨qk42_length, qk50_length, qk58_length, qk66_length, pv74_length⟩
 
+/-- The P->BF16 conversion: idempotent, packed, and the RNE boundaries. -/
+def FmhaConvertSummary : Prop :=
+  (∀ b : Bf16, bf16RoundWord (bf16ToWord b) = bf16ToWord b) ∧
+  bf16Round 0x3F808000 = 0x3F80 ∧
+  bf16Round 0x3F818000 = 0x3F82 ∧
+  bf16Round 0x3F80C000 = 0x3F81
+
+theorem fmha_convert_summary : FmhaConvertSummary :=
+  ⟨bf16RoundWord_packed, bf16Round_tie_even_down,
+   bf16Round_tie_even_up, bf16Round_above_half⟩
+
 /-- The headline checklist. -/
 theorem fmha_prefill_summary :
-    FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary :=
-  ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary⟩
+    FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary ∧
+    FmhaConvertSummary :=
+  ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary,
+   fmha_convert_summary⟩
 
 end IntelGpu

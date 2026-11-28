@@ -4,9 +4,9 @@ Status: proposal for stages 247+. The GEMM stack (stages 174–245) is merged
 on `main`; this document scopes the next kernel family: the SYCL-TLA FMHA
 prefill (`XeFMHAFwdKernel`, BF16, head dim 128). Stages 247 and 248 are
 merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261,
-#262, #263, #265); decoding is total, and the MUFU contract, softmax
-pipeline, causal mask, DPAS atoms, QK/PV chains and epilogue ratio are
-proved. The remaining gaps are listed in section 8.
+#262, #263, #265, #266); decoding is total, and the MUFU contract, softmax
+pipeline, causal mask, DPAS atoms, QK/PV chains, RNE conversion and epilogue
+ratio are proved. The remaining gaps are listed in section 8.
 
 ## 1. Scope
 
@@ -168,7 +168,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247-259 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265).
+Stages 247-260 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265, #266).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |

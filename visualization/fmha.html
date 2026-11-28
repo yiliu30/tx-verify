@@ -95,6 +95,7 @@
     <tr><td>257</td><td>#262</td><td>PV chain slab sum, epilogue ratio</td></tr>
     <tr><td>258</td><td>#263</td><td>summary module and this page</td></tr>
     <tr><td>259</td><td>#265</td><td>QK^T chain composition</td></tr>
+    <tr><td>260</td><td>#266</td><td>RNE FP32 &rarr; BF16 conversion</td></tr>
   </table>
 </section>
 
@@ -108,6 +109,7 @@
     <tr><td>Atom slab value and frame</td><td><code>fmhaAtomStep_acc0</code>, <code>fmhaAtomStep_frame</code></td></tr>
     <tr><td>QK^T chain = 8 slabs per block</td><td><code>qk42_sum</code>, <code>qk50_sum</code>, <code>qk58_sum</code>, <code>qk66_sum</code></td></tr>
     <tr><td>PV chain = initial + slab sum</td><td><code>fmhaAtomRun_fixed_acc</code>, <code>pv74_sum</code></td></tr>
+    <tr><td>RNE P&rarr;BF16: idempotent, packed, boundaries</td><td><code>bf16RoundWord_idempotent</code>, <code>bf16Round_tie_even_up</code></td></tr>
     <tr><td>Row max upper bound</td><td><code>rowMax_ge_mem</code></td></tr>
     <tr><td>Softmax weights sum to one</td><td><code>softmaxWeights_sum_one</code></td></tr>
     <tr><td>Online fold = two-pass sums</td><td><code>onlineFold_init_den</code>, <code>onlineFold_init_num</code></td></tr>
@@ -121,7 +123,6 @@
   <h2>Open gaps</h2>
   <table>
     <tr><th>Gap</th><th>Status</th></tr>
-    <tr><td>RNE fp32 &rarr; BF16 conversion before PV</td><td><span class="tag pending">packing exists, rounding model pending</span></td></tr>
     <tr><td>LSE variant <code>math.log</code> (8 forms in the LSE dump)</td><td><span class="tag pending">non-LSE dump imported</span></td></tr>
     <tr><td>Per-op MUFU samples</td><td><span class="tag pending">end-to-end 1.5e-05 only</span></td></tr>
     <tr><td>Plain prefill runner <code>--verify=1</code></td><td><span class="tag gap">kErrorInternal on the lab host</span></td></tr>

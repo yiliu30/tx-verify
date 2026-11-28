@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 260: RNE FP32 -> BF16 conversion
+
+`Intel/TlaBf16Rne.lean` adds `bf16Round` (round-to-nearest-even on the high
+16 bits) and `bf16RoundWord` for the packed high-half layout used by the PV
+DPAS sources. It proves the packed result has zero low bits, rounding is
+idempotent, already-packed BF16 words are unchanged, and checks the three RNE
+boundaries: tie-to-even down (`0x3F808000 -> 0x3F80`), tie-to-even up
+(`0x3F818000 -> 0x3F82`) and above half (`0x3F80C000 -> 0x3F81`).
+
 ## Stage 259: QK^T chain composition
 
 `Intel/TlaFmhaQk.lean` proves the four QK^T accumulator chains. Each group
@@ -3966,4 +3975,5 @@ lake build Intel
 256. Stage 256: FMHA DPAS atoms.
 257. Stage 257: PV chain and epilogue ratio.
 258. Stage 258: verification summary and FMHA page.
-259. Stage 259 (this PR): QK^T chain composition.
+259. Stage 259: QK^T chain composition.
+260. Stage 260 (this PR): RNE FP32 -> BF16 conversion.
