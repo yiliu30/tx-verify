@@ -2333,6 +2333,19 @@ theorem vaPackBoth_value :
 The proof also shows the high pack preserves `V0062` and the low pack
 preserves `V0059`, so both halves remain valid after sequential execution.
 
+## Stage 123: the first guard from executed packs
+
+`vaLoopP3_packed` instantiates the guard theorem with the executed low/high
+packs. For every active lane it yields
+
+```lean
+theorem vaLoopP3_packed :
+  P3 = vaLoopGuard (ids j) (vaLoopSize sizeLo sizeHi)
+```
+
+from the packed register halves and the two size-dword facts. The remaining
+work is proving those size-register facts survive the packs.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2517,4 +2530,5 @@ lake build Intel
 119. Stage 119: add masked dword-view move laws.
 120. Stage 120: execute the real M1+M5 low pack.
 121. Stage 121: execute the real M1+M5 high pack.
-122. Stage 122 (this PR): compose both packs into one state.
+122. Stage 122: compose both packs into one state.
+123. Stage 123 (this PR): derive P3 from the executed packs.
