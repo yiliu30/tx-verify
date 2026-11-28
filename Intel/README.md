@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 241: the second accumulator block's output store
+
+The mainloop's four accumulator stores write only `r21..r28`; the second
+accumulator block `r13..r20` leaves through the epilogue's plain
+`store_block2d.ugm.d32.a64 [r4:1], r13:8` at PC 2116. `Intel/TlaAcc1Store.lean`
+proves the `r13:8` window-store bridge (`store13_readTileC`) and composes it
+with `mainloopDpasRun_acc1_sum`: the stored element is the initial `r13` tile
+element plus the ordered 32-slab sum (`store2116_dpas_sum`). This corrects the
+stage-212 note, which had claimed the block was not stored.
+
 ## Stage 240: jump predicate evaluation
 
 `Intel/TlaJmpCond.lean` parses jump predicates (`(W)`, `(W&fN.M)`,
@@ -3101,8 +3111,8 @@ iteration.
 `mainloopDpasRun_acc0_sum`: the value written by the `r21:4` and `r25:4`
 stores (PCs 1394 and 1395) to memory lane `row*8+col` is the initial C
 element plus the ordered sum of the 32 DPAS slabs, for all eight rows of the
-`r21..r28` block. The second accumulator block `r13..r20` is not stored in
-this dump.
+`r21..r28` block. The second accumulator block `r13..r20` leaves through the
+epilogue's plain `store_block2d` at `r13:8` (stage 241).
 
 ## Stage 211: accumulator window bridge
 
@@ -3763,4 +3773,5 @@ lake build Intel
 237. Stage 237: FP32 exponent-relative rounding.
 238. Stage 238: DPAS accumulator with FP32-quantum rounding.
 239. Stage 239: refined instruction classification.
-240. Stage 240 (this PR): jump predicate evaluation.
+240. Stage 240: jump predicate evaluation.
+241. Stage 241 (this PR): the second accumulator block's output store.
