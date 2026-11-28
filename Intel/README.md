@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 262: PV phase census
+
+`Intel/TlaFmhaPvCensus.lean` covers all 16 PV accumulator groups: `pvAccs`
+lists the 16 bases, `pvAccs_ok` checks two atoms and the chain source
+conditions per group, `pvDpas_accs_mem` shows every PV atom belongs to a
+group, and `pvGroup_sum_of_mem` gives the two-pass slab sum for any census
+group. Together with the four QK^T chains, the whole DPAS phase is composed.
+
 ## Stage 261: total classification and execution
 
 `Intel/TlaFmhaDpasBase.lean` splits the null-tolerant DPAS shape from the
@@ -3987,4 +3995,5 @@ lake build Intel
 258. Stage 258: verification summary and FMHA page.
 259. Stage 259: QK^T chain composition.
 260. Stage 260: RNE FP32 -> BF16 conversion.
-261. Stage 261 (this PR): total classification and execution.
+261. Stage 261: total classification and execution.
+262. Stage 262 (this PR): PV phase census.

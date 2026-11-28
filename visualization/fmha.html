@@ -97,6 +97,7 @@
     <tr><td>259</td><td>#265</td><td>QK^T chain composition</td></tr>
     <tr><td>260</td><td>#266</td><td>RNE FP32 &rarr; BF16 conversion</td></tr>
     <tr><td>261</td><td>#267</td><td>total classification and execution</td></tr>
+    <tr><td>262</td><td>#268</td><td>PV phase census (16 groups)</td></tr>
   </table>
 </section>
 
@@ -110,7 +111,7 @@
     <tr><td>QP split 32 + 32</td><td><code>qkDpas_length</code>, <code>pvDpas_length</code></td></tr>
     <tr><td>Atom slab value and frame</td><td><code>fmhaAtomStep_acc0</code>, <code>fmhaAtomStep_frame</code></td></tr>
     <tr><td>QK^T chain = 8 slabs per block</td><td><code>qk42_sum</code>, <code>qk50_sum</code>, <code>qk58_sum</code>, <code>qk66_sum</code></td></tr>
-    <tr><td>PV chain = initial + slab sum</td><td><code>fmhaAtomRun_fixed_acc</code>, <code>pv74_sum</code></td></tr>
+    <tr><td>PV chain = initial + slab sum (all 16 groups)</td><td><code>fmhaAtomRun_fixed_acc</code>, <code>pvGroup_sum_of_mem</code></td></tr>
     <tr><td>RNE P&rarr;BF16: idempotent, packed, boundaries</td><td><code>bf16RoundWord_idempotent</code>, <code>bf16Round_tie_even_up</code></td></tr>
     <tr><td>Row max upper bound</td><td><code>rowMax_ge_mem</code></td></tr>
     <tr><td>Softmax weights sum to one</td><td><code>softmaxWeights_sum_one</code></td></tr>
