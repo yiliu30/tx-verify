@@ -2841,6 +2841,18 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 174: real SYCL-TLA GEMM import
+
+`Intel/Examples/RealTlaGemm.lean` is the raw IGC assembly of the SYCL-TLA
+GEMM example: a 256x256x32 BF16 GEMM with FP32 accumulation,
+2252 statements and 32 DPAS instructions. `Intel/RealTlaGemmCoverage.lean`
+proves the statement and DPAS counts, that every DPAS is `8x8` with execution
+size 16, two FP32 accumulator bases and two BF16 source bases, and that the B
+and A source bases range over `64..120` and `30..58` respectively. It also
+proves that the current decoder rejects the program at the first `(W) mov`
+prologue form, so the imported dump is a precise coverage frontier rather than
+a decoded program.
+
 ## Stage 173: review stage map refresh
 
 `Intel/REVIEW_63.md` now indexes stages 137--172 with their PR numbers and
@@ -3082,4 +3094,5 @@ lake build Intel
 170. Stage 170: fp16 fused multiply-add.
 171. Stage 171: sticky per-lane flags.
 172. Stage 172: directed-rounding FMA.
-173. Stage 173 (this PR): review stage map refresh.
+173. Stage 173: review stage map refresh.
+174. Stage 174 (this PR): real SYCL-TLA GEMM import.
