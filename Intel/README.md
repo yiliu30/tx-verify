@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 253: row softmax algebra
+
+`Intel/TlaSoftmax.lean` proves the softmax algebra over `Rat`: `ratMax` and
+`rowMax` are upper bounds of every row element (`rowMax_ge_mem`), `rowExp`
+and `rowExpSum` build the exponentials and their sum, and `softmaxWeights`
+normalises them. `softmaxWeights_sum_one` proves the weights sum to one when
+the model's reciprocal reference is the rational inverse of the row sum;
+length and empty-row laws are included. The word-level execution is bridged
+in the phase stages (256-258), and the MUFU budget stays in `MufuModel.Spec`.
+
 ## Stage 252: `math.exp` and `math.inv`
 
 `Intel/TlaMath.lean` decodes the 33 `math.exp` and one `math.inv` forms and
@@ -3888,4 +3898,5 @@ lake build Intel
 249. Stage 249: the select instruction.
 250. Stage 250: plain `cmp`, `not` and the `bfn` mux.
 251. Stage 251: `sync.allwr` waits.
-252. Stage 252 (this PR): `math.exp` and `math.inv`.
+252. Stage 252: `math.exp` and `math.inv`.
+253. Stage 253 (this PR): row softmax algebra.
