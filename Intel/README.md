@@ -225,6 +225,28 @@ theorem tlaXeF16_gemm_spec_tail ... -- every K: K / 16 full slabs, K % 16 tail
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 21: executed epilogue store
+
+`Intel/Epilogue.lean` closes the last executable gap for one tile: the
+accumulator is written to global memory by a real loop rather than assumed to
+appear in C.
+
+```lean
+def epilogueProg (T : Nat)          -- cmpGe / jmpiIf / store / inc / jmpi
+theorem epilogue_correct ... :
+    let s' := erun base N (epilogueProg T) (5 * T + 3) (eHead mem acc)
+    s'.halted = true ∧ ∀ k < T, s'.mem (base + k) = acc (k / N) (k % N)
+theorem epilogue_block ...          -- the tile lands at its C block, origin (gi, gj)
+theorem gemmTile_end_to_end ... :   -- DPAS mainloop + epilogue, end to end
+    s1.halted = true ∧ e.halted = true ∧
+      ∀ m < BM, ∀ n < BN,
+        e.mem (base + (ti * BM + m) * BN + (tj * BN + n)) =
+          dotMat A B (ti * BM + m) (tj * BN + n) (T * d)
+theorem tileSpec_of_store ...       -- bridges the store to TileSpec
+```
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -235,8 +257,8 @@ theorem tlaXeF16_gemm_spec_tail ... -- every K: K / 16 full slabs, K % 16 tail
 - Atomics and the launch ABI.
 - fp16/bf16 rounding and instruction-level DPAS dispatch (the atom is modeled
   as a tile operation).
-- The epilogue store path: tiles are assumed to land in C as the accumulator
-  tile.
+- A general leading dimension for the output tile: the epilogue writes the
+  tile packed at width `N`.
 
 ## Build
 
@@ -267,4 +289,5 @@ lake build Intel
 17. Stage 17: workgroup control flow and the SLM GEMM compute loop.
 18. Stage 18 (this PR): DPAS/XMX tiled accumulation and its executed mainloop.
 19. Stage 19: the SYCL-TLA Xe GEMM instance.
-20. Stage 20 (this PR): partial K tail, so the instance holds for every K.
+20. Stage 20: partial K tail, so the instance holds for every K.
+21. Stage 21 (this PR): executed epilogue store and the end-to-end tile.
