@@ -928,6 +928,20 @@ Two things this caught in itself: the first sweep silently skipped
 helper had a 105-column line. Both fixed before the run that produced the result
 above.
 
+## Stage 53: known-answer tests for an fp16 dot
+
+`Intel/SmokeFp16Dot.lean` checks whole dot products over bit patterns, the shape
+a real kernel has — decode, scale, accumulate — against hand-computed values:
+
+- A = [1.0, 0.5, 65504] with B = [1.0, 2.0, 1.0] gives `65506 * 2 ^ 48`;
+- `1.0` times the smallest subnormal gives `2 ^ 24`;
+- an empty dot is zero.
+
+One test I wrote was **wrong** and `decide` refused it: I expected
+`0xBC00 * 0x4000` to be negative, but `scaled` is a magnitude-only function —
+the sign lives in `Fixed.sign`, not in `scaled`. The test now records the
+actual behaviour and says why. That is exactly what these tests are for.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -1012,4 +1026,5 @@ lake build Intel
 49. Stage 49: DPAS at instruction granularity.
 50. Stage 50: interleaved copies.
 51. Stage 51: residue classes for interleaved lanes.
-52. Stage 52 (this PR): the audit covers every theorem.
+52. Stage 52: the audit covers every theorem.
+53. Stage 53 (this PR): known-answer tests for an fp16 dot.
