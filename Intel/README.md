@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 264: verification-scope correction
+
+The QK^T and PV slab-sum theorems are statements about **DPAS-only sub-runs**.
+Static inspection of the dump shows the real schedule reloads the A/B source
+registers between short DPAS groups (for example `load.ugm` into `r10`/`r14`
+between the QK atoms), so the chain lemmas do not by themselves describe the
+full program execution. This stage corrects the module docstrings, README,
+proposal and HTML page to state that limitation and records the program-level
+composition with the load schedule and loop as the main remaining asm-level
+step. No theorem statements change.
+
 ## Stage 263: pipeline order
 
 `Intel/TlaFmhaSchedule.lean` proves the phase order of the dump: all 32 QK^T
@@ -2855,7 +2866,9 @@ pipeline.
 lists the 16 bases, `pvAccs_ok` checks two atoms and the chain source
 conditions per group, `pvDpas_accs_mem` shows every PV atom belongs to a
 group, and `pvGroup_sum_of_mem` gives the two-pass slab sum for any census
-group. Together with the four QK^T chains, the whole DPAS phase is composed.
+group. These are DPAS-only chain lemmas; the real schedule reloads A/B
+between short groups, so program-level composition with the loads remains
+open.
 
 ## Stage 261: total classification and execution
 
@@ -2882,8 +2895,9 @@ boundaries: tie-to-even down (`0x3F808000 -> 0x3F80`), tie-to-even up
 (`r42`, `r50`, `r58`, `r66`) has eight atoms whose A/B sources are entirely
 above or below the group accumulator, so `fmhaAtomRun_fixed_acc` gives the
 block as its initial value plus the ordered eight-slab sum
-(`qk42_sum`, `qk50_sum`, `qk58_sum`, `qk66_sum`). This closes the QK^T phase
-composition gap from stage 258.
+(`qk42_sum`, `qk50_sum`, `qk58_sum`, `qk66_sum`). These are DPAS-only chains:
+the real schedule reloads A/B between short groups, so the program-level
+composition with the loads remains open.
 
 ## Stage 258: verification summary and FMHA page
 
@@ -4005,4 +4019,5 @@ lake build Intel
 260. Stage 260: RNE FP32 -> BF16 conversion.
 261. Stage 261: total classification and execution.
 262. Stage 262: PV phase census.
-263. Stage 263 (this PR): pipeline order.
+263. Stage 263: pipeline order.
+264. Stage 264 (this PR): verification-scope correction.

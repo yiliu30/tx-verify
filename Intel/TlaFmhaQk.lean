@@ -13,6 +13,9 @@ eight atoms each. Every A/B source of a group is either entirely above or
 entirely below the group accumulator, so the fixed-accumulator chain theorem
 applies: each block ends as its initial value plus the ordered slab sum of
 its eight atoms.
+
+These are DPAS-only chains; the real schedule reloads A/B between short
+groups, and the program-level composition with those loads is still open.
 -/
 
 namespace IntelGpu

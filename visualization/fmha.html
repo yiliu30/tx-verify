@@ -112,8 +112,8 @@
     <tr><td>4 null + 60 aliased DPAS</td><td><code>fmhaDpas_null_count</code>, <code>fmhaDpas_alias_count</code></td></tr>
     <tr><td>QP split 32 + 32</td><td><code>qkDpas_length</code>, <code>pvDpas_length</code></td></tr>
     <tr><td>Atom slab value and frame</td><td><code>fmhaAtomStep_acc0</code>, <code>fmhaAtomStep_frame</code></td></tr>
-    <tr><td>QK^T chain = 8 slabs per block</td><td><code>qk42_sum</code>, <code>qk50_sum</code>, <code>qk58_sum</code>, <code>qk66_sum</code></td></tr>
-    <tr><td>PV chain = initial + slab sum (all 16 groups)</td><td><code>fmhaAtomRun_fixed_acc</code>, <code>pvGroup_sum_of_mem</code></td></tr>
+    <tr><td>QK^T DPAS-only chain = 8 slabs per block</td><td><code>qk42_sum</code>, <code>qk50_sum</code>, <code>qk58_sum</code>, <code>qk66_sum</code></td></tr>
+    <tr><td>PV DPAS-only chain = initial + slab sum (all 16 groups)</td><td><code>fmhaAtomRun_fixed_acc</code>, <code>pvGroup_sum_of_mem</code></td></tr>
     <tr><td>RNE P&rarr;BF16: idempotent, packed, boundaries</td><td><code>bf16RoundWord_idempotent</code>, <code>bf16Round_tie_even_up</code></td></tr>
     <tr><td>Row max upper bound</td><td><code>rowMax_ge_mem</code></td></tr>
     <tr><td>Softmax weights sum to one</td><td><code>softmaxWeights_sum_one</code></td></tr>
@@ -129,6 +129,7 @@
   <table>
     <tr><th>Gap</th><th>Status</th></tr>
     <tr><td>LSE variant <code>math.log</code> (8 forms in the LSE dump)</td><td><span class="tag pending">non-LSE dump imported</span></td></tr>
+    <tr><td>Program-level DPAS composition with the A/B reload schedule and loop</td><td><span class="tag pending">DPAS-only chains proved</span></td></tr>
     <tr><td>Per-op MUFU samples</td><td><span class="tag pending">end-to-end 1.5e-05 only</span></td></tr>
     <tr><td>Plain prefill runner <code>--verify=1</code></td><td><span class="tag gap">kErrorInternal on the lab host</span></td></tr>
     <tr><td>varlen, paged KV, FP8/MXFP, GQA/MQA, decode</td><td><span class="tag gap">out of scope</span></td></tr>

@@ -11,6 +11,9 @@ public import Intel.TlaFmhaPv
 The 32 PV atoms split into 16 accumulator groups of two atoms each. Every
 group satisfies the fixed-accumulator chain conditions, so `pvGroup_sum_of_mem`
 gives the two-pass slab sum for any group named by the census.
+
+As in `Intel/TlaFmhaPv`, the sums are for DPAS-only sub-runs; the real
+schedule reloads A/B between the groups.
 -/
 
 namespace IntelGpu

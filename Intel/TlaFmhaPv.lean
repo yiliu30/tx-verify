@@ -8,13 +8,16 @@ public import Intel.Mainloop
 @[expose] public section
 
 /-!
-# The PV DPAS chain
+# The PV DPAS chain (DPAS-only sub-run)
 
-The 32 PV atoms accumulate into `r74..r194` while their A/B sources sit at
-`r202..r246`, above every PV accumulator. For a fixed accumulator, the reads
-are therefore stable across the whole chain and the fold is the initial block
-plus the ordered slab sum (`fmhaAtomRun_fixed_acc`). The first PV group
-(`r74`) is worked out concretely.
+The 32 PV atoms accumulate into `r74..r194`. Each group of two atoms shares
+one accumulator, and within the DPAS-only sub-run the A/B source windows are
+disjoint from that accumulator, so the fold is the initial block plus the
+ordered slab sum (`fmhaAtomRun_fixed_acc`).
+
+This is a statement about a DPAS-only sub-run. The real prefill schedule
+reloads A/B source registers between short DPAS groups, so composing these
+chains with the load schedule is a separate, still-open step.
 -/
 
 namespace IntelGpu

@@ -34,7 +34,8 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (215 jobs) and `Tools/check_axioms.py --all`
-  (2359 theorems, 779 documented exceptions at stage 263).
+  (2359 theorems, 779 documented exceptions at stage 264; stage 264 is a
+  verification-scope correction with no theorem changes).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -286,6 +287,7 @@ from `Classical.choose` in the racing-store model.
 | 261 | #267 | total classification and execution |
 | 262 | #268 | PV phase census |
 | 263 | #269 | pipeline order |
+| 264 | #270 | verification-scope correction |
 
-The stack is intentionally one PR per stage (#64-#269), as requested. The
+The stack is intentionally one PR per stage (#64-#270), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
