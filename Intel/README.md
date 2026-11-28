@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 190: ALU parsed/rejected census
+
+`Intel/TlaAluCensus.lean` records the exact split between the
+register-destination ALU forms and the rest of the dump. 68 instructions
+parse: 4 `and`, 31 `add`, 17 `shl`, 1 `asr`, 1 `mad`, 4 `mach` and 10 `macl`.
+The raw dump has 14 `mul`, 25 `shr` and 1 `or` forms with non-`r` destinations
+(`acc0`, `a0`, `cr0`), plus one non-`r` `and`. Those 41 forms are the precise
+next parser extension.
+
 ## Stage 189: executing the prologue ALU
 
 `Intel/TlaAluExec.lean` executes the register-destination `and`/`add`/`mad`
@@ -3257,4 +3266,5 @@ lake build Intel
 186. Stage 186: executing the predicated moves.
 187. Stage 187: sequencing moves and the entry effect.
 188. Stage 188: decoding the predicated ALU forms.
-189. Stage 189 (this PR): executing the prologue ALU.
+189. Stage 189: executing the prologue ALU.
+190. Stage 190 (this PR): ALU parsed/rejected census.
