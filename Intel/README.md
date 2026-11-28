@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 240: jump predicate evaluation
+
+`Intel/TlaJmpCond.lean` parses jump predicates (`(W)`, `(W&fN.M)`,
+`(W&~fN.M)`) and evaluates them on the flag state. The mainloop exit jump
+`(W&~f3.1)` at PC 1401 is taken exactly when the incremented counter has
+reached the bound (`exitJmp_taken_iff`, via `loopCmp_exit_iff`); the back-edge
+at PC 1404 is unconditional, and the early guard at PC 991 tests `f0.0`.
+
 ## Stage 239: refined instruction classification
 
 `Intel/TlaKindRefined.lean` gives a classifier with one constructor per
@@ -3754,4 +3762,5 @@ lake build Intel
 236. Stage 236: rounding-aware DPAS accumulation.
 237. Stage 237: FP32 exponent-relative rounding.
 238. Stage 238: DPAS accumulator with FP32-quantum rounding.
-239. Stage 239 (this PR): refined instruction classification.
+239. Stage 239: refined instruction classification.
+240. Stage 240 (this PR): jump predicate evaluation.
