@@ -1984,6 +1984,22 @@ logic is present but their lane law is the next refinement. Other instructions
 still use their pre-mask semantics, so this is the first partial execution of
 `(M5, 16)`, not a complete SIMD mask model.
 
+## Stage 97: stride-two masked destinations
+
+`maskedMov_stride2_lane` closes the destination-shape gap:
+
+```lean
+theorem maskedMov_stride2_lane : (stepWith ... (.movMasked e dst src)).regs
+  (alias dst.num) (dst.dstIndex (e.laneIndex l)) =
+  readSrcIndexed alias s src (e.laneIndex l)   -- when dst.hstride = 2
+```
+
+An active lane writes `base + 2 * (lane - maskOffset)`, matching the real
+`V0081(2,0)<2>` / `V0081(2,1)<2>` forms. The write helper already supported
+this layout; the stage supplies the checked lane law. Masked execution is now
+covered for all six real M5 moves. General mask application outside moves and
+the loop effect remain open.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1998,8 +2014,8 @@ still use their pre-mask semantics, so this is the first partial execution of
   region algebra; stage 66 models one uniform predicate bit for the GEMM's
   control flow; stages 90-93 add per-lane predicates, predicated `sel` and
   predicate `and`/`or`, register comparisons and predicated gotos; stages 92
-  and 96 decode masks and apply them to masked moves, but not yet to every
-  instruction. `gotoIf` remains a uniform lane-0 branch.
+  and 96-97 decode masks and apply them to all six real masked moves, but not
+  yet to every instruction. `gotoIf` remains a uniform lane-0 branch.
 - SEND issue/completion/wait and the register scoreboard are stage 78; raw
   message operand layout, EOT details beyond a halted flag, and the exact SBID
   assignments (not printed in the assembly) remain.
@@ -2137,4 +2153,5 @@ lake build Intel
 93. Stage 93: execute predicate `and` and `or` per lane.
 94. Stage 94: execute register-register `cmp.lt` and `cmp.eq`.
 95. Stage 95: decode predicated gotos and close vector-add coverage.
-96. Stage 96 (this PR): execute masked moves with M5 lane offsets.
+96. Stage 96: execute masked moves with M5 lane offsets.
+97. Stage 97 (this PR): prove stride-two masked destinations.

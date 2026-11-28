@@ -784,4 +784,26 @@ theorem maskedMov_unit_lane (alias : Nat → Nat) (typeOf : Nat → Option RegTy
   simp [stepWith, writeMaskedWith, Grf.dstIndex, Exec.laneIndex, hnm, hdst,
     Nat.add_sub_of_le hle, hactive]
 
+/-- A masked move with a stride-two destination writes each active lane's
+source element at `base + 2 * (lane - maskOffset)`. -/
+theorem maskedMov_stride2_lane (alias : Nat → Nat) (typeOf : Nat → Option RegType)
+    (s : RealState) (e : Exec) (dst src : Grf) (l : Nat)
+    (hnm : e.noMask = false) (hdst : dst.hstride = 2)
+    (hactive : e.laneActive l = true) :
+    (stepWith alias typeOf s (.movMasked e dst src)).regs (alias dst.num)
+        (dst.dstIndex (e.laneIndex l)) =
+      readSrcIndexed alias s src (e.laneIndex l) := by
+  have hle : e.offset ≤ l := by
+    have h := hactive
+    simp [Exec.laneActive, hnm] at h
+    exact h.1
+  have hmod : (l - e.offset) * 2 % 2 = 0 := by
+    rw [Nat.mul_comm]
+    exact Nat.mul_mod_right 2 (l - e.offset)
+  have hdiv : (l - e.offset) * 2 / 2 = l - e.offset := by
+    rw [Nat.mul_comm]
+    exact Nat.mul_div_right (l - e.offset) (by decide : 0 < 2)
+  simp [stepWith, writeMaskedWith, Grf.dstIndex, Exec.laneIndex, hnm, hdst,
+    Nat.add_sub_of_le hle, hactive, hmod, hdiv]
+
 end IntelGpu
