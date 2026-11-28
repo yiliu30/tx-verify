@@ -109,6 +109,7 @@
     <tr><td>270</td><td>#276</td><td>LSE prefill dump imported and verified</td></tr>
     <tr><td>271</td><td>#277</td><td>measured MUFU samples (exp/inv/log)</td></tr>
     <tr><td>272</td><td>#278</td><td>hardware conformance breadth (256/512/1024, batch 2, 2 heads)</td></tr>
+    <tr><td>273</td><td>#279</td><td>physical 8x8x16 BF16 layout and load bridges</td></tr>
   </table>
 </section>
 
@@ -123,6 +124,7 @@
     <tr><td>QP split 32 + 32</td><td><code>qkDpas_length</code>, <code>pvDpas_length</code></td></tr>
     <tr><td>Atom slab value and frame</td><td><code>fmhaAtomStep_acc0</code>, <code>fmhaAtomStep_frame</code></td></tr>
     <tr><td>BF16 atom semantics (`fmhaBf16Slab`)</td><td><code>fmhaAtomStep_acc0</code></td></tr>
+    <tr><td>Physical layout + A/B load bridges</td><td><code>physRun_fixed_acc</code>, <code>load1004_feeds_physA</code>, <code>load1543_feeds_physB</code></td></tr>
     <tr><td>All 64 DPAS operands are `:bf`</td><td><code>fmhaPrefill_dpas_bf16</code></td></tr>
     <tr><td>QK^T DPAS-only chain = 8 slabs per block</td><td><code>qk42_sum</code>, <code>qk50_sum</code>, <code>qk58_sum</code>, <code>qk66_sum</code></td></tr>
     <tr><td>PV DPAS-only chain = initial + slab sum (all 16 groups)</td><td><code>fmhaAtomRun_fixed_acc</code>, <code>pvGroup_sum_of_mem</code></td></tr>
@@ -141,7 +143,7 @@
   <table>
     <tr><th>Gap</th><th>Status</th></tr>
     <tr><td>LSE variant <code>math.log</code></td><td><span class="tag ok">imported, 2694/2694 decoded, hardware Passed</span></td></tr>
-    <tr><td>Program-level DPAS composition with the A/B reload schedule and loop</td><td><span class="tag pending">first PV load bridge (PC 1543) proved</span></td></tr>
+    <tr><td>Program-level DPAS composition with the A/B reload schedule and loop</td><td><span class="tag pending">physical layout + PC 1004/1543 bridges proved</span></td></tr>
     <tr><td>Float-valued half-ulp bound of the RNE conversion</td><td><span class="tag pending">structural bound proved</span></td></tr>
     <tr><td>Causal hardware conformance</td><td><span class="tag pending">LSE example rejects --is_causal; plain reference broken</span></td></tr>
     <tr><td>Shapes</td><td><span class="tag ok">256/512/1024, batch 2, 2 heads Passed</span></td></tr>

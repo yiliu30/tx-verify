@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 273: physical 8x8x16 BF16 layout
+
+`Intel/TlaFmhaPhys.lean` follows the CUTE Xe DPAS traits
+(`mma_traits_xe.hpp`): A is 8 registers (one row per register, VNNI-packed
+K), B is 8 registers (one column per register, VNNI-packed K), and C is
+`readTileC`. It proves the physical slab step/frame, read stability under C
+writes, `physRun_fixed_acc`, window bridges (a 4-register load fills four A
+rows; a 16-register load fills eight B columns) and the real PC 1004 A and
+PC 1543 B load bridges. This is the layout used for the program-level
+composition.
+
 ## Stage 272: hardware conformance breadth
 
 The LSE runner passes Full / LSE / SP-combined at 256, 512 and 1024 (max abs
@@ -4097,4 +4108,5 @@ lake build Intel
 269. Stage 269: PV load -> BF16 operand bridge.
 270. Stage 270: the FMHA prefill LSE dump.
 271. Stage 271: measured MUFU samples.
-272. Stage 272 (this PR): hardware conformance breadth.
+272. Stage 272: hardware conformance breadth.
+273. Stage 273 (this PR): physical 8x8x16 BF16 layout.
