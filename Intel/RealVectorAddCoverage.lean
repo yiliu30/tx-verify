@@ -45,7 +45,15 @@ theorem execMask_M5 : execMaskOffset 5 = some 16 := by decide
 theorem masked_mov_decodes :
     decodeReal (.instruction "mov"
       ["(M5, 16)", "V0062(1,0)<1>", "V0061(2,0)<2;1,0>"]) =
-    some (.movMasked ⟨16, 16, false⟩ ⟨62, 1, 0, 1, 1, 0⟩ ⟨61, 2, 0, 2, 1, 0⟩) := by
+    some (.movMasked ⟨16, 16, false⟩ ⟨62, 1, 0, 1, 1, 1⟩ ⟨61, 2, 0, 2, 1, 0⟩) := by
+  decide
+
+/-- A strided destination prints `<hstride>`, not the source shorthand. -/
+theorem masked_stride2_decodes :
+    decodeReal (.instruction "mov"
+      ["(M5, 16)", "V0081(2,0)<2>", "V0082(1,0)<1;1,0>"]) =
+    some (.movMasked ⟨16, 16, false⟩ ⟨81, 2, 0, 1, 1, 2⟩
+      ⟨82, 1, 0, 1, 1, 0⟩) := by
   decide
 
 /-- Mask names outside M1-M8 are refused. -/

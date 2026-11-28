@@ -222,10 +222,20 @@ def parseExec (s : String) : Option Exec :=
         | _, _, _ => none
   | _ => none
 
-/-- A GRF operand: `V0045(0,0)<1>` or `V0045(0,0)<1;1,0>`. -/
+/-- A source GRF operand: `V0045(0,0)<1>` or `V0045(0,0)<1;1,0>`. The
+one-field form is the source shorthand `<vstride;1,0>`. -/
 def parseGrf (s : String) : Option Grf :=
   match numRuns (operandCore s) with
   | [n, r, c, v] => some ⟨n, r, c, v, 1, 0⟩
+  | [n, r, c, v, w, h] => some ⟨n, r, c, v, w, h⟩
+  | _ => none
+
+/-- A destination GRF operand. The one-field form is `<hstride>`, not the
+source shorthand `<vstride;1,0>`. This distinction matters for strided
+destinations such as `V0081(2,0)<2>`. -/
+def parseDstGrf (s : String) : Option Grf :=
+  match numRuns (operandCore s) with
+  | [n, r, c, h] => some ⟨n, r, c, 1, 1, h⟩
   | [n, r, c, v, w, h] => some ⟨n, r, c, v, w, h⟩
   | _ => none
 
@@ -313,11 +323,11 @@ def decodeReal : Stmt → Option RInstr
   | .instruction op operands =>
       match op, operands with
       | "mul", [e, d, a, b] =>
-          match parseExec e, parseGrf d, parseGrf a, parseGrf b with
+          match parseExec e, parseDstGrf d, parseGrf a, parseGrf b with
           | some n, some x, some y, some z => some (.mul n x y z)
           | _, _, _, _ => none
       | "mov", [e, d, s] =>
-          match parseExec e, parseGrf d with
+          match parseExec e, parseDstGrf d with
           | some n, some x =>
               match parseGrf s with
               | some y =>
@@ -329,15 +339,15 @@ def decodeReal : Stmt → Option RInstr
                   | _, _ => none
           | _, _ => none
       | "add3", [e, d, a, b, c] =>
-          match parseExec e, parseGrf d, parseGrf a, parseGrf b, parseGrf c with
+          match parseExec e, parseDstGrf d, parseGrf a, parseGrf b, parseGrf c with
           | some n, some w, some x, some y, some z => some (.add3 n w x y z)
           | _, _, _, _, _ => none
       | "shl", [e, d, s, k] =>
-          match parseExec e, parseGrf d, parseGrf s, parseLit k with
+          match parseExec e, parseDstGrf d, parseGrf s, parseLit k with
           | some n, some x, some y, some m => some (.shl n x y m)
           | _, _, _, _ => none
       | "add", [e, d, a, b] =>
-          match parseExec e, parseGrf d, parseGrf a with
+          match parseExec e, parseDstGrf d, parseGrf a with
           | some n, some x, some y =>
               match parseGrf b with
               | some z => some (.add n x y z)
@@ -369,7 +379,7 @@ def decodeReal : Stmt → Option RInstr
       | "or", ["(M1_NM, 1)", "%cr0(0,0)<1>", "%cr0(0,0)<0;1,0>", "0x400004c0:ud"] =>
           some .prologue
       | "or", [e, d, a, b] =>
-          match parseExec e, parseGrf d, parseGrf a, parseGrf b with
+          match parseExec e, parseDstGrf d, parseGrf a, parseGrf b with
           | some n, some x, some y, some z => some (.or n x y z)
           | _, _, _, _ =>
               match parseExec e, parsePred d, parsePred a, parsePred b with
@@ -399,7 +409,7 @@ def decodeReal : Stmt → Option RInstr
           | some n, some (p, negated) => some (.gotoIf n p negated l)
           | _, _ => none
       | op, [e, d, a, b] =>
-          match parseSelPred op, parseExec e, parseGrf d, parseGrf a, parseGrf b with
+          match parseSelPred op, parseExec e, parseDstGrf d, parseGrf a, parseGrf b with
           | some p, some n, some x, some y, some z => some (.sel n p x y z)
           | _, _, _, _, _ => none
       | "ret", [e] =>
@@ -440,7 +450,7 @@ theorem realAddOne_load :
 /-- The add-after-load is an add-immediate with the `:w` suffix kept. -/
 theorem realAddOne_addImm :
     (decodeRealProgram realAddOne).bind (fun is => is[8]?) =
-      some (.addImm 32 ⟨55, 0, 0, 1, 1, 0⟩ ⟨54, 0, 0, 1, 1, 0⟩ 1 .w16) := by
+      some (.addImm 32 ⟨55, 0, 0, 1, 1, 1⟩ ⟨54, 0, 0, 1, 1, 0⟩ 1 .w16) := by
   unfold decodeRealProgram decodeRealStmts realAddOne
   decide
 
