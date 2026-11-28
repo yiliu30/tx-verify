@@ -31,7 +31,7 @@ structure Fixed where
   sign : Bool
   mant : Nat
   exp : Nat
-  deriving Repr
+  deriving Repr, DecidableEq
 
 /-- Magnitude of the value when the exponent is nonnegative. -/
 def Fixed.mag (v : Fixed) : Nat := v.mant * 2 ^ v.exp
