@@ -32,9 +32,12 @@ structure TlaBfn where
 
 /-- The bfn source forms include `<v;w>` without an explicit hstride. -/
 def parseBfnSrc (s : String) : Option TlaSrc :=
-  match numRuns (operandCore s) with
-  | [n, sub, v, w] => some (.reg ⟨n, 0, sub, v, w, 0⟩)
-  | _ => parseTlaSrc s
+  match negatedReg s with
+  | some g => some g
+  | none =>
+      match numRuns (operandCore s) with
+      | [n, sub, v, w] => some (.reg ⟨n, 0, sub, v, w, 0⟩)
+      | _ => parseTlaSrc s
 
 /-- A plain `bfn.(s0&s1|s2)` / `bfn.(s0|s1|s2)` form. -/
 def parseTlaBfn : TlaInstr → Option TlaBfn

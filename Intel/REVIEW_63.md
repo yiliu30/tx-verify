@@ -34,7 +34,7 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (199 jobs) and `Tools/check_axioms.py --all`
-  (2226 theorems, 673 documented exceptions at stage 247).
+  (2228 theorems, 675 documented exceptions at stage 248).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -270,6 +270,7 @@ from `Classical.choose` in the racing-store model.
 | 245 | #247 | fix the accumulator store docstring |
 | 246 | #248 | FMHA prefill gap analysis and proposal |
 | 247 | #251 | FMHA prefill dump coverage |
+| 248 | #252 | negated sources and `.v` immediates |
 
-The stack is intentionally one PR per stage (#64-#251), as requested. The
+The stack is intentionally one PR per stage (#64-#252), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.

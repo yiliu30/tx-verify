@@ -62,6 +62,10 @@ block2d loads/stores (`d32t`, `d16v`, `d16`, `d32x16t`, `d32x32t`, `d32x64t`),
 `jmpi`, `send.gtwy`, `bfn`, `mach`/`macl` and the DPAS forms — already
 decodes.
 
+> Status: stage 248 closed the negated-source and `.v` rows (coverage is now
+> 1854/1965, 111 remaining: `sel` 66, `math.exp` 33, `sync.allwr` 8 and the
+> four singletons). The table above is the stage-247 snapshot.
+
 ## 4. Semantic gaps
 
 Decoding is only 7.7% of the work; the new semantics are:
