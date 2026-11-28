@@ -2470,6 +2470,15 @@ released flag returns the published data, and `without_release_stale_observable`
 shows the release is load-bearing. The module docstring lists the model
 assumptions and the parts that remain outside it.
 
+## Stage 140: the decoded kernel entry from PC 0
+
+`Intel/LoopKernelEntry.lean` runs the eight decoded instructions at PC 0--7
+(the label, the prologue and the six index operations) and proves the register
+facts needed at PC 8: the size dwords, the per-lane index and the pointer
+frames. `vaLoop_kernel_pc0_mem` composes those facts with stage 138, so the
+kernel's `C[id] = A[id] + B[id]` effect now starts at PC 0 with the launch
+registers, the size constant and the three pointers.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2671,4 +2680,5 @@ lake build Intel
 136. Stage 136: compose the per-lane decoded control path.
 137. Stage 137: prove the per-lane memory effect on the decoded path.
 138. Stage 138: derive the path guards from the decoded prefix.
-139. Stage 139 (this PR): per-location visibility and release/acquire.
+139. Stage 139: per-location visibility and release/acquire.
+140. Stage 140 (this PR): the decoded kernel entry from PC 0.
