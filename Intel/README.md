@@ -2841,6 +2841,19 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 249: the select instruction
+
+`Intel/TlaSel.lean` decodes the three `sel` spellings in the FMHA prefill
+dump (`sel`, `(W) sel` and `(P) sel`), including accumulator-bank sources
+(`accN.M`) that the plain `TlaSrc` parser would read as `r0`. `TlaSel.value`
+implements flag select, `TlaSel.step` writes GRF, `acc`, `a`, `cr` and `flag`
+destinations, and `tlaSelStep_true`/`_false`/`_frame` give the select laws
+and the GRF frame. The dispatcher gains a `.sel` class (`tlaStep?_sel`) and
+`decodedAll` accepts `sel`, so FMHA prefill coverage rises from 1854/1965 to
+**1920/1965 (97.7%)**; the remaining 45 are `math.exp` 33, `sync.allwr` 8 and
+four singletons. Worked examples: the `(W) sel` at PC 487, the `(f3.1) sel`
+at PC 1170 and a plain `sel` at PC 1171; 66 `sel` statements in total.
+
 ## Stage 248: negated sources and `.v` immediates
 
 `parseTlaSrc`, the ALU source parser and the bfn source parser accept
@@ -3838,4 +3851,5 @@ lake build Intel
 245. Stage 245: fix the accumulator store docstring.
 246. Stage 246: FMHA prefill gap analysis and proposal.
 247. Stage 247: FMHA prefill dump coverage.
-248. Stage 248 (this PR): negated sources and `.v` immediates.
+248. Stage 248: negated sources and `.v` immediates.
+249. Stage 249 (this PR): the select instruction.

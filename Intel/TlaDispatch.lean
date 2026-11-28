@@ -2,6 +2,7 @@
 module
 
 public import Intel.TlaCmpGate
+public import Intel.TlaSel
 public import Intel.TlaBfnExec
 public import Intel.TlaLoadPhase
 public import Intel.TlaControlDecode
@@ -42,6 +43,7 @@ inductive TlaOp where
   | alu (a : TlaAlu)
   | b2d (b : TlaBlock2d)
   | cmp (c : TlaCmp)
+  | sel (s : TlaSel)
   | bfn (b : TlaBfn)
   | send (s : TlaSend)
   | sync
@@ -79,6 +81,9 @@ def classifyOp (i : TlaInstr) : TlaOp :=
   match parseTlaCmpInstr i with
   | some c => .cmp c
   | none =>
+  match parseTlaSelInstr i with
+  | some s => .sel s
+  | none =>
   match parseTlaBfn i with
   | some b => .bfn b
   | none =>
@@ -108,6 +113,7 @@ def tlaStep? (m : TlaFullMachine) (i : TlaInstr) : Option (TlaFullMachine × Tla
       (TlaBlock2d.loadStoreStep m.state m.mem m.bti b).map
         (fun p => ({ m with state := p.1, mem := p.2 }, .next))
   | .cmp c => some ({ m with state := c.step m.state }, .next)
+  | .sel s => some ({ m with state := s.step m.state }, .next)
   | .bfn b =>
       some ({ m with state := { m.state with regs := b.step m.state.regs } }, .next)
   | .send s => some ({ m with log := tlaSendStep m.log s }, .next)
@@ -144,6 +150,11 @@ theorem tlaStep?_b2d (m : TlaFullMachine) (i : TlaInstr) (b : TlaBlock2d)
 theorem tlaStep?_cmp (m : TlaFullMachine) (i : TlaInstr) (c : TlaCmp)
     (h : classifyOp i = .cmp c) :
     tlaStep? m i = some ({ m with state := c.step m.state }, .next) := by
+  simp [tlaStep?, h]
+
+theorem tlaStep?_sel (m : TlaFullMachine) (i : TlaInstr) (s : TlaSel)
+    (h : classifyOp i = .sel s) :
+    tlaStep? m i = some ({ m with state := s.step m.state }, .next) := by
   simp [tlaStep?, h]
 
 theorem tlaStep?_bfn (m : TlaFullMachine) (i : TlaInstr) (b : TlaBfn)
