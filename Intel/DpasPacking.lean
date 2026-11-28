@@ -140,4 +140,18 @@ theorem fmhaReal_uses_decoded_bases (regs : Nat → Nat → Word) :
     fmhaRealC regs = fmhaPackedC regs 383 16 :=
   ⟨rfl, rfl, rfl⟩
 
+/-- A register file whose packed A and B bytes are all one and whose C region
+is zero. The A range is r39-r42 (64 dwords) and B is r335-r342 (eight GRFs). -/
+def fmhaOnesRegs (r _d : Nat) : Word :=
+  if 39 ≤ r ∧ r < 43 then 0x01010101
+  else if 335 ≤ r ∧ r < 343 then 0x01010101
+  else 0
+
+/-- Known-answer test: a 32-deep all-ones fp8 dot adds 32 to C. -/
+theorem fmhaRealPackedAtom_ones :
+    fmhaAtom (fmhaRealA fmhaOnesRegs) (fmhaRealB fmhaOnesRegs)
+      (fmhaRealC fmhaOnesRegs) 0 0 0 0 = 32 := by
+  rw [fmhaRealPackedAtom_correct]
+  decide
+
 end IntelGpu
