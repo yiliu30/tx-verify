@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 246: FMHA prefill gap analysis and proposal
+
+`Intel/FMHA_PREFILL_PROPOSAL.md` scopes the next kernel family: the SYCL-TLA
+FMHA prefill (`XeFMHAFwdKernel`, BF16, head dim 128). The measured decoder
+gap on the prefill dump is 152 of 1965 statements (7.7%): `sel` 66, negated
+`mad` sources 40, `math.exp` 33, `sync.allwr` 8 and four singletons. The
+proposal lists the semantic gaps (softmax, online rescaling, causal mask,
+P→BF16, epilogue/LSE, DPAS `null`/`Atomic`) and a twelve-stage plan
+(247-258) with acceptance criteria and risks. No Lean declarations change.
+
 ## Stage 244: verification visualization
 
 `visualization/verification.html` is a self-contained page that renders the
@@ -3802,4 +3812,6 @@ lake build Intel
 241. Stage 241: the second accumulator block's output store.
 242. Stage 242: remaining-work review pass.
 243. Stage 243: one kernel entry for the whole conformance matrix.
-244. Stage 244 (this PR): verification visualization.
+244. Stage 244: verification visualization.
+245. Stage 245: fix the accumulator store docstring.
+246. Stage 246 (this PR): FMHA prefill gap analysis and proposal.
