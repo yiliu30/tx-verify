@@ -1222,9 +1222,43 @@ The stage-5 decoder reads **none** of the real kernel: region syntax, arity and
 unknown opcodes all fail closed. That is the gap stages 63+ exist to close, and
 it is now measured.
 
+## Stage 63: decoding the real kernel, failing closed
+
+`Intel/RealDecode.lean` decodes exactly the instruction forms the real add-one
+kernel uses, and refuses everything else:
+
+- `Grf` keeps the full region: register number, row and column offsets,
+  vertical stride, region width and horizontal stride. IGC's `<v>` shorthand is
+  normalised to `<v;1,0>`; any other spelling is refused.
+- `parseExec` reads the execution size from after the comma, so `(M1, 32)` and
+  `(M1_NM, 1)` both parse while `(M1, 32, 7)` does not.
+- Typed suffixes are read literally after the colon (`d32`, `a64`, `q`, `w`,
+  `ud`); immediates are parsed as hex or decimal (`0x2:q`, `0x1:w`).
+- `lsc_load.ugm` and `lsc_store.ugm` name their payload as a bare register in
+  IGC's output, so those operands are register numbers, not regions.
+
+The correspondence is a set of kernel-checked theorems:
+
+```lean
+theorem realAddOne_decodes : (decodeRealProgram realAddOne).isSome = true
+theorem realAddOne_decoded_length : ... = some 11
+theorem realAddOne_load  : ... is[7]? = some (.load 32 54 .d32 53)
+theorem realAddOne_addImm: ... is[8]? = some (.addImm 32 V55 V54 1 .w16)
+theorem realAddOne_store : ... is[9]? = some (.store 32 53 .d32 55)
+```
+
+Negative tests pin the fail-closed behaviour: a malformed execution size, a
+truncated instruction and a load payload written as a region all return `none`.
+
+Parsing is structural on `List Char` (no `String.splitOn`), so the proofs
+reduce in the kernel. The program-level proofs `unfold` the two decoder
+definitions and then `decide`; the audit records the `Classical.choice`
+dependency inherited from `String.toList`, as for the stage-5 decoder.
+
 ## Not modeled yet
 
-- IGC text parsing and register aliases (`r7:4`, `r12:2`).
+- IGC text parsing beyond the add-one subset, and register aliases
+  (`r7:4`, `r12:2`); stage 63 parses the real kernel's operand forms only.
 - The compiler-generated prolog and global-id / address computation.
 - SIMD masks, GRF regions, predicates, and scoreboards.
 - SEND/EOT details beyond a halted flag.
@@ -1317,4 +1351,6 @@ lake build Intel
 59. Stage 59: a SIMD lane dimension.
 60. Stage 60: memory-model laws.
 61. Stage 61: NaN payloads.
-62. Stage 62 (this PR): a real IGC kernel imported, and its decoder coverage.
+62. Stage 62: a real IGC kernel imported, and its decoder coverage.
+63. Stage 63 (this PR): a region-aware decoder for the real kernel, failing
+    closed on everything else.

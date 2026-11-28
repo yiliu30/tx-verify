@@ -31,6 +31,16 @@ KNOWN = {
     # These go through `decodeInstr`, hence through `String.toList`.
     "IntelGpu.realAddOne_rejected": {"Classical.choice"},
     "IntelGpu.realAddOne_unsupported": {"Classical.choice"},
+    # Stage 63 decoder: same `String.toList` path, plus `decide`-evaluated
+    # operand parsing. The theorems talk about parsed data only.
+    "IntelGpu.realAddOne_decodes": {"Classical.choice"},
+    "IntelGpu.realAddOne_decoded_length": {"Classical.choice"},
+    "IntelGpu.realAddOne_load": {"Classical.choice"},
+    "IntelGpu.realAddOne_addImm": {"Classical.choice"},
+    "IntelGpu.realAddOne_store": {"Classical.choice"},
+    "IntelGpu.parseExec_rejects_extra_field": {"Classical.choice"},
+    "IntelGpu.decodeReal_rejects_truncated": {"Classical.choice"},
+    "IntelGpu.decodeReal_rejects_region_payload": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -85,6 +95,9 @@ THEOREMS = [
     ("Intel.Fp16Value", "IntelGpu.vstep_nan_left"),
     ("Intel.Fp16Scaled", "IntelGpu.scaled_normal"),
     ("Intel.Fp16Gluing", "IntelGpu.scaled_eq_mag"),
+    ("Intel.RealDecode", "IntelGpu.realAddOne_decodes"),
+    ("Intel.RealDecode", "IntelGpu.realAddOne_load"),
+    ("Intel.RealDecode", "IntelGpu.realAddOne_store"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
