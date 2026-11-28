@@ -278,6 +278,26 @@ theorem epilogueLd_correct ... :
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 24: operand staging into SLM
+
+`Intel/Staging.lean` produces the DPAS operands instead of assuming them. A
+bulk copy moves an `M x d` A slab and an `N x d` B slab from global memory into
+SLM in the row-major layout the operands need, then a barrier retires:
+
+```lean
+def copyN ...                       -- dstMem[dst + k] := srcMem[src + k]
+theorem copyN_value ...             -- every copied word lands
+theorem copyN_frame ...             -- words outside the range are untouched
+def stageSlabProg ...               -- copy A, copy B, barrier
+theorem stageSlab_correct ... :
+    s.phase = 1 ∧
+      (∀ k < d, ∀ m < M, s.slm (m * d + k) = mem (aBase + m * d + k)) ∧
+      (∀ k < d, ∀ n < N, s.slm (M * d + n * d + k) = mem (bBase + n * d + k))
+theorem dpas_from_staged ...        -- the staged tile is the DPAS operand slab
+```
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -288,9 +308,8 @@ theorem epilogueLd_correct ... :
 - Atomics and the launch ABI.
 - fp16/bf16 rounding and instruction-level DPAS dispatch (the atom is modeled
   as a tile operation).
-- The staging path from global memory into the DPAS operands: the workgroup
-  SLM model is the two-lane stage-16/17 example, not yet connected to the
-  `256 x 256` tile's operand loads.
+- Per-work-item staging schedules: the bulk copy is modeled as one
+  workgroup-wide instruction rather than a per-lane distribution.
 
 ## Build
 
@@ -324,4 +343,5 @@ lake build Intel
 20. Stage 20: partial K tail, so the instance holds for every K.
 21. Stage 21: executed epilogue store and the end-to-end tile.
 22. Stage 22: epilogue leading dimension.
-23. Stage 23 (this PR): assembling executed tiles into `GemmSpecW`.
+23. Stage 23: assembling executed tiles into `GemmSpecW`.
+24. Stage 24 (this PR): operand staging from global memory into SLM.
