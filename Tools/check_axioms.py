@@ -2226,6 +2226,8 @@ THEOREMS = [
     ("Intel.TlaCmp", "IntelGpu.loopCmp_step_flags_other"),
     ("Intel.TlaCmp", "IntelGpu.loopCmp_step_regs"),
     ("Intel.TlaCmp", "IntelGpu.loopCmp_exit_iff"),
+    ("Intel.TlaLoopTail", "IntelGpu.tlaTail_continue"),
+    ("Intel.TlaLoopTail", "IntelGpu.tlaTail_exit"),
     ("Intel.TlaAluCensus", "IntelGpu.tlaAlu_r_count"),
     ("Intel.TlaAluCensus", "IntelGpu.tlaAlu_acc_count"),
     ("Intel.TlaAluCensus", "IntelGpu.tlaAlu_addr_count"),
