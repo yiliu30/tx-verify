@@ -2841,6 +2841,12 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 198: mainloop block census
+
+`Intel/TlaBlockCensus.lean` counts the decoded mainloop block `[959, 1404)`:
+445 instructions total, 130 block2d loads/stores, 103 sync forms, 32 DPAS and
+2 jumps. This is the composition inventory for the mainloop reconstruction.
+
 ## Stage 197: mainloop bounds
 
 `Intel/TlaMainloop.lean` records the decoded mainloop skeleton. The 32 DPAS
@@ -3329,4 +3335,5 @@ lake build Intel
 194. Stage 194: block2d memory forms.
 195. Stage 195: control and scoreboard forms.
 196. Stage 196: control-flow targets.
-197. Stage 197 (this PR): mainloop bounds.
+197. Stage 197: mainloop bounds.
+198. Stage 198 (this PR): mainloop block census.
