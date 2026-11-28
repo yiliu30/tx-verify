@@ -2652,6 +2652,19 @@ preservation are not IEEE behavior. It is still not a full IEEE FMA: general
 round-to-nearest for every binade, exception flags and fused multiply-add
 remain outside it.
 
+## Stage 157: coherence traffic between two caches
+
+`Intel/CacheTraffic.lean` models two workgroup caches over one shared
+visibility state. `TwoCache` has producer and consumer caches;
+`writeThroughBroadcast` stores and synchronously invalidates the other cache,
+and `TwoCacheCoherent` states that every valid line equals the visible global
+value. `producer_write_broadcast_consumer_observes` proves the fresh read, the
+negative tests show the stale line without the broadcast, and
+`producerPublishBroadcast_message_passing` covers the data-then-flag pattern.
+Assumptions: write-through, no write-allocate, one line per address per cache,
+synchronous broadcast invalidation, no directory/ownership protocol or relaxed
+atomics.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2870,4 +2883,5 @@ lake build Intel
 153. Stage 153: composing the 32 lane stores.
 154. Stage 154: write-through cache coherence.
 155. Stage 155: register-level FMHA mainloop.
-156. Stage 156 (this PR): fp16 special values and overflow.
+156. Stage 156: fp16 special values and overflow.
+157. Stage 157 (this PR): coherence traffic between two caches.
