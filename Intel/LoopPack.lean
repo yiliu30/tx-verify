@@ -63,4 +63,30 @@ theorem writeId24_qword (r : DRegs) (low high : Nat → Word) (l : Nat) (hl : l 
   have hdiv : (2 * l + 1) / 2 = l := by omega
   simp [qwordOf, writeId24, h2, h2', he, ho, hdiv]
 
+/-- The loop-carried index after one iteration: take the new id when the
+continuation predicate is true, otherwise keep the old id. -/
+def selectId (old new : Nat → Addr) (takeNew : Nat → Bool) : Nat → Addr :=
+  fun l => if takeNew l then new l else old l
+
+theorem selectId_true (old new : Nat → Addr) (takeNew : Nat → Bool) (l : Nat)
+    (h : takeNew l = true) :
+    selectId old new takeNew l = new l := by
+  simp [selectId, h]
+
+theorem selectId_false (old new : Nat → Addr) (takeNew : Nat → Bool) (l : Nat)
+    (h : takeNew l = false) :
+    selectId old new takeNew l = old l := by
+  simp [selectId, h]
+
+/-- Writing the selected low/high dwords back into the qword register
+reconstructs the selected 64-bit id. -/
+theorem writeId24_selected_qword (r : DRegs) (old new : Nat → Addr)
+    (takeNew : Nat → Bool) (l : Nat) (hl : l < 24) :
+    qwordOf (writeId24 r
+      (fun l => (selectId old new takeNew l).truncate 32)
+      (fun l => ((selectId old new takeNew l) >>> 32).truncate 32)) l =
+      selectId old new takeNew l := by
+  rw [writeId24_qword r _ _ l hl]
+  bv_decide
+
 end IntelGpu
