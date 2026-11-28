@@ -41,6 +41,19 @@ KNOWN = {
     "IntelGpu.parseExec_rejects_extra_field": {"Classical.choice"},
     "IntelGpu.decodeReal_rejects_truncated": {"Classical.choice"},
     "IntelGpu.decodeReal_rejects_region_payload": {"Classical.choice"},
+    # Stage 64 store model: `storeVec` picks a lane with `Classical.choose`
+    # when addresses alias, and `stepReal` embeds that choice.
+    "IntelGpu.storeVec_same": {"Classical.choice"},
+    "IntelGpu.storeVec_frame": {"Classical.choice"},
+    "IntelGpu.runReal_append": {"Classical.choice"},
+    "IntelGpu.realAddOne_preamble_mem": {"Classical.choice"},
+    "IntelGpu.realAddOne_tail_mem": {"Classical.choice"},
+    "IntelGpu.realAddOne_mem": {"Classical.choice"},
+    "IntelGpu.realAddOne_halted": {"Classical.choice"},
+    "IntelGpu.realAddOne_effect": {"Classical.choice"},
+    # The address proof and the decode bridge inherit the same model.
+    "IntelGpu.realAddOne_address_preamble": {"Classical.choice"},
+    "IntelGpu.realAddOne_decoded_eq": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -98,6 +111,9 @@ THEOREMS = [
     ("Intel.RealDecode", "IntelGpu.realAddOne_decodes"),
     ("Intel.RealDecode", "IntelGpu.realAddOne_load"),
     ("Intel.RealDecode", "IntelGpu.realAddOne_store"),
+    ("Intel.RealSemantics", "IntelGpu.realAddOne_decoded_eq"),
+    ("Intel.RealSemantics", "IntelGpu.realAddOne_address_preamble"),
+    ("Intel.RealSemantics", "IntelGpu.realAddOne_effect"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
