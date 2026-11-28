@@ -245,8 +245,50 @@ theorem gemmLoop_final (s : RealState) (aPtr bPtr cPtr : Addr)
   · simpa using hfinal.2.1
   · exact hfinal.2.2.trans h63.2
 
+
+theorem gemmEpilogue_mem (s : RealState) :
+    (runGemm s gemmEpilogue).mem =
+      storeVec s.mem 32 ((runGemm s gemmEpilogue).regs 85)
+        (fun l => low32 (s.regs 62 l)) := by
+  unfold gemmEpilogue runGemm
+  simp [runRealWith, stepGemm, stepWith, writeVecWith, setReg, readRegWith,
+    readSrcWith, srcIndex, gemmAlias, isWideOf, gemmRegType, RegType.is64,
+    binOpWide, add3Wide, shlWide]
+  rfl
+
+/-- The epilogue's store vector at a word index equal to lane `l`'s address
+holds that lane's sum. -/
+theorem gemmEpilogue_store_at (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word) (l : Nat) (hl : l < 32) (w : Nat)
+    (hw : w = (((runGemm s gemmEpilogue).regs 85) l).toNat / 4)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
+    (hdistinct : ∀ l', l' < 32 → l' ≠ l →
+      ((runGemm s gemmEpilogue).regs 85 l').toNat / 4 ≠
+        ((runGemm s gemmEpilogue).regs 85 l).toNat / 4) :
+    storeVec s.mem 32 ((runGemm s gemmEpilogue).regs 85)
+        (fun l => low32 (s.regs 62 l)) w = sum := by
+  subst hw
+  have hs := storeVec_same s.mem 32 ((runGemm s gemmEpilogue).regs 85)
+    (fun l => low32 (s.regs 62 l)) l hl hdistinct
+  rw [h.v62] at hs
+  simp at hs
+  exact hs
+
+/-- The final memory at lane `l`'s C word is that lane's sum. -/
+theorem gemmEpilogue_store_mem (s : RealState) (aPtr bPtr cPtr : Addr)
+    (i j0 k sum goX : Word) (l : Nat) (hl : l < 32) (w : Nat)
+    (hw : w = (((runGemm s gemmEpilogue).regs 85) l).toNat / 4)
+    (h : GemmLoopInv s aPtr bPtr cPtr l i j0 k sum goX)
+    (hdistinct : ∀ l', l' < 32 → l' ≠ l →
+      ((runGemm s gemmEpilogue).regs 85 l').toNat / 4 ≠
+        ((runGemm s gemmEpilogue).regs 85 l).toNat / 4) :
+    (runGemm s gemmEpilogue).mem w = sum := by
+  rw [gemmEpilogue_mem]
+  exact gemmEpilogue_store_at s aPtr bPtr cPtr i j0 k sum goX l hl w hw h hdistinct
+
 end
 
 end IntelGpu
+
 
 

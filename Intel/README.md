@@ -1573,6 +1573,29 @@ So 63 loop steps plus the final body accumulate all 64 terms and leave the
 exit predicate false. The remaining piece is the epilogue store at `C` and the
 final output statement.
 
+## Stage 76: the epilogue store at C
+
+`gemmEpilogue_mem` exposes the exact store vector of the epilogue:
+
+```lean
+theorem gemmEpilogue_mem :
+    (runGemm s gemmEpilogue).mem =
+      storeVec s.mem 32 ((runGemm s gemmEpilogue).regs 85)
+        (fun l => low32 (s.regs 62 l))
+```
+
+At lane `l`, with a word index `w` equal to the C address divided by four and
+the per-lane distinctness hypothesis, `gemmEpilogue_store_at` gives
+`storeVec ... w = sum`, and `gemmEpilogue_store_mem` gives the final memory:
+
+```lean
+theorem gemmEpilogue_store_mem :
+    (runGemm s gemmEpilogue).mem w = sum
+```
+
+The explicit `w` keeps the dependent index out of the statement; the final
+output theorem will instantiate `w = cPtr/4 + (i*64+j0+goX).toNat`.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1695,4 +1718,5 @@ lake build Intel
 72. Stage 72: make the GEMM loop invariant per-lane, matching the launch.
 73. Stage 73: prove the GEMM epilogue's C address.
 74. Stage 74: prove the K-induction over repeated loop steps.
-75. Stage 75 (this PR): prove the final iteration and the total `gemmDot 0 64`.
+75. Stage 75: prove the final iteration and the total `gemmDot 0 64`.
+76. Stage 76 (this PR): prove the epilogue store at `C`.
