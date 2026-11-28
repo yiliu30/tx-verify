@@ -594,6 +594,35 @@ identification definitional, and it is noted in the module.
 `#print axioms`: `laneBlockFold_eq_copyStrided` uses none; the rest only
 `[propext, Quot.sound]`.
 
+## Stage 38: fp16-shaped values on a shared grid
+
+Stage 34 takes the shared grid as a hypothesis. `Intel/Fp16Shape.lean` supplies
+it from an fp16-shaped value: `sign * mantissa * 2 ^ exponent` with an 11-bit
+significand.
+
+```lean
+structure Fixed where           -- sign, mantissa, unbiased exponent
+  sign : Bool
+  mant : Nat
+  exp : Nat
+def Fixed.mag ...               -- mantissa * 2 ^ exponent
+theorem Fixed.mag_eq ... :      -- an exponent >= e0 means a multiple of 2 ^ e0
+    v.mag = v.mant * 2 ^ (v.exp - e0) * 2 ^ e0
+theorem fp16_grid_exact ...     -- grid values accumulate exactly (stage 34)
+theorem fp16_grid_exact_of_exp ... :
+    -- every exponent >= e0 ⇒ maccDot (stepEven (2 ^ e0)) ... = accDot ...
+    ... = accDot ...
+```
+
+So fp16 operands whose exponents share a floor `e0`, accumulated on the same
+grid, compute the exact integer dot product with no rounding at all — the
+stage-34 hypothesis is now derived, not assumed.
+
+Out of scope, and said so in the module: negative exponents (subnormals and
+fractional values), NaN/Inf, and exponent overflow.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -602,9 +631,9 @@ identification definitional, and it is noted in the module.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
-- Bit-level fp16/bf16 rounding: stages 29-31 derive the per-step error from
-  concrete quantum roundings including ties-to-even, but IEEE-754 subnormals
-  and the fp16 exponent range are not modeled.
+- Bit-level fp16/bf16: stage 38 derives the shared-grid hypothesis from an
+  fp16-shaped value, but only for nonnegative exponents. Subnormals, NaN/Inf
+  and exponent overflow still need a real IEEE-754 value semantics.
 - Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
 - Strided per-thread staging as SYCL-TLA's copy atoms use it: stage 37 models
   a block distribution (lane `l` owns a contiguous chunk), not the interleaved
@@ -656,4 +685,5 @@ lake build Intel
 34. Stage 34: exactness on a shared quantization grid.
 35. Stage 35: executable checks for the workgroup stages.
 36. Stage 36: axiom audit over the whole stack.
-37. Stage 37 (this PR): distributed staging across lanes.
+37. Stage 37: distributed staging across lanes.
+38. Stage 38 (this PR): fp16-shaped values on a shared grid.
