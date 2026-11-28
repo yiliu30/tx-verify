@@ -49,6 +49,7 @@ THEOREMS = [
     ("Intel.Dpas", "IntelGpu.dpasRun_correct"),
     ("Intel.GemmDpasLoop", "IntelGpu.dpasProg_correct"),
     ("Intel.TlaInstance", "IntelGpu.tlaXeF16_gemm_spec"),
+    ("Intel.DpasAtom", "IntelGpu.dpasSlab_two_atoms"),
     ("Intel.DpasMask", "IntelGpu.tlaXeF16_gemm_spec_tail"),
     ("Intel.Epilogue", "IntelGpu.gemmTile_end_to_end"),
     ("Intel.EpilogueLd", "IntelGpu.epilogueLd_correct"),

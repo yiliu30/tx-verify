@@ -19,8 +19,11 @@ on a silent assumption.
    discharged.
 4. **SLM visibility** — writes are visible when they retire; the barrier orders
    phases, it does not model latency. `Intel/Slm.lean`. Not discharged.
-5. **DPAS as a tile operation** — per-instruction dispatch is not modelled.
-   `Intel/Dpas.lean`. Not discharged.
+5. **DPAS as a tile operation** — `Intel/Dpas.lean`. Discharged in part by
+   stage 49: a depth-`d` slab is a chain of atom-depth instructions over
+   shifted operands (`dpasSlab_split`, `dpasSlab_two_atoms`), so the tile
+   operation is a composition rather than a primitive. Register-file dispatch
+   itself is still not modelled.
 6. **Tile shape** `256 x 256 x 32` with an `8 x 16 x 16` atom, taken from the
    upstream Xe GEMM configuration. `Intel/TlaInstance.lean`. Re-check if
    upstream changes.
@@ -844,6 +847,26 @@ with kernel `decide`:
 The last pair is the executable form of the scale gap: a subnormal genuinely
 cannot be a `Fixed`.
 
+## Stage 49: DPAS at instruction granularity
+
+Assumption 5 said DPAS is one tile operation. `Intel/DpasAtom.lean` refines it:
+
+```lean
+theorem dpasSlab_split (dA rest) :
+    dpasSlab (dA + rest) A B m n =
+      dpasSlab dA A B m n +
+        dpasSlab rest (A shifted by dA) (B shifted by dA) m n
+theorem dpasSlab_two_atoms :
+    -- the SYCL-TLA K tile: depth 32 is two atom instructions of depth 16
+    dpasSlab 32 A B m n = dpasSlab 16 A B m n + dpasSlab 16 (shift 16) m n
+```
+
+The operand shift is the content: after an atom, the next instruction reads the
+operands `dA` columns further along — the register rotation the kernel does.
+So a tile DPAS is a chain of atom instructions, not a primitive.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -923,4 +946,6 @@ lake build Intel
 44. Stage 44: a value domain with NaN and infinities.
 45. Stage 45: CI builds the library and runs the axiom audit.
 46. Stage 46: values for every finite fp16.
-47. Stage 47 (this PR): executable checks for the fp16 path.
+47. Stage 47: executable checks for the fp16 path.
+48. Stage 48: consolidate the assumption ledger.
+49. Stage 49 (this PR): DPAS at instruction granularity.
