@@ -2583,6 +2583,18 @@ disjoint updates commute and sum pointwise. The logical tile addressing is a
 documented model assumption; the dump gives bases, not the full physical
 layout.
 
+## Stage 151: mask-aware execution for the loop body
+
+`Intel/MaskedBody.lean` gives non-mov instructions their execution masks.
+`stepMasked` applies `Exec.laneActive`/`Exec.laneIndex` to `add`, `add3`,
+loads and stores: inactive destination lanes keep their prior values and
+inactive store lanes emit no write. `stepMasked_*_reg_full` and the store
+agreement lemmas show that full 32-lane controls reproduce `stepWith`, and the
+`vaLoopBody_runMasked_*` theorems transfer the body's
+`C[id] = A[id] + B[id]` effect to the masked semantics. The module also
+records the footprint caveats: an inactive-store frame needs address
+disjointness, and offset masks compress destinations by lane index.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2795,4 +2807,5 @@ lake build Intel
 147. Stage 147: SBID fields in an encoded SEND descriptor.
 148. Stage 148: fp8 E4M3 decode for the FMHA atom.
 149. Stage 149: IEEE fp16 addition rounding.
-150. Stage 150 (this PR): register-level FMHA DPAS execution.
+150. Stage 150: register-level FMHA DPAS execution.
+151. Stage 151 (this PR): mask-aware execution for the loop body.
