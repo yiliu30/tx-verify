@@ -775,6 +775,13 @@ numbers, and the README says so.
   a block distribution (lane `l` owns a contiguous chunk), not the interleaved
   per-thread addressing.
 
+## CI
+
+`.github/workflows/build.yml` builds the `Intel` library and runs
+`Tools/check_axioms.py` on every push and pull request. The audit is the gate:
+a theorem that picks up an unexpected axiom fails the run, so the footprint
+claims in this file cannot drift from the code.
+
 ## Build
 
 Lean 4.35.0:

@@ -1,0 +1,19 @@
+name: build-and-audit
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the Intel library
+        uses: leanprover/lean-action@v1
+        with:
+          build-args: Intel
+
+      - name: Axiom audit
+        run: python3 Tools/check_axioms.py
