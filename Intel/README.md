@@ -89,6 +89,7 @@ lake build Intel
 6. Stage 6: IGC loop-control step semantics.
 7. Stage 7: data + control-flow semantics.
 8. Stage 8: GEMM body through data/control.
-9. Stage 9 (this PR): dot-product loop invariant.
-10. Stage 10: memory/pointer GEMM loop.
-11. Stage 11: SYCL-TLA GEMM instance.
+9. Stage 9: dot-product loop invariant.
+10. Stage 10 (this PR): memory body with pointer advance.
+11. Stage 11: memory/pointer GEMM loop.
+12. Stage 12: SYCL-TLA GEMM instance.
