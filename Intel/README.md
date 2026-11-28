@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 203: mainloop schedule
+
+`Intel/TlaSchedule.lean` classifies all 445 mainloop instructions into ten
+kinds: 152 moves, 8 predicated ALU ops, 130 predicated block2d ops, 7 plain
+block2d loads, 32 DPAS, 102 `sync.nop`, 1 `sync.bar`, 2 jumps, 4 labels and 7
+other scalar forms. The single barrier is at PC 1396 and every DPAS precedes
+it; the in-block jumps are at PCs 991 and 1401, and the unique back-edge is
+the jump at PC 1404 (immediately after the block) targeting PC 959.
+
 ## Stage 202: mainloop DPAS phase
 
 `Intel/TlaMainloopDpas.lean` extracts the 32 DPAS instructions of the mainloop
@@ -3379,4 +3388,5 @@ lake build Intel
 199. Stage 199: block2d address operands.
 200. Stage 200: block2d address semantics.
 201. Stage 201: mainloop operand-window loads.
-202. Stage 202 (this PR): mainloop DPAS phase.
+202. Stage 202: mainloop DPAS phase.
+203. Stage 203 (this PR): mainloop schedule.
