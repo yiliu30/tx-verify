@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 187: sequencing moves and the entry effect
+
+`Intel/TlaMovRun.lean` sequences decoded moves on the register file.
+`tlaMovRun_frame` proves a run that avoids a register leaves it unchanged, and
+`prologue_id_effect` composes the first two GEMM instructions: `r127` is zeroed
+for 16 elements, `r2` receives `r1` for 8 elements, and every other register is
+framed.
+
 ## Stage 186: executing the predicated moves
 
 `Intel/TlaMovExec.lean` executes a decoded move on the register file.
@@ -3226,4 +3234,5 @@ lake build Intel
 183. Stage 183: census of the predicated forms.
 184. Stage 184: the DPAS chain over BF16 values.
 185. Stage 185: decoding the predicated moves.
-186. Stage 186 (this PR): executing the predicated moves.
+186. Stage 186: executing the predicated moves.
+187. Stage 187 (this PR): sequencing moves and the entry effect.
