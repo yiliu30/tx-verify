@@ -79,6 +79,37 @@ THEOREMS = [
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
 
 
+def discover() -> dict[str, list[str]]:
+    """Every theorem in every Intel module, by module."""
+    found: dict[str, list[str]] = {}
+    for path in sorted(pathlib.Path("Intel").rglob("*.lean")):
+        rel = path.relative_to("Intel").with_suffix("")
+        module = "Intel." + ".".join(rel.parts)
+        names = []
+        for line in path.read_text().splitlines():
+            if line.startswith("theorem "):
+                names.append("IntelGpu." + line.split()[1])
+        found[module] = names
+    return found
+
+
+def axioms_of_many(module: str, theorems: list[str]) -> dict[str, set[str]]:
+    source = "\n".join(["import " + module, "", "open IntelGpu"]
+                        + ["#print axioms " + t for t in theorems] + [""])
+    with tempfile.TemporaryDirectory() as tmp:
+        path = pathlib.Path(tmp) / "Audit.lean"
+        path.write_text(source)
+        proc = subprocess.run(["lake", "env", "lean", str(path)],
+                              capture_output=True, text=True)
+    out: dict[str, set[str]] = {}
+    for line in (proc.stdout + proc.stderr).splitlines():
+        match = LINE.match(line.strip())
+        if match:
+            out[match.group("name")] = {
+                a.strip() for a in match.group("axioms").split(",") if a.strip()}
+    return out
+
+
 def axioms_of(module: str, theorem: str) -> set[str] | None:
     source = "\n".join(["import " + module, "", "open IntelGpu",
                          "#print axioms " + theorem, ""])
@@ -98,7 +129,36 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--also", action="append", default=[],
                         help="extra Module,theorem entries to audit")
+    parser.add_argument("--all", action="store_true",
+                        help="audit every theorem in every Intel module, not just the headlines")
     args = parser.parse_args()
+
+    if args.all:
+        modules = discover()
+        bad: list[tuple[str, list[str]]] = []
+        known: list[tuple[str, list[str]]] = []
+        count = 0
+        for module, theorems in modules.items():
+            if not theorems:
+                continue
+            count += len(theorems)
+            for theorem, axioms in axioms_of_many(module, theorems).items():
+                extra = axioms - ALLOWED
+                if not extra:
+                    continue
+                if extra <= KNOWN.get(theorem, set()):
+                    known.append((theorem, sorted(extra)))
+                else:
+                    bad.append((theorem, sorted(extra)))
+        for theorem, extra in known:
+            print(f"KNOWN: {theorem} also depends on {', '.join(extra)} (documented)")
+        for theorem, extra in bad:
+            print(f"DIRTY: {theorem} depends on {', '.join(extra)}")
+        if bad:
+            print(f"{len(bad)} dirty of {count} theorems")
+            return 1
+        print(f"OK: all {count} theorems, {len(known)} documented exception(s)")
+        return 0
 
     entries = list(THEOREMS)
     for item in args.also:
