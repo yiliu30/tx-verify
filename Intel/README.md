@@ -2841,6 +2841,18 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 252: `math.exp` and `math.inv`
+
+`Intel/TlaMath.lean` decodes the 33 `math.exp` and one `math.inv` forms and
+executes them through a `MufuModel`: bit-level functions plus a rational
+contract (`expErr`/`invErr`, `exp_mono`, `inv_anti`). The contract is a
+separate `MufuModel.Spec` predicate, so every theorem that consumes a budget
+carries it in the statement. Decoding is now **1965/1965 (100%)**; the math
+census is 33 `exp` and 1 `inv`, with worked examples at PC 1272 and PC 1774.
+Hardware evidence is recorded in `Tools/conformance/sycl_tla_fmha.md`: LSE
+vs a host reference max abs error `1.5e-05`, full output Passed; per-op MUFU
+samples remain TODO.
+
 ## Stage 251: `sync.allwr` waits
 
 `Intel/TlaSyncAllwr.lean` decodes the eight `sync.allwr ($a,$b,...)` forms,
@@ -3875,4 +3887,5 @@ lake build Intel
 248. Stage 248: negated sources and `.v` immediates.
 249. Stage 249: the select instruction.
 250. Stage 250: plain `cmp`, `not` and the `bfn` mux.
-251. Stage 251 (this PR): `sync.allwr` waits.
+251. Stage 251: `sync.allwr` waits.
+252. Stage 252 (this PR): `math.exp` and `math.inv`.

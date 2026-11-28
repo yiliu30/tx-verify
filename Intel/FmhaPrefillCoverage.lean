@@ -13,11 +13,11 @@ public import Intel.TlaDispatch
 instructions, 1965 statements). This module measures how much of it the
 merged GEMM stack already decodes with the total classifier `decodedAll`:
 
-- 1931 of 1965 statements decode (98.3%) after the `sel` decoder of stage
-  249, the plain `cmp`/`not`/`bfn` mux forms of stage 250 and the
-  `sync.allwr` waits of stage 251 (and the negated-source and `.v`
-  extensions of stage 248),
-- the 34 that do not are `math.exp` 33 and `math.inv`,
+- **1965 of 1965 statements decode (100%)** after the `sel`, plain
+  `cmp`/`not`/`bfn`, `sync.allwr` and `math.exp`/`math.inv` stages
+  (plus the negated-source and `.v` extensions of stage 248),
+- the 34 math instructions are 33 `math.exp` and one `math.inv`, modelled by
+  `MufuModel` with an explicit rational error contract,
 - 64 `dpas.8x8 (16|M0)` instructions: 4 use `null` as the second
   accumulator and 60 alias it to the first accumulator.
 
@@ -67,22 +67,22 @@ theorem fmhaPrefillCode_length : fmhaPrefillCode.length = 1965 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 8000000 in
-/-- 1931 statements decode with the merged stack. -/
+/-- All 1965 statements decode with the merged stack. -/
 theorem fmhaPrefill_decoded_count :
-    (fmhaPrefillPc.filter (fun p => decodedAll p.2)).length = 1931 := by decide
+    (fmhaPrefillPc.filter (fun p => decodedAll p.2)).length = 1965 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 8000000 in
-/-- 34 statements do not decode. -/
-theorem fmhaPrefill_unclassified_count : fmhaUnclassified.length = 34 := by decide
+/-- No statement remains unclassified. -/
+theorem fmhaPrefill_unclassified_count : fmhaUnclassified.length = 0 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 16000000 in
 /-- The unclassified forms and their counts. -/
 theorem fmhaPrefill_unclassified_forms :
     fmhaFormCensus =
-      [("sel", 0), ("mad-neg", 0), ("math.exp", 33), ("sync.allwr", 0),
-       ("mov", 0), ("cmp", 0), ("not", 0), ("bfn", 0), ("math.inv", 1)] := by
+      [("sel", 0), ("mad-neg", 0), ("math.exp", 0), ("sync.allwr", 0),
+       ("mov", 0), ("cmp", 0), ("not", 0), ("bfn", 0), ("math.inv", 0)] := by
   decide
 
 set_option maxRecDepth 1000000 in
@@ -166,6 +166,44 @@ theorem fmhaPrefill_plainCmp_parsed :
     (fmhaParsedAt 1169).bind parseTlaCmpInstr =
       some ⟨"", ⟨16, 0, true⟩, "lt", 3, 1,
         .reg ⟨4, 0, 0, 1, 1, 0⟩, .reg ⟨2, 0, 6, 0, 1, 0⟩⟩ := by decide
+
+/-- The decoded math instructions, in program order. -/
+def fmhaMath : List TlaMath :=
+  fmhaPrefillPc.filterMap (fun p => parseTlaMath p.2)
+
+set_option maxRecDepth 1000000 in
+/-- There are 34 math instructions: 33 `exp` and one `inv`. -/
+theorem fmhaPrefill_math_count : fmhaMath.length = 34 := by decide
+
+set_option maxRecDepth 1000000 in
+/-- 33 of the math instructions are `math.exp`. -/
+theorem fmhaPrefill_math_exp_count :
+    (fmhaMath.filter (fun m => m.op = .exp)).length = 33 := by decide
+
+set_option maxRecDepth 1000000 in
+/-- One math instruction is `math.inv`. -/
+theorem fmhaPrefill_math_inv_count :
+    (fmhaMath.filter (fun m => m.op = .inv)).length = 1 := by decide
+
+set_option maxRecDepth 1000000 in
+/-- PC 1272 is the first `math.exp`. -/
+theorem fmhaPrefill_exp_parsed :
+    (fmhaParsedAt 1272).bind parseTlaMath =
+      some ⟨.exp, ⟨16, 0, true⟩, ⟨39, 0, 0, 1, 1, 1⟩,
+        .reg ⟨22, 0, 0, 1, 1, 0⟩⟩ := by decide
+
+set_option maxRecDepth 1000000 in
+/-- PC 1774 is the `math.inv`. -/
+theorem fmhaPrefill_inv_parsed :
+    (fmhaParsedAt 1774).bind parseTlaMath =
+      some ⟨.inv, ⟨16, 0, true⟩, ⟨4, 0, 0, 1, 1, 1⟩,
+        .reg ⟨4, 0, 0, 1, 1, 0⟩⟩ := by decide
+
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 8000000 in
+/-- Every prefill statement is decoded. -/
+theorem fmhaPrefill_decoded_all :
+    fmhaPrefillPc.all (fun p => decodedAll p.2) = true := by decide
 
 /-- The decoded `sync.allwr` waits, in program order. -/
 def fmhaSyncAllwr : List TlaSyncAllwr :=

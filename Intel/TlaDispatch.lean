@@ -4,6 +4,7 @@ module
 public import Intel.TlaCmpGate
 public import Intel.TlaSel
 public import Intel.TlaSyncAllwr
+public import Intel.TlaMath
 public import Intel.TlaBfnExec
 public import Intel.TlaLoadPhase
 public import Intel.TlaControlDecode
@@ -31,6 +32,7 @@ structure TlaFullMachine where
   mem : TlaMem
   bti : Nat → Word
   log : List TlaMsg
+  mufu : MufuModel
 
 /-- The control effect of one instruction. -/
 inductive TlaCtl where
@@ -46,6 +48,7 @@ inductive TlaOp where
   | cmp (c : TlaCmp)
   | sel (s : TlaSel)
   | syncAllwr (s : TlaSyncAllwr)
+  | math (m : TlaMath)
   | bfn (b : TlaBfn)
   | send (s : TlaSend)
   | sync
@@ -98,6 +101,9 @@ def classifyOp (i : TlaInstr) : TlaOp :=
   match parseTlaSyncAllwr i with
   | some s => .syncAllwr s
   | none =>
+  match parseTlaMath i with
+  | some mt => .math mt
+  | none =>
   match i with
   | .label _ => .label
   | .plain "sync.nop" _ => .sync
@@ -124,6 +130,8 @@ def tlaStep? (m : TlaFullMachine) (i : TlaInstr) : Option (TlaFullMachine × Tla
   | .send s => some ({ m with log := tlaSendStep m.log s }, .next)
   | .sync => some (m, .next)
   | .syncAllwr _ => some (m, .next)
+  | .math t =>
+      some ({ m with state := { m.state with regs := t.step m.mufu m.state.regs } }, .next)
   | .jmp j => some (m, .jump j.target)
   | .label => some (m, .next)
   | .other => none
@@ -189,6 +197,12 @@ theorem tlaStep?_sync (m : TlaFullMachine) (i : TlaInstr) (h : classifyOp i = .s
     tlaStep? m i = some (m, .next) := by
   simp [tlaStep?, h]
 
+theorem tlaStep?_math (m : TlaFullMachine) (i : TlaInstr) (t : TlaMath)
+    (h : classifyOp i = .math t) :
+    tlaStep? m i =
+      some ({ m with state := { m.state with regs := t.step m.mufu m.state.regs } }, .next) := by
+  simp [tlaStep?, h]
+
 theorem tlaStep?_jmp (m : TlaFullMachine) (i : TlaInstr) (j : TlaJmp)
     (h : classifyOp i = .jmp j) :
     tlaStep? m i = some (m, .jump j.target) := by
@@ -208,7 +222,7 @@ theorem realTlaGemm_classified :
 /-- A canonical all-zero machine. -/
 def canonMachine : TlaFullMachine :=
   ⟨⟨fun _ _ => 0, fun _ _ => 0, fun _ _ => 0, fun _ _ => 0, fun _ _ => 0⟩,
-    ⟨fun _ _ => 0⟩, fun _ => 0, []⟩
+    ⟨fun _ _ => 0⟩, fun _ => 0, [], idMufu⟩
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 2000000 in
