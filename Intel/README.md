@@ -2841,6 +2841,13 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 199: block2d address operands
+
+`Intel/TlaAddr.lean` parses the `ss[a0.2][r2:1-0x...]`, `bti[255][r127:1]`
+and flat `[r4:1]` address forms into a `TlaAddr` structure. The parser is
+proved on all three examples, and `realTlaGemmBlock2d_addr_parse` shows that
+all 393 block2d address operands parse.
+
 ## Stage 198: mainloop block census
 
 `Intel/TlaBlockCensus.lean` counts the decoded mainloop block `[959, 1404)`:
@@ -3336,4 +3343,5 @@ lake build Intel
 195. Stage 195: control and scoreboard forms.
 196. Stage 196: control-flow targets.
 197. Stage 197: mainloop bounds.
-198. Stage 198 (this PR): mainloop block census.
+198. Stage 198: mainloop block census.
+199. Stage 199 (this PR): block2d address operands.
