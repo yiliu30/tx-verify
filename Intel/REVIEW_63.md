@@ -152,7 +152,7 @@ from `Classical.choose` in the racing-store model.
 - SYCL-TLA FMHA prefill: `Intel/FMHA_PREFILL_PROPOSAL.md` scopes the next
   kernel family. The prefill dump decodes 1813/1965 statements (92.3%) with
   the GEMM stack; the 152 unclassified forms (`sel`, negated `mad` sources,
-  `math.exp`/`inv`, `sync.allwr` and four singletons) and the softmax,
+  `math.exp`/`inv`, `sync.allwr` and five singletons) and the softmax,
   online-rescaling and causal-mask semantics are staged in the proposal.
 
 ## Stage index 137-172
