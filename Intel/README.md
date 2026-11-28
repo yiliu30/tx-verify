@@ -2370,6 +2370,13 @@ IDs for lanes 0..23.
 `V0075`/`V0076` simultaneously contain the next ID halves. The high pack
 preserves `V0075`, and the low pack preserves the `V0074` source register.
 
+## Stage 128: increment packs preserve the size dwords
+
+`vaPackIncBoth_preserves49` proves all four increment-pack moves leave
+`V0049` untouched; `vaPackIncBoth_preserves49_low32` exposes the form used by
+the second guard. The P6 path therefore does not need a post-pack size
+assumption.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2559,4 +2566,5 @@ lake build Intel
 124. Stage 124: derive P3 with preserved size dwords.
 125. Stage 125: execute the increment's low pack.
 126. Stage 126: execute the increment's high pack.
-127. Stage 127 (this PR): compose both increment packs.
+127. Stage 127: compose both increment packs.
+128. Stage 128 (this PR): prove increment packs preserve the size dwords.
