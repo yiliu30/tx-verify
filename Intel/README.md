@@ -1382,12 +1382,47 @@ Visibility, synchronization and a full hardware memory model remain open; this
 stage covers byte-level accesses, alignment, aliasing and race freedom at byte
 granularity.
 
+## Stage 68: the GEMM's own tables and loop entry
+
+The semantics is now parameterised rather than add-one-specific:
+`stepWith alias typeOf` takes the register-alias and declared-type tables, and
+`runRealWith` is the generic straight-line fold. `stepReal`/`runReal` are the
+add-one instances, so all earlier proofs are unchanged.
+
+`Intel/GemmReal.lean` instantiates both tables from the real GEMM dump:
+
+```
+gemmAlias    V0052 -> V0042   V0056 -> V0041   V0059 -> V0034   V0060 -> V0035
+             V0065 -> V0063   V0068 -> V0067   V0073 -> V0071   V0076 -> V0075
+             V0079 -> V0061   V0081 -> V0036   V0083 -> V0080   V0086 -> V0085
+gemmRegType / gemmRegElems   the dump's `.decl` types and element counts
+```
+
+The first 11 statements are proved to be a prefix of the decoded program
+(`realGemm_preamble_prefix`), and the preamble's executions are proved:
+
+```lean
+gemmI  = localSizeY * r0[6] + zeroExtend(localIdY) + globalOffset[1]
+gemmJ0 = localSizeX * r0[1] + zeroExtend(localIdX)
+
+theorem gemmPreamble_entry :
+    V0058 = zeroExtend (gemmI <<< 6) ∧
+    V0057 = zeroExtend gemmJ0 ∧
+    V0061 = 0 ∧ V0062 = 0
+```
+
+`gemmPreamble_dst_counts` checks every preamble destination against its
+declared type and element count, so whole-register writes stay exact. The next
+GEMM stage is the loop body: the two address chains, the load/multiply/add and
+the counter/branch, followed by the K-induction and the final store.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
   register aliasing (`r7:4`, `r12:2`); stages 63-66 cover those two dumps'
   operand forms and numeric aliases only.
-- The GEMM's global-id and address computation; the add-one chain is stage 64.
+- The GEMM's loop-body address chains and functional loop proof; its global-id
+  preamble is stage 68, and the add-one chain is stage 64.
 - Cross-workgroup visibility, synchronization, caches and SLM aliasing; stage
   67 refines aligned accesses to bytes and proves byte-range disjointness.
 - SIMD masks and scoreboards. Stage 64 interprets this kernel's broadcast and
@@ -1492,5 +1527,7 @@ lake build Intel
     coverage of its control-flow shell.
 66. Stage 66: decode the control-flow shell and interpret labels, predicates
     and both `goto` forms.
-67. Stage 67 (this PR): byte-addressed memory, alignment, aliasing and
-    byte-range race freedom.
+67. Stage 67: byte-addressed memory, alignment, aliasing and byte-range race
+    freedom.
+68. Stage 68 (this PR): parameterise the semantics and prove the real GEMM's
+    preamble and loop-entry values.
