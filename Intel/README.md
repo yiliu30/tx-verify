@@ -2015,6 +2015,21 @@ theorem mask_offset_load_bearing :
 The last theorem is the negative test for stage 92: a decoder that dropped the
 mask would still pass syntax checks but would activate the wrong lane set.
 
+## Stage 99: packed DPAS operands
+
+The real FMHA instruction's operands are now given their ISA layouts:
+
+- A (`r39:hf8`) and C (`r383:f`) are row-major register-file data;
+- B (`r335.0:hf8`) is column-packed, with depth `k` in byte `k % 4` of dword
+  `n` in GRF `k / 4` after the base;
+- `fmhaRealPackedAtom_correct` connects those packed operands to
+  `fmhaAtom_correct`;
+- `fmhaRealB_address` checks one concrete B address.
+
+The GRF width is parameterised (8 or 16 dwords); the real instance uses 16.
+This models the documented layout, while the compiler's choice of operand
+bases remains transcribed from the dump.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2171,4 +2186,5 @@ lake build Intel
 95. Stage 95: decode predicated gotos and close vector-add coverage.
 96. Stage 96: execute masked moves with M5 lane offsets.
 97. Stage 97: prove stride-two masked destinations.
-98. Stage 98 (this PR): masked-move frames and a load-bearing mask test.
+98. Stage 98: masked-move frames and a load-bearing mask test.
+99. Stage 99 (this PR): packed DPAS operands for the real FMHA atom.
