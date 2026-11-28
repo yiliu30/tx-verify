@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 227: aliasing laws
+
+`Intel/TlaAliasing.lean` records the alias behaviour of the TLA memory and
+windows: tile addresses alias exactly when the words are equal
+(`tileAddr_eq_of_toNat_eq`), a second store to the same tile replaces the first
+(`storeTile_storeTile_same`), stores to different tiles commute
+(`storeTile_storeTile_other`), and when two windows overlap on a physical
+element the later active write wins while an inactive write leaves the earlier
+value or the frame intact (`writeWindow_writeWindow_share`,
+`writeWindow_writeWindow_share_inactive`).
+
 ## Stage 226: mainloop loads feed the DPAS operands
 
 `Intel/TlaOperandLoad.lean` composes the five plain mainloop loads (PCs 979,
@@ -3620,4 +3631,5 @@ lake build Intel
 223. Stage 223: unified instruction dispatcher.
 224. Stage 224: 64-bit multiply high/low.
 225. Stage 225: trusted-base consolidation.
-226. Stage 226 (this PR): mainloop loads feed the DPAS operands.
+226. Stage 226: mainloop loads feed the DPAS operands.
+227. Stage 227 (this PR): aliasing laws.
