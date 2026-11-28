@@ -406,6 +406,65 @@ def runRealCFWith (step : RealState → RInstr → RealState) (code : List RInst
 /-- The add-one instance of the control-flow interpreter. -/
 abbrev runRealCF := runRealCFWith stepReal
 
+/-- A per-lane control-flow interpreter. `gotoIf` reads the predicate for the
+selected lane, unlike `runRealCF`, which is the uniform lane-0 model. -/
+def runRealCFLaneWith (step : RealState → RInstr → RealState) (code : List RInstr)
+    (s : RealState) (pc fuel : Nat) (lane : Nat) : RealState :=
+  match fuel with
+  | 0 => s
+  | fuel + 1 =>
+      match code[pc]? with
+      | none => s
+      | some (.label _) => runRealCFLaneWith step code s (pc + 1) fuel lane
+      | some (.goto _ l) =>
+          match labelIndex code l with
+          | some pc' => runRealCFLaneWith step code s pc' fuel lane
+          | none => s
+      | some (.gotoIf _ p negated l) =>
+          let taken := if negated then !(s.preds p lane) else s.preds p lane
+          if taken then
+            match labelIndex code l with
+            | some pc' => runRealCFLaneWith step code s pc' fuel lane
+            | none => s
+          else runRealCFLaneWith step code s (pc + 1) fuel lane
+      | some i => runRealCFLaneWith step code (step s i) (pc + 1) fuel lane
+
+theorem runRealCFLaneWith_zero (step : RealState → RInstr → RealState)
+    (code : List RInstr) (s : RealState) (pc fuel : Nat) :
+    runRealCFLaneWith step code s pc fuel 0 = runRealCFWith step code s pc fuel := by
+  induction fuel generalizing pc s with
+  | zero => rfl
+  | succ fuel ih =>
+      cases hcode : code[pc]? with
+      | none => simp [runRealCFLaneWith, runRealCFWith, hcode]
+      | some i =>
+          cases i with
+          | label name => simp [runRealCFLaneWith, runRealCFWith, hcode, ih]
+          | goto n l => simp [runRealCFLaneWith, runRealCFWith, hcode, ih]
+          | gotoIf n p negated l => simp [runRealCFLaneWith, runRealCFWith, hcode, ih]
+          | _ => simp [runRealCFLaneWith, runRealCFWith, hcode, ih]
+
+/-- A taken predicated branch for a selected lane jumps to its label. -/
+theorem runRealCFLane_gotoIf_taken (step : RealState → RInstr → RealState)
+    (code : List RInstr) (s : RealState) (pc fuel : Nat) (lane : Nat)
+    (n : Exec) (p : Nat) (negated : Bool) (l : String) (pc' : Nat)
+    (hcode : code[pc]? = some (.gotoIf n p negated l))
+    (hpred : (if negated then !s.preds p lane else s.preds p lane) = true)
+    (htarget : labelIndex code l = some pc') :
+    runRealCFLaneWith step code s pc (fuel + 1) lane =
+      runRealCFLaneWith step code s pc' fuel lane := by
+  simp [runRealCFLaneWith, hcode, hpred, htarget]
+
+/-- A not-taken predicated branch for a selected lane falls through. -/
+theorem runRealCFLane_gotoIf_not_taken (step : RealState → RInstr → RealState)
+    (code : List RInstr) (s : RealState) (pc fuel : Nat) (lane : Nat)
+    (n : Exec) (p : Nat) (negated : Bool) (l : String)
+    (hcode : code[pc]? = some (.gotoIf n p negated l))
+    (hpred : (if negated then !s.preds p lane else s.preds p lane) = false) :
+    runRealCFLaneWith step code s pc (fuel + 1) lane =
+      runRealCFLaneWith step code s (pc + 1) fuel lane := by
+  simp [runRealCFLaneWith, hcode, hpred]
+
 theorem runRealWith_append (step : RealState → RInstr → RealState)
     (s : RealState) (is js : List RInstr) :
     runRealWith step s (is ++ js) = runRealWith step (runRealWith step s is) js := by

@@ -2214,6 +2214,17 @@ uses `V0065` as their alias. `vaLoopSize` assembles the 64-bit value,
 proves the guard is false after one stride. This connects the size constant to
 the termination arithmetic; the decoded compare/branch sequence remains.
 
+## Stage 112: per-lane control flow
+
+`runRealCFLaneWith` extends the control-flow interpreter with an explicit lane:
+`gotoIf` reads that lane's predicate instead of the uniform lane-0 bit.
+`runRealCFLaneWith_zero` proves it agrees with the existing interpreter at lane
+0, and `runRealCFLane_gotoIf_taken` / `_not_taken` expose the two branch cases.
+
+This is the control-flow piece needed to connect the loop guard and
+termination facts to the decoded `sel`/branch sequence without assuming
+uniformity across all lanes.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2387,4 +2398,5 @@ lake build Intel
 108. Stage 108: prove the loop-carried ID selection law.
 109. Stage 109: compose the real index and body into a per-lane effect.
 110. Stage 110: prove the loop exits after one body.
-111. Stage 111 (this PR): connect global-size dwords to the continuation guard.
+111. Stage 111: connect global-size dwords to the continuation guard.
+112. Stage 112 (this PR): add per-lane control flow and branch lemmas.
