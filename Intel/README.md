@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 259: QK^T chain composition
+
+`Intel/TlaFmhaQk.lean` proves the four QK^T accumulator chains. Each group
+(`r42`, `r50`, `r58`, `r66`) has eight atoms whose A/B sources are entirely
+above or below the group accumulator, so `fmhaAtomRun_fixed_acc` gives the
+block as its initial value plus the ordered eight-slab sum
+(`qk42_sum`, `qk50_sum`, `qk58_sum`, `qk66_sum`). This closes the QK^T phase
+composition gap from stage 258.
+
 ## Stage 258: verification summary and FMHA page
 
 `Intel/FmhaSummary.lean` collects the headline facts into
@@ -3956,4 +3965,5 @@ lake build Intel
 255. Stage 255: causal mask.
 256. Stage 256: FMHA DPAS atoms.
 257. Stage 257: PV chain and epilogue ratio.
-258. Stage 258 (this PR): verification summary and FMHA page.
+258. Stage 258: verification summary and FMHA page.
+259. Stage 259 (this PR): QK^T chain composition.

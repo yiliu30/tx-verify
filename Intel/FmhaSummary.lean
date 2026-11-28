@@ -3,6 +3,7 @@ module
 
 public import Intel.FmhaPrefillCoverage
 public import Intel.TlaFmhaPv
+public import Intel.TlaFmhaQk
 public import Intel.TlaEpilogue
 public import Intel.TlaMask
 
@@ -53,9 +54,17 @@ theorem fmha_phase_summary : FmhaPhaseSummary :=
   ⟨fmhaDpas_length, fmhaDpas_null_count, fmhaDpas_alias_count,
    qkDpas_length, pvDpas_length, pv74_length⟩
 
+/-- The four QK^T accumulator groups and the PV group. -/
+def FmhaQkSummary : Prop :=
+  (qkGroup 42).length = 8 ∧ (qkGroup 50).length = 8 ∧
+  (qkGroup 58).length = 8 ∧ (qkGroup 66).length = 8 ∧ pv74.length = 2
+
+theorem fmha_qk_summary : FmhaQkSummary :=
+  ⟨qk42_length, qk50_length, qk58_length, qk66_length, pv74_length⟩
+
 /-- The headline checklist. -/
 theorem fmha_prefill_summary :
-    FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary :=
-  ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary⟩
+    FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary :=
+  ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary⟩
 
 end IntelGpu
