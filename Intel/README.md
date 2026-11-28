@@ -2429,6 +2429,17 @@ next-ID guard.
 and the stride move, preserving memory, predicates and `V0059` while writing
 `V0067[0]` from `V0068`/`V0037`.
 
+## Stage 136: per-lane end-to-end control path
+
+`Intel/LoopEndToEnd.lean` composes the decoded entry, body, increment and
+second-guard slices with the per-lane interpreter. `vaLoop_lane_body_exit`
+proves that a lane entering at PC 17 with `P3 = true` reaches the exit branch
+at PC 44 when `P6 = false`; `vaLoopP6_false_of_range` derives that exit from
+the range-completion fact.
+
+The body's store effect is proved in `Intel/LoopBodyExec.lean`, but transporting
+it through the remaining slices is still open.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2626,4 +2637,5 @@ lake build Intel
 132. Stage 132: execute the decoded P3 prefix.
 133. Stage 133: execute the decoded P6 prefix.
 134. Stage 134: execute the decoded body slice.
-135. Stage 135 (this PR): execute the decoded entry slice.
+135. Stage 135: execute the decoded entry slice.
+136. Stage 136 (this PR): compose the per-lane decoded control path.
