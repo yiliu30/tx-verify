@@ -349,6 +349,8 @@ THEOREMS = [
     ("Intel.LoopPack", "IntelGpu.selectId_true"),
     ("Intel.LoopPack", "IntelGpu.selectId_false"),
     ("Intel.LoopPack", "IntelGpu.writeId24_selected_qword"),
+    ("Intel.LoopPack", "IntelGpu.packLow_dword"),
+    ("Intel.LoopPack", "IntelGpu.packHigh_dword"),
     ("Intel.Fp16Ieee", "IntelGpu.vstepIEEE_zero_left"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_fin"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_ne_fin"),

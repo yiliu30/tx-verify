@@ -2264,6 +2264,13 @@ register facts from the pack moves.
 is the same lexicographic/64-bit guard, now from the increment's packed halves
 in `V0075`/`V0076`. Both real guard blocks are therefore covered.
 
+## Stage 116: packed halves of a qword ID array
+
+`idDwords` is the dword view of a qword-per-lane ID array. `packLow_dword` and
+`packHigh_dword` prove the 24-lane even/odd packs select exactly the low and
+high dwords of each qword. This connects the pack layout to the register-halves
+premises used by the guard predicates.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2441,4 +2448,5 @@ lake build Intel
 112. Stage 112: add per-lane control flow and branch lemmas.
 113. Stage 113: materialize the decoded loop and branch sites.
 114. Stage 114: prove the first guard predicate from packed halves.
-115. Stage 115 (this PR): prove the second guard predicate.
+115. Stage 115: prove the second guard predicate.
+116. Stage 116 (this PR): prove the packed low/high halves of a qword ID array.
