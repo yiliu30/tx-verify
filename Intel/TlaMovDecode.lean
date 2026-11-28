@@ -28,6 +28,7 @@ inductive TlaDst where
 /-- A TLA source operand: a GRF region or an immediate. -/
 inductive TlaSrc where
   | reg (g : Grf)
+  | cr (num sub : Nat)
   | imm (v : Int) (w : Width)
   deriving Repr, DecidableEq
 

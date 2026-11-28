@@ -64,11 +64,17 @@ def isRReg (s : String) : Bool :=
 
 /-- The `<v;h>` source shorthand used by some ALU operands. -/
 def parseTlaSrcAlu (s : String) : Option TlaSrc :=
-  if isRReg s then
-    match numRuns (operandCore s) with
-    | [n, sub, v, h] => some (.reg ⟨n, 0, sub, v, 1, h⟩)
-    | _ => parseTlaSrc s
-  else parseTlaSrc s
+  match (operandCore s).toList with
+  | 'c' :: 'r' :: _ =>
+      match numRuns (operandCore s) with
+      | [n, sub, _] => some (.cr n sub)
+      | [n, sub, _v, _w, _h] => some (.cr n sub)
+      | _ => none
+  | 'r' :: _ =>
+      match numRuns (operandCore s) with
+      | [n, sub, v, h] => some (.reg ⟨n, 0, sub, v, 1, h⟩)
+      | _ => parseTlaSrc s
+  | _ => parseTlaSrc s
 
 /-- Parse an ALU destination class. -/
 def parseTlaAluDst (s : String) : Option TlaAluDst :=
@@ -85,6 +91,7 @@ def parseTlaAluDst (s : String) : Option TlaAluDst :=
   | 'c' :: 'r' :: _ =>
       match numRuns (operandCore s) with
       | [n, sub, _] => some (.cr n sub)
+      | [n, sub, _v, _w, _h] => some (.cr n sub)
       | _ => none
   | 'f' :: _ =>
       match numRuns (operandCore s) with
