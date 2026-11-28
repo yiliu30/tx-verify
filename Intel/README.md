@@ -2411,6 +2411,12 @@ At PC 25, `vaLoopIncAdd_value` proves the loop computes
 plus first guard and that running it sets `P3` to the proved guard on every
 active lane.
 
+## Stage 133: executing the decoded P6 prefix
+
+`Intel/LoopP6Exec.lean` proves the decoded PC 26..34 slice is exactly the
+increment packs plus second guard and that running it sets `P6` to the proved
+next-ID guard.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2605,4 +2611,5 @@ lake build Intel
 129. Stage 129: derive full P6 from executed increment packs.
 130. Stage 130: compose the decoded P3/P6 branches.
 131. Stage 131: prove the increment add.
-132. Stage 132 (this PR): execute the decoded P3 prefix.
+132. Stage 132: execute the decoded P3 prefix.
+133. Stage 133 (this PR): execute the decoded P6 prefix.
