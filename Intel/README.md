@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 175: total decoder for the SYCL-TLA dump
+
+`Intel/TlaDecode.lean` adds `TlaInstr` and a total, lossless decoder for the
+raw SYCL-TLA program. `TlaInstr` separates labels, predicate-prefixed forms
+such as `(W) mov`, `dpas.8x8` with its two accumulators and two sources, and
+plain instructions. `decodeTla` preserves every statement: the census proves
+2252 statements, 968 predicated forms and 32 DPAS, and that every DPAS is
+8x8 with execution size 16, two FP32 accumulators and two BF16 sources. This
+is a decoding layer; connecting `TlaInstr` to the execution semantics is the
+next stage.
+
 ## Stage 174: real SYCL-TLA GEMM import
 
 `Intel/Examples/RealTlaGemm.lean` is the raw IGC assembly of the SYCL-TLA
@@ -3095,4 +3106,5 @@ lake build Intel
 171. Stage 171: sticky per-lane flags.
 172. Stage 172: directed-rounding FMA.
 173. Stage 173: review stage map refresh.
-174. Stage 174 (this PR): real SYCL-TLA GEMM import.
+174. Stage 174: real SYCL-TLA GEMM import.
+175. Stage 175 (this PR): total decoder for the SYCL-TLA dump.
