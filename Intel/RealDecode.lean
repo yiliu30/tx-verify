@@ -25,8 +25,9 @@ GEMM's control-flow shell, and fails closed on everything else:
   region, so those operands are bare register numbers.
 - `decodeReal` / `decodeRealProgram`: the decoder, `Option`-valued. Besides
   arithmetic, loads and stores it reads labels, `mov` with an immediate source,
-  the three-operand `or`, `cmp.lt` into a predicate, `goto` and the predicated
-  `(!P1) goto`. `parseWidth` accepts IGC's `:d` dword suffix as `d32`.
+  the three-operand `or`, predicate logic, both register comparisons, `goto`
+  and a predicated `goto` for any predicate number and polarity. `parseWidth`
+  accepts IGC's `:d` dword suffix as `d32`.
 
 Parsing works on `List Char` with structural recursion rather than
 `String.splitOn`, so the `decide` proofs below reduce in the kernel.
@@ -286,6 +287,23 @@ def parsePred (s : String) : Option Nat :=
       | _ => none
   | _ => none
 
+/-- A predicated goto mnemonic, `(!P3) goto` or `(P3) goto`. -/
+def parsePredGoto (s : String) : Option (Nat × Bool) :=
+  match s.toList with
+  | '(' :: '!' :: 'P' :: rest =>
+      let digits := rest.takeWhile isDigit
+      if digits.isEmpty then none
+      else if rest.dropWhile isDigit = [')', ' ', 'g', 'o', 't', 'o'] then
+        some (digitsToNat digits, true)
+      else none
+  | '(' :: 'P' :: rest =>
+      let digits := rest.takeWhile isDigit
+      if digits.isEmpty then none
+      else if rest.dropWhile isDigit = [')', ' ', 'g', 'o', 't', 'o'] then
+        some (digitsToNat digits, false)
+      else none
+  | _ => none
+
 def decodeReal : Stmt → Option RInstr
   | .label name => some (.label name)
   | .instruction op operands =>
@@ -370,10 +388,10 @@ def decodeReal : Stmt → Option RInstr
           match parseExec e with
           | some n => some (.goto n l)
           | none => none
-      | "(!P1) goto", [e, l] =>
-          match parseExec e with
-          | some n => some (.gotoIf n 1 true l)
-          | none => none
+      | op, [e, l] =>
+          match parseExec e, parsePredGoto op with
+          | some n, some (p, negated) => some (.gotoIf n p negated l)
+          | _, _ => none
       | op, [e, d, a, b] =>
           match parseSelPred op, parseExec e, parseGrf d, parseGrf a, parseGrf b with
           | some p, some n, some x, some y, some z => some (.sel n p x y z)

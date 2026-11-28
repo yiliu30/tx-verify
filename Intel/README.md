@@ -1954,6 +1954,17 @@ lane, writing the destination predicate only on active lanes. `cmpLtReg_lane`,
 The decoder now accepts 39 of 41 vector-add instructions; only the two
 predicated `goto`s remain.
 
+## Stage 95: predicated gotos decoded
+
+The predicated-branch mnemonic now parses any predicate and both polarities:
+the literal `(!P1) goto` special case became `parsePredGoto`, with
+`predicated_gotos_decode` checking the real `(!P3)` and `(!P6)` forms. All 41
+vector-add instructions (46 statements including five labels) decode.
+
+Control flow is still the documented uniform model: `runRealCF` reads lane 0.
+This stage closes decoding, not divergent branch execution; per-lane branch
+masks and re-convergence remain open.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1967,8 +1978,9 @@ predicated `goto`s remain.
   interprets this kernel's broadcast and dense GRF regions, not the general
   region algebra; stage 66 models one uniform predicate bit for the GEMM's
   control flow; stages 90-93 add per-lane predicates, predicated `sel` and
-  predicate `and`/`or` and register comparisons; stage 92 decodes M1-M8 masks
-  but does not yet apply their lane offset.
+  predicate `and`/`or`, register comparisons and predicated gotos; stage 92
+  decodes M1-M8 masks but does not yet apply their lane offset. `gotoIf`
+  remains a uniform lane-0 branch.
 - SEND issue/completion/wait and the register scoreboard are stage 78; raw
   message operand layout, EOT details beyond a halted flag, and the exact SBID
   assignments (not printed in the assembly) remain.
@@ -2104,4 +2116,5 @@ lake build Intel
 91. Stage 91: execute predicated select per lane.
 92. Stage 92: decode M1-M8 execution masks without dropping them.
 93. Stage 93: execute predicate `and` and `or` per lane.
-94. Stage 94 (this PR): execute register-register `cmp.lt` and `cmp.eq`.
+94. Stage 94: execute register-register `cmp.lt` and `cmp.eq`.
+95. Stage 95 (this PR): decode predicated gotos and close vector-add coverage.
