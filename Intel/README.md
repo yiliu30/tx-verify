@@ -2550,6 +2550,16 @@ and that waiting on or committing one token does not consume the other.
 Out-of-range SBID fields are rejected. The layout is a model assumption, not
 a binary reading: the dumps do not print SBIDs.
 
+## Stage 148: fp8 E4M3 decode for the FMHA atom
+
+`Intel/Fp8Decode.lean` models the low-precision element path of the coded FMHA
+atom. It decodes E4M3FN (bias 7, subnormals, `S.1111.111` as NaN, no infinity)
+into an exact fixed-point value, proves the exact values of `1.0`, `1.5`,
+`2.0`, `0.5`, zero, the minimum subnormal and the maximum finite, and defines
+`fmhaAtomFp8` over fp8 tiles. `fmhaAtomFp8_eq_fmhaAtom` connects it to the
+existing atom when every read element is non-NaN, and the concrete all-ones and
+unit-tile theorems check the 32-term atom by computation.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2759,4 +2769,5 @@ lake build Intel
 144. Stage 144: reaching `ret` with the halt flag.
 145. Stage 145: global/SLM disjointness and workgroup barriers.
 146. Stage 146: grid-stride indices and store composition.
-147. Stage 147 (this PR): SBID fields in an encoded SEND descriptor.
+147. Stage 147: SBID fields in an encoded SEND descriptor.
+148. Stage 148 (this PR): fp8 E4M3 decode for the FMHA atom.
