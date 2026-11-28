@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 243: one kernel entry for the whole conformance matrix
+
+Re-dumping each problem size in the conformance matrix produces the same
+kernel entry with the imported sha256 (`698d4a30...73c12`), so the
+`RealTlaGemm` program is the kernel behind all four bit-exact hardware runs;
+the sizes differ only in launch geometry and loop bounds. Recorded in
+`Tools/conformance/sycl_tla_gemm.md`; no Lean declarations change.
+
 ## Stage 242: remaining-work review pass
 
 `Intel/REVIEW_63.md` credits the SYCL-TLA stages in the remaining-work list:
@@ -3784,4 +3792,5 @@ lake build Intel
 239. Stage 239: refined instruction classification.
 240. Stage 240: jump predicate evaluation.
 241. Stage 241: the second accumulator block's output store.
-242. Stage 242 (this PR): remaining-work review pass.
+242. Stage 242: remaining-work review pass.
+243. Stage 243 (this PR): one kernel entry for the whole conformance matrix.

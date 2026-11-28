@@ -145,9 +145,10 @@ from `Classical.choose` in the racing-store model.
   because the dumps do not print the field;
 - SYCL-TLA GEMM: all 2252 statements are decoded and classified (stages
   219-220, 239), the mainloop runs end-to-end with both accumulator sums and
-  their stores (stages 200-241), and the binary behind the four bit-exact
-  hardware runs re-dumps to the imported sha256 (stages 231-232); the SBID
-  field and the hardware FP32 product rounding remain.
+  their stores (stages 200-241); the binary behind the four bit-exact hardware
+  runs re-dumps to the imported sha256, and every problem size dispatches to
+  that same kernel entry (stages 231-232, 243). The SBID field and the
+  hardware FP32 product rounding remain.
 
 ## Stage index 137-172
 
@@ -259,6 +260,7 @@ from `Classical.choose` in the racing-store model.
 | 240 | #242 | jump predicate evaluation |
 | 241 | #243 | second accumulator block output store |
 | 242 | #244 | remaining-work review pass |
+| 243 | #245 | one kernel entry for the whole conformance matrix |
 
-The stack is intentionally one PR per stage (#64-#244), as requested. The
+The stack is intentionally one PR per stage (#64-#245), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
