@@ -2423,6 +2423,12 @@ next-ID guard.
 `stepLoop` agrees with `stepVAL` there, transferring the proved
 `C[index] = A[index] + B[index]` effect to the actual decoded slice.
 
+## Stage 135: executing the decoded entry slice
+
+`Intel/LoopEntryExec.lean` proves the decoded PCs 18--20 are the two labels
+and the stride move, preserving memory, predicates and `V0059` while writing
+`V0067[0]` from `V0068`/`V0037`.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2619,4 +2625,5 @@ lake build Intel
 131. Stage 131: prove the increment add.
 132. Stage 132: execute the decoded P3 prefix.
 133. Stage 133: execute the decoded P6 prefix.
-134. Stage 134 (this PR): execute the decoded body slice.
+134. Stage 134: execute the decoded body slice.
+135. Stage 135 (this PR): execute the decoded entry slice.
