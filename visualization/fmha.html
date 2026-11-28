@@ -98,6 +98,7 @@
     <tr><td>260</td><td>#266</td><td>RNE FP32 &rarr; BF16 conversion</td></tr>
     <tr><td>261</td><td>#267</td><td>total classification and execution</td></tr>
     <tr><td>262</td><td>#268</td><td>PV phase census (16 groups)</td></tr>
+    <tr><td>263</td><td>#269</td><td>pipeline order (QK &rarr; exp &rarr; PV &rarr; inv)</td></tr>
   </table>
 </section>
 
@@ -107,6 +108,7 @@
     <tr><th>Claim</th><th>Theorem</th></tr>
     <tr><td>Every statement decodes</td><td><code>fmhaPrefill_decoded_all</code></td></tr>
     <tr><td>Every statement is classified and has a step</td><td><code>fmhaPrefill_classified</code>, <code>fmhaPrefill_step_total</code></td></tr>
+    <tr><td>Phase order: QK &rarr; exp &rarr; PV &rarr; inv</td><td><code>qkDpasPcs_before_exp</code>, <code>pvDpasPcs_range</code>, <code>invPcs_eq</code></td></tr>
     <tr><td>4 null + 60 aliased DPAS</td><td><code>fmhaDpas_null_count</code>, <code>fmhaDpas_alias_count</code></td></tr>
     <tr><td>QP split 32 + 32</td><td><code>qkDpas_length</code>, <code>pvDpas_length</code></td></tr>
     <tr><td>Atom slab value and frame</td><td><code>fmhaAtomStep_acc0</code>, <code>fmhaAtomStep_frame</code></td></tr>

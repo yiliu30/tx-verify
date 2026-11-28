@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 263: pipeline order
+
+`Intel/TlaFmhaSchedule.lean` proves the phase order of the dump: all 32 QK^T
+atoms have PC < 1272, the 33 `math.exp` forms lie in `1272..1412`, the 32 PV
+atoms in `1456..1654`, and `math.inv` is the last math instruction at 1774.
+This ties the decoded program to the QK^T -> softmax -> PV -> epilogue
+pipeline.
+
 ## Stage 262: PV phase census
 
 `Intel/TlaFmhaPvCensus.lean` covers all 16 PV accumulator groups: `pvAccs`
@@ -3996,4 +4004,5 @@ lake build Intel
 259. Stage 259: QK^T chain composition.
 260. Stage 260: RNE FP32 -> BF16 conversion.
 261. Stage 261: total classification and execution.
-262. Stage 262 (this PR): PV phase census.
+262. Stage 262: PV phase census.
+263. Stage 263 (this PR): pipeline order.
