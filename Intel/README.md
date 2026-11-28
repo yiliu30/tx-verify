@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 266: packed-BF16 DPAS atom semantics
+
+`Intel/TlaFmhaDpasBase.lean` now executes each FMHA atom with
+`fmhaBf16Slab`, the packed low-half BF16 slab (`bf16ReadA`/`bf16ReadB` plus
+`dpasSlab`), instead of the raw-dword slab. This matches the `:bf` source
+types in the dump and the GEMM BF16 path. The QK/PV chain statements use
+`fmhaBf16Slab` and the packed-read stability lemmas
+(`bf16ReadA_fmhaAtomStep_above`/`_below`, same for B). The DPAS-only scope
+caveat from stage 264 still applies.
+
 ## Stage 265: RNE structural bound
 
 `Intel/TlaBf16Rne.lean` adds `bf16RoundWord_trunc_or_succ` (rounding only
@@ -4029,4 +4039,5 @@ lake build Intel
 262. Stage 262: PV phase census.
 263. Stage 263: pipeline order.
 264. Stage 264: verification-scope correction.
-265. Stage 265 (this PR): RNE structural bound.
+265. Stage 265: RNE structural bound.
+266. Stage 266 (this PR): packed-BF16 DPAS atom semantics.

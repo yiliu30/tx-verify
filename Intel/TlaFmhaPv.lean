@@ -26,33 +26,33 @@ namespace IntelGpu
 def fmhaAtomRun (steps : List FmhaDpas) (rf : RegFile) : RegFile :=
   steps.foldl fmhaAtomStep rf
 
-theorem readTileA_fmhaAtomStep_above (rf : RegFile) (d : FmhaDpas)
-    (readBase m k : Nat) (h : d.acc0 + 8 ≤ readBase + k) :
-    readTileA (fmhaAtomStep rf d) readBase m k = readTileA rf readBase m k := by
-  unfold fmhaAtomStep
-  exact readTileA_writeTileC_above rf _ readBase d.acc0 m k h
+theorem bf16ReadA_fmhaAtomStep_above (rf : RegFile) (d : FmhaDpas)
+    (readBase : Nat) (h : d.acc0 + 8 ≤ readBase) (m k : Nat) (hk : k < 8) :
+    bf16ReadA (fmhaAtomStep rf d) readBase m k = bf16ReadA rf readBase m k := by
+  unfold bf16ReadA fmhaAtomStep
+  rw [readTileA_writeTileC_above _ _ readBase d.acc0 m k (by omega)]
 
-theorem readTileB_fmhaAtomStep_above (rf : RegFile) (d : FmhaDpas)
-    (readBase sub k n : Nat) (h : d.acc0 + 8 ≤ readBase + n) :
-    readTileB (fmhaAtomStep rf d) readBase sub k n = readTileB rf readBase sub k n := by
-  unfold fmhaAtomStep
-  exact readTileB_writeTileC_above rf _ readBase sub d.acc0 k n h
+theorem bf16ReadB_fmhaAtomStep_above (rf : RegFile) (d : FmhaDpas)
+    (readBase : Nat) (h : d.acc0 + 8 ≤ readBase) (k n : Nat) (hn : n < 8) :
+    bf16ReadB (fmhaAtomStep rf d) readBase k n = bf16ReadB rf readBase k n := by
+  unfold bf16ReadB fmhaAtomStep
+  rw [readTileB_writeTileC_above _ _ readBase 0 d.acc0 k n (by omega)]
 
-theorem readTileA_fmhaAtomStep_below (rf : RegFile) (d : FmhaDpas)
-    (readBase m k : Nat) (h : readBase + k < d.acc0) :
-    readTileA (fmhaAtomStep rf d) readBase m k = readTileA rf readBase m k := by
-  unfold fmhaAtomStep
-  exact readTileA_writeTileC_below rf _ readBase d.acc0 m k h
+theorem bf16ReadA_fmhaAtomStep_below (rf : RegFile) (d : FmhaDpas)
+    (readBase : Nat) (h : readBase + 8 ≤ d.acc0) (m k : Nat) (hk : k < 8) :
+    bf16ReadA (fmhaAtomStep rf d) readBase m k = bf16ReadA rf readBase m k := by
+  unfold bf16ReadA fmhaAtomStep
+  rw [readTileA_writeTileC_below _ _ readBase d.acc0 m k (by omega)]
 
-theorem readTileB_fmhaAtomStep_below (rf : RegFile) (d : FmhaDpas)
-    (readBase sub k n : Nat) (h : readBase + n < d.acc0) :
-    readTileB (fmhaAtomStep rf d) readBase sub k n = readTileB rf readBase sub k n := by
-  unfold fmhaAtomStep
-  exact readTileB_writeTileC_below rf _ readBase sub d.acc0 k n h
+theorem bf16ReadB_fmhaAtomStep_below (rf : RegFile) (d : FmhaDpas)
+    (readBase : Nat) (h : readBase + 8 ≤ d.acc0) (k n : Nat) (hn : n < 8) :
+    bf16ReadB (fmhaAtomStep rf d) readBase k n = bf16ReadB rf readBase k n := by
+  unfold bf16ReadB fmhaAtomStep
+  rw [readTileB_writeTileC_below _ _ readBase 0 d.acc0 k n (by omega)]
 
-/-- A fixed-accumulator chain is the initial block plus the ordered slab sum.
-Each source is either entirely above the accumulator or entirely below it, so
-the reads are stable across the chain. -/
+/-- A fixed-accumulator chain is the initial block plus the ordered BF16
+slab sum. Each source is either entirely above or entirely below the
+accumulator, so the reads are stable across the chain. -/
 theorem fmhaAtomRun_fixed_acc (steps : List FmhaDpas) (rf : RegFile) (acc : Nat)
     (hacc : ∀ d, d ∈ steps → d.acc0 = acc)
     (hA : ∀ d, d ∈ steps → acc + 8 ≤ d.srcA ∨ d.srcA + 8 ≤ acc)
@@ -60,8 +60,7 @@ theorem fmhaAtomRun_fixed_acc (steps : List FmhaDpas) (rf : RegFile) (acc : Nat)
     ∀ m n, m < 8 → n < 8 →
       readTileC (fmhaAtomRun steps rf) acc m n =
         readTileC rf acc m n +
-          (steps.map (fun d =>
-            dpasSlab 16 (readTileA rf d.srcA) (readTileB rf d.srcB 0) m n)).sum := by
+          (steps.map (fun d => fmhaBf16Slab rf d m n)).sum := by
   induction steps generalizing rf with
   | nil => intro m n _ _; simp [fmhaAtomRun]
   | cons d ds ih =>
@@ -69,35 +68,32 @@ theorem fmhaAtomRun_fixed_acc (steps : List FmhaDpas) (rf : RegFile) (acc : Nat)
       simp only [fmhaAtomRun, List.foldl_cons]
       have hd : d.acc0 = acc := hacc d (by simp)
       have hstep : readTileC (fmhaAtomStep rf d) acc m n =
-          readTileC rf acc m n + dpasSlab 16 (readTileA rf d.srcA) (readTileB rf d.srcB 0) m n := by
-        simpa [hd, tlaSlab] using fmhaAtomStep_acc0 rf d m n hm hn
+          readTileC rf acc m n + fmhaBf16Slab rf d m n := by
+        simpa [hd] using fmhaAtomStep_acc0 rf d m n hm hn
       change readTileC (fmhaAtomRun ds (fmhaAtomStep rf d)) acc m n = _
       rw [ih (fmhaAtomStep rf d)
         (fun e he => hacc e (by simp [he]))
         (fun e he => hA e (by simp [he]))
         (fun e he => hB e (by simp [he])) m n hm hn]
-      have hmap : ds.map (fun e =>
-            dpasSlab 16 (readTileA (fmhaAtomStep rf d) e.srcA)
-              (readTileB (fmhaAtomStep rf d) e.srcB 0) m n) =
-          ds.map (fun e =>
-            dpasSlab 16 (readTileA rf e.srcA) (readTileB rf e.srcB 0) m n) := by
+      have hmap : ds.map (fun e => fmhaBf16Slab (fmhaAtomStep rf d) e m n) =
+          ds.map (fun e => fmhaBf16Slab rf e m n) := by
         apply List.map_congr_left
         intro e he
+        unfold fmhaBf16Slab
         exact dpasSlab_congr 16 _ _ _ _ m n
           (fun k _ => by
             rcases hA e (by simp [he]) with h | h
-            · exact readTileA_fmhaAtomStep_above rf d e.srcA k m (by omega)
-            · exact readTileA_fmhaAtomStep_below rf d e.srcA k m (by omega))
+            · exact bf16ReadA_fmhaAtomStep_above rf d e.srcA (by simpa [hd] using h) k m hm
+            · exact bf16ReadA_fmhaAtomStep_below rf d e.srcA (by simpa [hd] using h) k m hm)
           (fun k _ => by
             rcases hB e (by simp [he]) with h | h
-            · exact readTileB_fmhaAtomStep_above rf d e.srcB 0 k n (by omega)
-            · exact readTileB_fmhaAtomStep_below rf d e.srcB 0 k n (by omega))
+            · exact bf16ReadB_fmhaAtomStep_above rf d e.srcB (by simpa [hd] using h) k n hn
+            · exact bf16ReadB_fmhaAtomStep_below rf d e.srcB (by simpa [hd] using h) k n hn)
       rw [hmap, hstep]
       simp [List.sum_cons, BitVec.add_assoc]
 
 set_option maxRecDepth 1000000 in
-/-- Every PV source is below its group accumulator (`src + 8 <= 74` suffices
-for the first group; the check below is at the highest PV accumulator `194`). -/
+/-- All PV sources are below the highest PV accumulator. -/
 theorem pvDpas_sources_below :
     pvDpas.all (fun d => d.srcA + 8 ≤ 194 && d.srcB + 8 ≤ 194) = true := by decide
 
@@ -115,8 +111,7 @@ theorem pv74_sources : pv74.all (fun d => d.srcA + 8 ≤ 74 && d.srcB + 8 ≤ 74
 theorem pv74_sum (rf : RegFile) (m n : Nat) (hm : m < 8) (hn : n < 8) :
     readTileC (fmhaAtomRun pv74 rf) 74 m n =
       readTileC rf 74 m n +
-        (pv74.map (fun d =>
-          dpasSlab 16 (readTileA rf d.srcA) (readTileB rf d.srcB 0) m n)).sum := by
+        (pv74.map (fun d => fmhaBf16Slab rf d m n)).sum := by
   refine fmhaAtomRun_fixed_acc pv74 rf 74 ?_ ?_ ?_ m n hm hn
   · intro d hd
     have h := (List.mem_filter.mp hd).2

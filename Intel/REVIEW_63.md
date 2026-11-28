@@ -34,7 +34,8 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (215 jobs) and `Tools/check_axioms.py --all`
-  (2361 theorems, 777 documented exceptions at stage 265).
+  (2361 theorems, 777 documented exceptions at stage 266; the BF16 refactor
+  keeps the theorem count and audit profile).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
@@ -288,6 +289,7 @@ from `Classical.choose` in the racing-store model.
 | 263 | #269 | pipeline order |
 | 264 | #270 | verification-scope correction |
 | 265 | #271 | RNE structural bound |
+| 266 | #272 | packed-BF16 DPAS atom semantics |
 
-The stack is intentionally one PR per stage (#64-#271), as requested. The
+The stack is intentionally one PR per stage (#64-#272), as requested. The
 review's consolidation suggestion is left as a merge/upstreaming decision.
