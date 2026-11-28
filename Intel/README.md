@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 177: composing two SYCL-TLA DPAS steps
+
+`Intel/TlaDpasFold.lean` composes the first two real DPAS instructions of the
+SYCL-TLA GEMM. The first writes the accumulator blocks `r21..r28` and
+`r13..r20`; the second reads A at `r34` and B at `r64`, which are disjoint from
+those blocks. `readTileA_tlaDpasStep` and `readTileB_tlaDpasStep` prove the
+source reads are unchanged by the accumulator write, and
+`tlaDpasRun_two_acc0`/`_acc1` prove each accumulator receives
+`C + slab(r30) + slab(r34)`. This is the composition pattern for the 32-step
+chain; a generic fold over the full list is the next stage.
+
 ## Stage 176: register-level execution of the SYCL-TLA DPAS chain
 
 `Intel/TlaDpasExec.lean` parses the 32 DPAS instructions of the real
@@ -3120,4 +3131,5 @@ lake build Intel
 173. Stage 173: review stage map refresh.
 174. Stage 174: real SYCL-TLA GEMM import.
 175. Stage 175: total decoder for the SYCL-TLA dump.
-176. Stage 176 (this PR): register-level execution of the SYCL-TLA DPAS chain.
+176. Stage 176: register-level execution of the SYCL-TLA DPAS chain.
+177. Stage 177 (this PR): composing two SYCL-TLA DPAS steps.
