@@ -1483,6 +1483,32 @@ What remains is the K-induction over repeated steps, the final body at
 `k = 63` (where the predicate is false and the counter is not incremented),
 and the epilogue store to `C`.
 
+## Stage 72: the GEMM invariant is per-lane
+
+`GemmLoopInv` now takes the lane:
+
+```lean
+structure GemmLoopInv (s : RealState) (aPtr bPtr cPtr : Addr) (l : Nat)
+    (i j0 k sum goX : Word) : Prop where
+  v58 : s.regs 58 l = zext (i <<< 6)
+  v57 : s.regs 57 l = zext j0
+  v61 : s.regs 61 0 = zext k
+  v62 : s.regs 62 l = zext sum
+  ...
+```
+
+This is what the launch supplies: each lane has its own row `i`, column base
+`j0` and accumulator `sum`, while the K counter `V0061` is uniform. The earlier
+`∀ l` fields forced one `i/j0/sum` across the whole warp, which no real launch
+satisfies; this stage corrects that.
+
+All stage 68-71 proofs were updated, and `gemmBodyStep_inv` is now a genuinely
+per-lane inductive step. The distributed `setWidth` forms of the OR and address
+expressions needed the 64-bit and `Nat` variants `or_shift_six_64`,
+`nat_wordA`/`nat_wordB`/`nat_wordB_mod`.
+
+Next is the K-induction over repeated per-lane steps and the epilogue store.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1601,5 +1627,6 @@ lake build Intel
 69. Stage 69: prove the loop body's A and B index computations.
 70. Stage 70: prove the byte addresses, both loads, the multiply and the
     accumulation.
-71. Stage 71 (this PR): prove one full loop iteration and its inductive
-    invariant.
+71. Stage 71: prove one full loop iteration and its inductive invariant.
+72. Stage 72 (this PR): make the GEMM loop invariant per-lane, matching the
+    launch.
