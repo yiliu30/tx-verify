@@ -2692,6 +2692,69 @@ infinity above `65504`, and the other directions saturate. Bit-level examples
 and counterexamples show where the modes differ. General per-binade RNE,
 exception flags and FMA remain open.
 
+## Stage 160: dword/qword coalescing adapter
+
+`Intel/DwordCoalesce.lean` supplies the adapter for the stage-158 gap.
+`coalesceDword` merges the two dword slots of a qword lane, `coalesceReg59`
+rewrites only `V0059`, and `coalesce_writeback` proves the coalesced loop-back
+value is `selectId old (old + stride) takeNew` for `l < 24`.
+`coalesced_bodyPre` gives the body preconditions and
+`vaLoop_lane_second_body_literal` proves the literal second-iteration store
+`C[idx] = A[idx] + B[idx]`. The raw model still has the dword/qword gap
+(`coalesce_raw_counterexample`); coalescing is the explicit hardware
+interpretation.
+
+## Stage 161: n-iteration grid-stride induction
+
+`Intel/LoopMultiIteration.lean` lifts stage 160 to `n` iterations.
+`vaLoop_coalesced_iteration_step` is the exact PC 21 to PC 21 iteration with
+coalesced re-entry and `id + stride`; `vaLoop_coalesced_iteration` is the
+guard-shaped induction concluding index `strideId id stride n` and every prior
+`C[id_k] = A[id_k] + B[id_k]`, under `VaLoopIterMemorySafe`;
+`vaLoop_coalesced_iteration_two_literal` matches stage 160, and
+`vaLoop_coalesced_iteration_branch`/`_exit` connect the loop to the stage-136
+exit. The lane bound remains `l < 24`; lanes 24--31 keep the raw dword slots.
+
+## Stage 162: directory/ownership coherence
+
+`Intel/CacheDirectory.lean` adds a synchronous directory with per-location
+ownership and sharer sets. `readRequest` shares a line, `writeRequest` and
+`writeWithOwnership` acquire exclusive ownership and invalidate sharers, and
+`DirectoryInvariant` states owner uniqueness, read-only sharers and fresh valid
+lines. `writeWithOwnership_invalidates_sharers`, `readAfterWrite_fresh` and
+`no_stale_after_ownership_transfer` are the core laws;
+`writeWithOwnership_message_passing` covers data-then-flag. Negative tests show
+a write without ownership transfer and a read that ignores the directory can
+both observe stale data. Request queues, write-back dirty lines and relaxed
+atomics remain outside the model.
+
+## Stage 163: FMHA tail and partial K
+
+`Intel/FmhaTail.lean` models `K = T*32 + r` with `0 < r < 32` by zero-padding
+the operand depth beyond `K`. `tailSlab_eq_dotMatFrom` proves the padded tail
+slab equals the partial dot product over `[T*32, T*32+r)`, and
+`fmhaMainloopTail_c` gives the T full slabs plus tail as `C + dotMat ... K`.
+The `r = 0` and `T = 0` specializations reduce to stage 155 and to a short K;
+the frame law fixes everything outside C. Zero-padding is a value-level
+idealization; masked/partial DPAS hardware behavior is not modeled.
+
+## Stage 164: general fp16 round-to-nearest-even
+
+`Intel/IeeeFp16GeneralRne.lean` selects the destination binade for a finite
+exact sum (`destExp`, `destQuantum`, `destMant`), proves the quantum bounds and
+that `roundScaled` is IEEE round-to-nearest-even at that quantum with
+ties-to-even inherited from `roundEvenNat`. `addGeneral_fin` covers every
+finite exact sum below the stage-156 overflow threshold, across all subnormal
+and normal binades through exponent 30, and agrees with `addFull` on the
+previously covered classes. The overflow branch stays with stage 156;
+exception flags and FMA remain outside the model.
+
+## Stage 165: review stage map
+
+`Intel/REVIEW_63.md` now carries a single stage index for stages 137--164
+with their PR numbers and one-line results, and the stack range is updated to
+`#64-#166`. No Lean declarations change in this stage.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2918,4 +2981,5 @@ lake build Intel
 161. Stage 161: n-iteration grid-stride induction.
 162. Stage 162: directory/ownership coherence.
 163. Stage 163: FMHA tail and partial K.
-164. Stage 164 (this PR): general fp16 round-to-nearest-even.
+164. Stage 164: general fp16 round-to-nearest-even.
+165. Stage 165 (this PR): refresh the review stage map.
