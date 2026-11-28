@@ -3,8 +3,8 @@
 Status: proposal for stages 247+. The GEMM stack (stages 174–245) is merged
 on `main`; this document scopes the next kernel family: the SYCL-TLA FMHA
 prefill (`XeFMHAFwdKernel`, BF16, head dim 128). Stages 247 and 248 are
-merged (PRs #251, #252, #254, #255); the `sel`, plain `cmp`/`not`/`bfn`
-stage is complete.
+merged (PRs #251, #252, #254, #255, #256); the `sel`, plain
+`cmp`/`not`/`bfn` and `sync.allwr` stages are complete.
 
 ## 1. Scope
 
@@ -44,14 +44,13 @@ Verification harness:
 `Tools/parse_igc.py` on the prefill dump, then the merged classifier
 (`decodedAll`) over the 1965 statements:
 
-- **1923 statements decode (97.9%)** with the stack as it stands after the
-  plain `cmp`/`not`/`bfn` stage;
-- **42 statements (2.1%) do not**:
+- **1931 statements decode (98.3%)** with the stack as it stands after the
+  `sync.allwr` stage;
+- **34 statements (1.7%) do not**:
 
 | Form | Count | Why it fails today |
 | --- | --- | --- |
 | `math.exp` | 33 | no MUFU decoder (stage 252) |
-| `sync.allwr` | 8 | `sync` classifier knows nop/allrd/bar only (stage 251) |
 | `math.inv` | 1 | no MUFU decoder (stage 252) |
 
 Everything else — 878 mov, 273 mul, 159 add, 49 mad, the predicated and plain
@@ -59,8 +58,9 @@ block2d loads/stores (`d32t`, `d16v`, `d16`, `d32x16t`, `d32x32t`, `d32x64t`),
 `jmpi`, `send.gtwy`, `bfn`, `mach`/`macl` and the DPAS forms — already
 decodes. The stage-247 snapshot had 152 unclassified statements; stage 248
 closed the 40 negated-source `mad` forms and the single `.v` immediate, and
-stage 249 closed all 66 `sel` forms, and stage 250 closed the plain
-`cmp`/`not`/`bfn` singletons.
+stage 249 closed all 66 `sel` forms, stage 250 closed the plain
+`cmp`/`not`/`bfn` singletons, and stage 251 closed the eight `sync.allwr`
+waits.
 
 These counts are machine-checked in `Intel/FmhaPrefillCoverage.lean`
 (`fmhaPrefill_decoded_count`, `fmhaPrefill_unclassified_count`,
@@ -113,7 +113,8 @@ Decoding is only 7.7% of the work; the new semantics are:
    value function plus a relative/absolute error budget, and the end-to-end
    theorem must be tolerance-based.
 4. **`sync.allwr`**: an all-write scoreboard wait; extends the `sync` classes
-   and the ordering story of stage 228.
+   and the ordering story of stage 228 (done in stage 251 as
+   `TlaSyncAllwr`).
 5. **DPAS second-accumulator aliasing and the `Atomic` flag**: 64 forms,
    8x8x16 BF16 atom (the same atom as the GEMM); the second accumulator is
   either `null` (4 forms) or aliased to the first (60 forms), so the model
@@ -169,7 +170,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247-250 are merged (PRs #251, #252, #254, #255).
+Stages 247-251 are merged (PRs #251, #252, #254, #255, #256).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |

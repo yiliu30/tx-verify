@@ -13,10 +13,11 @@ public import Intel.TlaDispatch
 instructions, 1965 statements). This module measures how much of it the
 merged GEMM stack already decodes with the total classifier `decodedAll`:
 
-- 1923 of 1965 statements decode (97.9%) after the `sel` decoder of stage
-  249 and the plain `cmp`/`not`/`bfn` mux forms of stage 250 (and the
-  negated-source and `.v` extensions of stage 248),
-- the 42 that do not are `math.exp` 33, `sync.allwr` 8, and `math.inv`,
+- 1931 of 1965 statements decode (98.3%) after the `sel` decoder of stage
+  249, the plain `cmp`/`not`/`bfn` mux forms of stage 250 and the
+  `sync.allwr` waits of stage 251 (and the negated-source and `.v`
+  extensions of stage 248),
+- the 34 that do not are `math.exp` 33 and `math.inv`,
 - 64 `dpas.8x8 (16|M0)` instructions: 4 use `null` as the second
   accumulator and 60 alias it to the first accumulator.
 
@@ -66,21 +67,21 @@ theorem fmhaPrefillCode_length : fmhaPrefillCode.length = 1965 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 8000000 in
-/-- 1923 statements decode with the merged stack. -/
+/-- 1931 statements decode with the merged stack. -/
 theorem fmhaPrefill_decoded_count :
-    (fmhaPrefillPc.filter (fun p => decodedAll p.2)).length = 1923 := by decide
+    (fmhaPrefillPc.filter (fun p => decodedAll p.2)).length = 1931 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 8000000 in
-/-- 42 statements do not decode. -/
-theorem fmhaPrefill_unclassified_count : fmhaUnclassified.length = 42 := by decide
+/-- 34 statements do not decode. -/
+theorem fmhaPrefill_unclassified_count : fmhaUnclassified.length = 34 := by decide
 
 set_option maxRecDepth 10000000 in
 set_option maxHeartbeats 16000000 in
 /-- The unclassified forms and their counts. -/
 theorem fmhaPrefill_unclassified_forms :
     fmhaFormCensus =
-      [("sel", 0), ("mad-neg", 0), ("math.exp", 33), ("sync.allwr", 8),
+      [("sel", 0), ("mad-neg", 0), ("math.exp", 33), ("sync.allwr", 0),
        ("mov", 0), ("cmp", 0), ("not", 0), ("bfn", 0), ("math.inv", 1)] := by
   decide
 
@@ -165,6 +166,32 @@ theorem fmhaPrefill_plainCmp_parsed :
     (fmhaParsedAt 1169).bind parseTlaCmpInstr =
       some ⟨"", ⟨16, 0, true⟩, "lt", 3, 1,
         .reg ⟨4, 0, 0, 1, 1, 0⟩, .reg ⟨2, 0, 6, 0, 1, 0⟩⟩ := by decide
+
+/-- The decoded `sync.allwr` waits, in program order. -/
+def fmhaSyncAllwr : List TlaSyncAllwr :=
+  fmhaPrefillPc.filterMap (fun p => parseTlaSyncAllwr p.2)
+
+set_option maxRecDepth 1000000 in
+/-- The eight wait sets, e.g. `($12,$13,$14,$29,$30)`. -/
+theorem fmhaPrefill_syncAllwr_waits :
+    fmhaSyncAllwr.map (fun s => s.waits) =
+      [[12, 13, 14, 29, 30], [2, 25, 28], [0, 31], [12, 16, 18],
+       [29, 30], [1, 15], [1, 3, 6, 21], [9, 18]] := by decide
+
+set_option maxRecDepth 1000000 in
+/-- There are eight `sync.allwr` waits. -/
+theorem fmhaPrefill_syncAllwr_count : fmhaSyncAllwr.length = 8 := by decide
+
+set_option maxRecDepth 1000000 in
+/-- Every wait names at least one scoreboard. -/
+theorem fmhaPrefill_syncAllwr_nonempty :
+    fmhaSyncAllwr.all (fun s => s.nonempty) = true := by decide
+
+set_option maxRecDepth 1000000 in
+/-- PC 1013 waits on `$12,$13,$14,$29,$30`. -/
+theorem fmhaPrefill_syncAllwr_parsed :
+    (fmhaParsedAt 1013).bind parseTlaSyncAllwr =
+      some ⟨[12, 13, 14, 29, 30]⟩ := by decide
 
 set_option maxRecDepth 1000000 in
 /-- Exactly one prefill statement is the `bfn` mux form. -/
