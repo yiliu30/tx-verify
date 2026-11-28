@@ -759,6 +759,38 @@ numbers, and the README says so.
 
 `#print axioms` on each reports only `[propext]`.
 
+## Stage 46: values for every finite fp16
+
+Stage 43 returned `none` below the bias. `Intel/Fp16Scaled.lean` fixes a global
+scale so *every* finite word has a concrete integer value, in units of `2 ^ -24`:
+
+```lean
+def scaled (w : Fp16) : Nat        -- 2 ^ 24 * value
+theorem scaled_normal ...          -- (1024 + mantissa) * 2 ^ (exp - 1)
+theorem scaled_subnormal ...       -- mantissa
+```
+
+Known vectors are checked with `decide`, which is what catches an off-by-one in
+the bias or in the implicit leading bit:
+
+| value | bits | `scaled` |
+|---|---|---|
+| 1.0 | `0x3C00` | `2 ^ 24` |
+| 2.0 | `0x4000` | `2 ^ 25` |
+| 0.5 | `0x3800` | `2 ^ 23` |
+| 65504 (max) | `0x7BFF` | `65504 * 2 ^ 24` |
+| `2 ^ -14` (min normal) | `0x0400` | `2 ^ 10` |
+| `2 ^ -24` (min subnormal) | `0x0001` | `1` |
+
+So subnormals and fractions are now numbers rather than classes.
+
+Not done: the gluing lemma `scaled = mag * 2 ^ 14` on the decoded fragment. I
+had it down to an arithmetic rewrite that kept timing out in `whnf` while
+elaborating through `decode`, and chose to ship the verified vectors instead of
+a half-proved gluing.
+
+`#print axioms` on each theorem reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -767,9 +799,10 @@ numbers, and the README says so.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
-- IEEE-754 value semantics: stages 43/44 give NaN and infinities a value domain
-  and prove the finite fragment is closed, but NaN payloads and subnormal
-  *values* are still classes, not numbers.
+- IEEE-754 value semantics: stages 43-46 cover the bit layout, the value
+  domain, and values in units of `2 ^ -24` for normals, subnormals and
+  fractions. NaN *payloads*, and the gluing between the `2 ^ -24` scale and the
+  numeric layer's scale, are not done.
 - Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
 - Strided per-thread staging as SYCL-TLA's copy atoms use it: stage 37 models
   a block distribution (lane `l` owns a contiguous chunk), not the interleaved
@@ -835,4 +868,6 @@ lake build Intel
 41. Stage 41: blocks are separated.
 42. Stage 42: the shared buffer is complete.
 43. Stage 43: a bit-level fp16 encoding.
-44. Stage 44 (this PR): a value domain with NaN and infinities.
+44. Stage 44: a value domain with NaN and infinities.
+45. Stage 45: CI builds the library and runs the axiom audit.
+46. Stage 46 (this PR): values for every finite fp16.
