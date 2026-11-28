@@ -2346,6 +2346,13 @@ theorem vaLoopP3_packed :
 from the packed register halves and the two size-dword facts. The remaining
 work is proving those size-register facts survive the packs.
 
+## Stage 124: P3 with preserved size dwords
+
+The four pack moves preserve `V0049`, and `vaPackBoth_preserves49` lifts that
+to the composed pack. `vaLoopP3_packed_full` uses those facts to derive
+`P3 = id < globalSize` directly from the launch size dwords, with no remaining
+size assumption about the post-pack state.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2531,4 +2538,5 @@ lake build Intel
 120. Stage 120: execute the real M1+M5 low pack.
 121. Stage 121: execute the real M1+M5 high pack.
 122. Stage 122: compose both packs into one state.
-123. Stage 123 (this PR): derive P3 from the executed packs.
+123. Stage 123: derive P3 from the executed packs.
+124. Stage 124 (this PR): derive P3 with preserved size dwords.
