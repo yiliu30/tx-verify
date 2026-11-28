@@ -2917,4 +2917,5 @@ lake build Intel
 160. Stage 160: dword/qword coalescing adapter.
 161. Stage 161: n-iteration grid-stride induction.
 162. Stage 162: directory/ownership coherence.
-163. Stage 163 (this PR): FMHA tail and partial K.
+163. Stage 163: FMHA tail and partial K.
+164. Stage 164 (this PR): general fp16 round-to-nearest-even.
