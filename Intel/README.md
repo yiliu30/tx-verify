@@ -1833,6 +1833,12 @@ So the compiled FMHA fp8 mainloop issues one 8x8x32 DPAS per K=32, while the
 SYCL-TLA fp16 path issues two 8x16x16 DPAS instructions — the existing
 `dpasSlab_two_atoms` split. The atom mapping is now explicit in both directions.
 
+## Review #63 response
+
+`Intel/REVIEW_63.md` maps every priority in the review to the stages and
+artifacts that address it, lists the acceptance criteria, and separates the
+trusted base from the remaining open work.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -1972,4 +1978,5 @@ lake build Intel
 83. Stage 83: decode scaled memory and prove the vector-add index preamble.
 84. Stage 84: prove the vector-add loads and sum.
 85. Stage 85: the real vector add end-to-end.
-86. Stage 86 (this PR): record and quantify the real DPAS atom shapes.
+86. Stage 86: record and quantify the real DPAS atom shapes.
+87. Stage 87 (this PR): consolidate the issue #63 response and trusted base.
