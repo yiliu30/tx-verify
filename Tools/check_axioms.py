@@ -64,6 +64,8 @@ KNOWN = {
     "IntelGpu.realGemm_label_loop": {"Classical.choice"},
     "IntelGpu.realGemm_label_step": {"Classical.choice"},
     "IntelGpu.realGemm_label_exit": {"Classical.choice"},
+    # Stage 67 byte refinement: composed with the stage-64 store model.
+    "IntelGpu.realAddOne_byte_word_increment": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -128,6 +130,9 @@ THEOREMS = [
     ("Intel.RealGemmCoverage", "IntelGpu.realGemm_decodes"),
     ("Intel.RealGemmCoverage", "IntelGpu.realGemm_decoded_length"),
     ("Intel.RealGemmCoverage", "IntelGpu.realGemm_label_loop"),
+    ("Intel.ByteMemory", "IntelGpu.wordView_store32LE"),
+    ("Intel.ByteMemory", "IntelGpu.realAddOne_byteRangesDisjoint"),
+    ("Intel.ByteMemory", "IntelGpu.realAddOne_byte_word_increment"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")

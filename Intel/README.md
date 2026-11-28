@@ -1359,15 +1359,37 @@ theorem realGemm_decoded_length : ... = some 37
 
 The four branch targets also resolve in the decoded list:
 `_main_0` at 0, `_0_004` at 11, `_0_006` at 27 and `_0_005` at 30. What remains
-is the functional loop proof: stage 67 connects this decoded loop to the
-existing `sum += A[i*K+k] * B[k*N+j]` memory-loop invariant.
+is the functional loop proof: the next GEMM stage connects this decoded loop
+to the existing `sum += A[i*K+k] * B[k*N+j]` memory-loop invariant.
+
+## Stage 67: byte-addressed memory
+
+The word-addressed model is refined to bytes:
+
+- `load32LE` / `store32LE` over `Nat → BitVec 8`, little-endian.
+- `load32LE_store32LE_same`, `store32LE_frame`, and
+  `load32LE_store32LE_other` for a disjoint four-byte range.
+- `wordView_store32LE`: an aligned byte store is exactly a word store in the
+  stage-1 view. `wordView` is the bridge between the two layers.
+- `byteDisjoint` and `wordDisjoint_byteDisjoint`: distinct aligned word indices
+  give disjoint byte ranges.
+- `realAddOne_byteRangesDisjoint`: the real add-one kernel's 32 lane writes are
+  pairwise byte-disjoint under the stage-64 distinctness hypothesis.
+- `realAddOne_byte_word_increment`: the final word at each lane, read through
+  the byte view, is the original little-endian word plus one.
+
+Visibility, synchronization and a full hardware memory model remain open; this
+stage covers byte-level accesses, alignment, aliasing and race freedom at byte
+granularity.
 
 ## Not modeled yet
 
-- IGC text parsing beyond the add-one subset, and general register aliasing
-  (`r7:4`, `r12:2`); stages 63-64 cover the real kernel's operand forms and its
-  four numeric aliases only.
-- The compiler-generated prolog and global-id / address computation.
+- IGC text parsing beyond the add-one and integer-GEMM forms, and general
+  register aliasing (`r7:4`, `r12:2`); stages 63-66 cover those two dumps'
+  operand forms and numeric aliases only.
+- The GEMM's global-id and address computation; the add-one chain is stage 64.
+- Cross-workgroup visibility, synchronization, caches and SLM aliasing; stage
+  67 refines aligned accesses to bytes and proves byte-range disjointness.
 - SIMD masks and scoreboards. Stage 64 interprets this kernel's broadcast and
   dense GRF regions, not the general region algebra; stage 66 models one
   uniform predicate bit for the GEMM's control flow.
@@ -1468,5 +1490,7 @@ lake build Intel
     the per-lane load/add/store effect.
 65. Stage 65: import a real 64x64x64 integer GEMM and measure the decoder's
     coverage of its control-flow shell.
-66. Stage 66 (this PR): decode the control-flow shell and interpret labels,
-    predicates and both `goto` forms.
+66. Stage 66: decode the control-flow shell and interpret labels, predicates
+    and both `goto` forms.
+67. Stage 67 (this PR): byte-addressed memory, alignment, aliasing and
+    byte-range race freedom.
