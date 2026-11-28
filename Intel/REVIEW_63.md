@@ -281,9 +281,11 @@ from `Classical.choose` in the racing-store model.
 | 256 | #261 | FMHA DPAS atoms |
 | 257 | #262 | PV chain and epilogue ratio |
 | 258 | #263 | verification summary and FMHA page |
+| 258 | #263 | verification summary and FMHA page |
 | 255 | #260 | causal mask |
 | 256 | #261 | FMHA DPAS atoms |
 | 257 | #262 | PV chain and epilogue ratio |
+| 258 | #263 | verification summary and FMHA page |
 | 258 | #263 | verification summary and FMHA page |
 
 The stack is intentionally one PR per stage (#64-#263), as requested. The
