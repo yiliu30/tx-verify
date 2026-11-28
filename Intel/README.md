@@ -1,12 +1,47 @@
-# Intel GPU semantic core (stage 1)
+# Intel GPU semantic core
 
-Stage 1 of a staged Lean verification effort toward a SYCL-TLA GEMM kernel.
+A staged Lean verification effort toward a SYCL-TLA GEMM kernel. Stage 1 built
+the ISA core; later stages add the GEMM spec, the IGC parser, tiling, SLM,
+DPAS, the SYCL-TLA instance, the numeric layer and the fp16 encoding. The
+roadmap at the end lists all 47 stages.
 
-This stage adds a deliberately small Intel GPU / IGC semantic core and proves
-the single-lane core of an `add_one` kernel. It is the foundation for the
-later GEMM spec, IGC parser, and SYCL-TLA kernel proof.
+## Assumption ledger
 
-## What is modeled
+Every claim in this file is relative to these assumptions. Each is stated in
+code and, where possible, exercised by an executable check; nothing here rests
+on a silent assumption.
+
+1. **Memory model** — word-addressed, modelled `d32` accesses 4-byte aligned.
+   Lives in `Intel/Asm.lean`. Not discharged.
+2. **One lane per data/control step** — SIMD masks and GRF regions are not
+   modelled. `Intel/Asm.lean`. Not discharged.
+3. **Uniform control flow** across the workgroup. `Intel/WControl.lean`. Not
+   discharged.
+4. **SLM visibility** — writes are visible when they retire; the barrier orders
+   phases, it does not model latency. `Intel/Slm.lean`. Not discharged.
+5. **DPAS as a tile operation** — per-instruction dispatch is not modelled.
+   `Intel/Dpas.lean`. Not discharged.
+6. **Tile shape** `256 x 256 x 32` with an `8 x 16 x 16` atom, taken from the
+   upstream Xe GEMM configuration. `Intel/TlaInstance.lean`. Re-check if
+   upstream changes.
+7. **Accumulator rounding** — nearest, ties to even, on the accumulator
+   quantum. `Intel/NumericBridge.lean` (`hstep`). Discharged on a shared grid
+   (stage 34); bounded by `n * (q / 2)` off it (stages 30-32).
+8. **Staging** — a per-lane block distribution of a contiguous chunk.
+   `Intel/LaneStaging.lean`. Interleaved per-thread addressing not modelled.
+9. **fp16 classes** — NaN and infinity carry a class but no payload;
+   subnormals are values in units of `2 ^ -24`. `Intel/Fp16Value.lean`,
+   `Intel/Fp16Scaled.lean`. Not discharged.
+
+Assumption 7 is the one with real numeric content, and it is the one that has
+been reduced furthest: on a shared quantization grid the rounding is the
+identity (stage 34), so exactness holds outright; off the grid the error is
+bounded by `n * (q / 2)` (stages 30-32).
+
+`python3 Tools/check_axioms.py` audits the headline theorem of every stage;
+`.github/workflows/build.yml` runs it on every push and pull request.
+
+## What is modeled (stage 1)
 
 - Word-addressed global memory (one 32-bit word per address).
 - 32-bit data registers and 64-bit address registers.
