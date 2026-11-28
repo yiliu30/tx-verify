@@ -245,6 +245,7 @@ THEOREMS = [
     ("Intel.VectorAdd", "IntelGpu.vaStore"),
     ("Intel.VectorAdd", "IntelGpu.vaFrame"),
     ("Intel.VectorAdd", "IntelGpu.realVectorAdd_effect"),
+    ("Intel.VectorAdd", "IntelGpu.va_scale_load_bearing"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
