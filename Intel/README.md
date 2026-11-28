@@ -2490,6 +2490,16 @@ lanes and fixes every other element. `writeMaskedWith_commute_unit` gives the
 footprint condition under which two masked writes commute, and the `_NM` laws
 record that `_NM` means "no channel mask" rather than an empty mask.
 
+## Stage 142: FMHA atom value refinement and tile composition
+
+`Intel/FmhaAtomTile.lean` refines the coded FMHA 8x8x32 atom at the value
+level. `fmhaAtom_eq_slab` and `fmhaAtom_eq_dpas` identify it with one depth-32
+`dpas` at the same origin, `fmhaAtom_eq_sum_halves` and `fmhaAtom_eq_two_dpas`
+split that step into two K=16 halves, and the `fmhaGrid2x1`/`fmhaGrid2x2`
+lemmas show that atoms over disjoint 8x8 accumulator blocks compose into the
+pointwise sum of their depth-32 deltas. The fp8 element encoding remains the
+assumption recorded in `Intel.RealDpas`.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2693,4 +2703,5 @@ lake build Intel
 138. Stage 138: derive the path guards from the decoded prefix.
 139. Stage 139: per-location visibility and release/acquire.
 140. Stage 140: the decoded kernel entry from PC 0.
-141. Stage 141 (this PR): generic execution-mask laws.
+141. Stage 141: generic execution-mask laws.
+142. Stage 142 (this PR): FMHA atom value refinement and tile composition.
