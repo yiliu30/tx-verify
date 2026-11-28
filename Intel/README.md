@@ -2841,6 +2841,14 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 265: RNE structural bound
+
+`Intel/TlaBf16Rne.lean` adds `bf16RoundWord_trunc_or_succ` (rounding only
+truncates the low 16 bits or adds one BF16 ulp) and
+`bf16RoundWord_rounds_up` (the exact round-up condition: above half, or a tie
+with an odd high half). These are the structural facts behind the half-ulp
+error bound; the float-valued error bound itself is still open.
+
 ## Stage 264: verification-scope correction
 
 The QK^T and PV slab-sum theorems are statements about **DPAS-only sub-runs**.
@@ -4020,4 +4028,5 @@ lake build Intel
 261. Stage 261: total classification and execution.
 262. Stage 262: PV phase census.
 263. Stage 263: pipeline order.
-264. Stage 264 (this PR): verification-scope correction.
+264. Stage 264: verification-scope correction.
+265. Stage 265 (this PR): RNE structural bound.

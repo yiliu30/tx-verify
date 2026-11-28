@@ -68,13 +68,15 @@ theorem fmha_qk_summary : FmhaQkSummary :=
 /-- The P->BF16 conversion: idempotent, packed, and the RNE boundaries. -/
 def FmhaConvertSummary : Prop :=
   (∀ b : Bf16, bf16RoundWord (bf16ToWord b) = bf16ToWord b) ∧
+  (∀ w : Word, bf16RoundWord w = (w &&& 0xFFFF0000) ∨
+    bf16RoundWord w = (w &&& 0xFFFF0000) + 0x10000) ∧
   bf16Round 0x3F808000 = 0x3F80 ∧
   bf16Round 0x3F818000 = 0x3F82 ∧
   bf16Round 0x3F80C000 = 0x3F81
 
 theorem fmha_convert_summary : FmhaConvertSummary :=
-  ⟨bf16RoundWord_packed, bf16Round_tie_even_down,
-   bf16Round_tie_even_up, bf16Round_above_half⟩
+  ⟨bf16RoundWord_packed, bf16RoundWord_trunc_or_succ,
+   bf16Round_tie_even_down, bf16Round_tie_even_up, bf16Round_above_half⟩
 
 /-- Every statement is classified and has a dispatcher step. -/
 def FmhaExecSummary : Prop :=

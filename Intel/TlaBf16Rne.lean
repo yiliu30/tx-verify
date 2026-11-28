@@ -51,6 +51,21 @@ theorem bf16RoundWord_packed (b : Bf16) :
   unfold bf16RoundWord bf16Round bf16ToWord
   bv_decide
 
+/-- Rounding only truncates or adds one BF16 ulp. -/
+theorem bf16RoundWord_trunc_or_succ (w : Word) :
+    bf16RoundWord w = (w &&& 0xFFFF0000) ∨
+      bf16RoundWord w = (w &&& 0xFFFF0000) + 0x10000 := by
+  unfold bf16RoundWord bf16Round
+  bv_decide
+
+/-- The round-up decision: above half, or a tie with an odd high half. -/
+theorem bf16RoundWord_rounds_up (w : Word) :
+    (bf16RoundWord w = (w &&& 0xFFFF0000) + 0x10000) ↔
+      (BitVec.ult 0x8000 (w &&& 0xFFFF) ∨
+       ((w &&& 0xFFFF) = 0x8000 ∧ ((w >>> 16) &&& 1) = 1)) := by
+  unfold bf16RoundWord bf16Round
+  bv_decide
+
 /-- Tie with an even high half rounds down. -/
 theorem bf16Round_tie_even_down : bf16Round 0x3F808000 = 0x3F80 := by decide
 
