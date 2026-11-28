@@ -3,6 +3,7 @@ module
 
 public import Intel.Examples.RealFmhaPrefill
 public import Intel.TlaDispatch
+public import Intel.TlaFmhaDispatch
 
 @[expose] public section
 
@@ -204,6 +205,21 @@ set_option maxHeartbeats 8000000 in
 /-- Every prefill statement is decoded. -/
 theorem fmhaPrefill_decoded_all :
     fmhaPrefillPc.all (fun p => decodedAll p.2) = true := by decide
+
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 8000000 in
+/-- Every prefill statement is classified (none is `.other`). -/
+theorem fmhaPrefill_classified :
+    fmhaPrefillPc.all (fun p =>
+      (match classifyFmha p.2 with | .other => false | _ => true)) = true := by
+  decide
+
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 8000000 in
+/-- Every prefill statement has a dispatcher step. -/
+theorem fmhaPrefill_step_total :
+    fmhaPrefillPc.all (fun p => (tlaStepFmha? canonMachine p.2).isSome) = true := by
+  decide
 
 /-- The decoded `sync.allwr` waits, in program order. -/
 def fmhaSyncAllwr : List TlaSyncAllwr :=
