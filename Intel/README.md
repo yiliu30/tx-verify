@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 230: trap delivery and exception masks
+
+`Intel/FpTrapDelivery.lean` adds exception masks and trap delivery: a trap is
+raised exactly when a masked exception bit is set, carrying the raised flags,
+and an empty mask never traps. The concrete overflow case is worked out: max
+normal plus max normal raises overflow and inexact, traps under an
+overflow-only mask and under an inexact-only mask, and does not trap under an
+empty mask; `1.0 + 1.0` raises nothing and never traps. All ten theorems are
+axiom-clean.
+
 ## Stage 229: FTZ and DAZ
 
 `Intel/Fp16FtzDaz.lean` adds the two hardware flush modes: DAZ maps a
@@ -3653,4 +3663,5 @@ lake build Intel
 226. Stage 226: mainloop loads feed the DPAS operands.
 227. Stage 227: aliasing laws.
 228. Stage 228: barrier placement.
-229. Stage 229 (this PR): FTZ and DAZ.
+229. Stage 229: FTZ and DAZ.
+230. Stage 230 (this PR): trap delivery and exception masks.
