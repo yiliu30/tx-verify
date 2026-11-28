@@ -73,6 +73,32 @@ structure VaLoopBodyPre (s : RealState) (aPtr bPtr cPtr : Addr)
   cReg : s.regs 46 0 = cPtr
   idxReg : ∀ l, s.regs 59 l = idx l
 
+/-- The preamble leaves the three pointer registers and memory unchanged. -/
+theorem vaLoopPreamble_frame (s : RealState) :
+    (runVAL s vaLoopPreamble).regs 46 0 = s.regs 46 0 ∧
+    (runVAL s vaLoopPreamble).regs 47 0 = s.regs 47 0 ∧
+    (runVAL s vaLoopPreamble).regs 48 0 = s.regs 48 0 ∧
+    (runVAL s vaLoopPreamble).mem = s.mem := by
+  unfold vaLoopPreamble runVAL stepVAL
+  simp [runRealWith, stepWith, writeVecWith, setReg, vaLoopAlias]
+
+/-- Launch facts plus the three pointers for the loop kernel. -/
+structure VaLoopPre (s : RealState) (aPtr bPtr cPtr : Addr)
+    (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16) : Prop
+    extends VaLoopLaunch s localSize r0 globalOffset localId where
+  aReg : s.regs 47 0 = aPtr
+  bReg : s.regs 48 0 = bPtr
+  cReg : s.regs 46 0 = cPtr
+
+theorem vaLoopPreamble_bodyPre (s : RealState) (aPtr bPtr cPtr : Addr)
+    (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16)
+    (h : VaLoopPre s aPtr bPtr cPtr localSize r0 globalOffset localId) :
+    VaLoopBodyPre (runVAL s vaLoopPreamble) aPtr bPtr cPtr
+      (fun l => vaLoopId localSize r0 globalOffset localId l) := by
+  rcases vaLoopPreamble_frame s with ⟨h46, h47, h48, _hmem⟩
+  exact ⟨h47.trans h.aReg, h48.trans h.bReg, h46.trans h.cReg,
+    fun l => vaLoopPreamble_id s localSize r0 globalOffset localId l h.toVaLoopLaunch⟩
+
 /-- The body's memory is a store of the lane sums at the C addresses. -/
 theorem vaLoopBody_mem (s : RealState) (aPtr bPtr cPtr : Addr)
     (idx : Nat → Addr) (h : VaLoopBodyPre s aPtr bPtr cPtr idx) :
@@ -128,6 +154,31 @@ theorem vaLoopBody_store_at (s : RealState) (aPtr bPtr cPtr : Addr)
   rw [vaLoopWordBitVec cPtr (idx l) hc hcb] at hsame
   rw [hsame]
   exact vaLoopBody_sum s aPtr bPtr cPtr idx h l ha hb hab hbb
+
+/-- End to end for one active lane of the real loop vector add: the preamble
+computes the initial 64-bit id and the body stores `A[id] + B[id]` at `C[id]`. -/
+theorem realVectorAdd_loop_effect (s : RealState) (aPtr bPtr cPtr : Addr)
+    (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16)
+    (h : VaLoopPre s aPtr bPtr cPtr localSize r0 globalOffset localId)
+    (l : Nat) (hl : l < 24) (ha : aPtr.toNat % 4 = 0) (hb : bPtr.toNat % 4 = 0)
+    (hc : cPtr.toNat % 4 = 0)
+    (hab : aPtr.toNat + 4 * (vaLoopId localSize r0 globalOffset localId l).toNat < 2 ^ 64)
+    (hbb : bPtr.toNat + 4 * (vaLoopId localSize r0 globalOffset localId l).toNat < 2 ^ 64)
+    (hcb : cPtr.toNat + 4 * (vaLoopId localSize r0 globalOffset localId l).toNat < 2 ^ 64)
+    (hboundC : ∀ k, k < 32 → cPtr.toNat + 4 *
+      (vaLoopId localSize r0 globalOffset localId k).toNat < 2 ^ 64)
+    (hdistinct : ∀ k, k < 32 → k ≠ l →
+      cPtr.toNat / 4 + (vaLoopId localSize r0 globalOffset localId k).toNat ≠
+        cPtr.toNat / 4 + (vaLoopId localSize r0 globalOffset localId l).toNat) :
+    (runVAL (runVAL s vaLoopPreamble) vaLoopBody).mem
+        (cPtr.toNat / 4 + (vaLoopId localSize r0 globalOffset localId l).toNat) =
+      s.mem (aPtr.toNat / 4 + (vaLoopId localSize r0 globalOffset localId l).toNat) +
+        s.mem (bPtr.toNat / 4 + (vaLoopId localSize r0 globalOffset localId l).toNat) := by
+  have hpre := vaLoopPreamble_bodyPre s aPtr bPtr cPtr localSize r0 globalOffset localId h
+  have hstore := vaLoopBody_store_at (runVAL s vaLoopPreamble) aPtr bPtr cPtr
+    (fun l => vaLoopId localSize r0 globalOffset localId l) hpre l (by omega) ha hb hc
+    hab hbb hcb hboundC hdistinct
+  simpa [vaLoopPreamble_mem s] using hstore
 
 end
 
