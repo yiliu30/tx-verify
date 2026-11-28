@@ -53,8 +53,15 @@ theorem gemmBody_correct ... :
     s'.regs 4 = sum + a * b ∧ s'.mem = s.mem ∧ s'.halted = s.halted
 ```
 
-This is one lane; SIMD masks, loop control, pointer increment, and IGC text
-parsing are later stages.
+This is one lane; SIMD masks, loop control, pointer increment, and the
+SYCL-TLA tile/DPAS kernel are later stages.
+
+## Stage 4: IGC syntax/parser
+
+`Intel/Syntax.lean` defines a raw IGC `Stmt`/`Program` syntax.
+`Tools/parse_igc.py` parses a canonical GEMM loop-body fixture into
+`Intel/Examples/GemmLoop.lean`, and `--check` verifies the generated file is
+current. Operands remain raw strings; decoding is the next stage.
 
 ## Not modeled yet
 
@@ -76,6 +83,7 @@ lake build Intel
 
 1. Stage 1: minimal Intel GPU / IGC core and `add_one`.
 2. Stage 2: GEMM specification and loop invariant.
-3. Stage 3 (this PR): GEMM loop-body semantics.
-4. Stage 4: IGC text/parser and loop control.
-5. Stage 5: SYCL-TLA GEMM instance.
+3. Stage 3: GEMM loop-body semantics.
+4. Stage 4 (this PR): IGC syntax and parser.
+5. Stage 5: IGC operand decoding and loop control.
+6. Stage 6: SYCL-TLA GEMM instance.
