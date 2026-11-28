@@ -34,7 +34,7 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (77 jobs) and `Tools/check_axioms.py --all`
-  (437 theorems, 127 documented exceptions at stage 110).
+  (439 theorems, 128 documented exceptions at stage 111).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base

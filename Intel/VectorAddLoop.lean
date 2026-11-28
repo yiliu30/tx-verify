@@ -136,6 +136,19 @@ structure VaLoopLaunch (s : RealState) (localSize r0 globalOffset : Word)
   localIdReg : ∀ l, s.regs 39 l = (localId l).zeroExtend 64
   offsetReg : s.regs 36 0 = zext globalOffset
 
+/-- The two dwords of the loop's 64-bit global-size constant. -/
+structure VaLoopSizePre (s : RealState) (sizeLo sizeHi : Word) : Prop where
+  loReg : s.regs 45 0 = zext sizeLo
+  hiReg : s.regs 45 1 = zext sizeHi
+
+theorem vaLoopPreamble_size (s : RealState) (sizeLo sizeHi : Word)
+    (h : VaLoopSizePre s sizeLo sizeHi) :
+    (runVAL s vaLoopPreamble).regs 49 0 = zext sizeLo ∧
+    (runVAL s vaLoopPreamble).regs 49 1 = zext sizeHi := by
+  unfold vaLoopPreamble runVAL stepVAL
+  simp [runRealWith, stepWith, writeVecWith, setReg, readRegWith, readSrcWith,
+    srcIndex, vaLoopAlias, h.loReg, h.hiReg]
+
 /-- The per-lane 64-bit ID computed by the preamble. -/
 def vaLoopId (localSize r0 globalOffset : Word) (localId : Nat → BitVec 16)
     (l : Nat) : Addr :=
