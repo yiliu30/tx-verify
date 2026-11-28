@@ -507,6 +507,27 @@ with `A = [3, 4]`, `B = [5, 6]`, so the expected result is `3*5 + 4*6 = 39`.
 These are evidence the model is not vacuous: staging, barrier, DPAS, the tail
 path, the epilogue and the roundings all compute what the theorems say.
 
+## Stage 34: exactness on a shared grid
+
+The numeric layer bounds the error of a rounded accumulation. This stage gives
+the case where there is no error: if the operands and the accumulator all sit
+on the same quantum grid — the shared-exponent-window case — every product and
+partial sum is exactly representable, so rounding is the identity.
+
+```lean
+theorem roundEvenNat_mul ...         -- rounding a multiple of q changes nothing
+theorem roundEven_fixed ...          -- signed version, k * q
+theorem stepEven_grid ...            -- a multiply-add of grid values is exact
+theorem evenDot_exact_on_grid ... :  -- so is an n-deep accumulation
+    maccDot (stepEven q) ... n = accDot ... n
+```
+
+This is the bridge back to stages 1-28: on the grid the machine accumulation
+equals the exact integer dot, so the exact-integer theorems apply verbatim to
+that input class. Off the grid, stage 31/32 bound the error by `n * (q / 2)`.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -564,4 +585,5 @@ lake build Intel
 30. Stage 30: round-to-nearest, halving the accumulation bound.
 31. Stage 31: ties-to-even, the hardware tie rule.
 32. Stage 32: bridging word arithmetic to the numeric bound.
-33. Stage 33 (this PR): executable smoke tests.
+33. Stage 33: executable smoke tests.
+34. Stage 34 (this PR): exactness on a shared quantization grid.
