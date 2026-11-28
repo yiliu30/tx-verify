@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 254: online softmax invariant
+
+`Intel/TlaOnlineSoftmax.lean` proves the running-state invariant for the
+flash-attention rescaling: `onlineStep` updates `(m, l, acc)` with
+`alpha = exp(m_old - m_new)`, and `onlineFold_init_spec` shows that after any
+prefix the state holds the two-pass sums `sum exp(x - m)` and
+`sum exp(x - m) * v` at its running `m`. The rescaling uses the exponential
+law `exp a * exp b = exp (a + b)` (`exp_sub_mul`, `sum_rescale_den/num`), a
+separate contract from the MUFU error budget. The final division by `l` is
+part of the epilogue stage.
+
 ## Stage 253: row softmax algebra
 
 `Intel/TlaSoftmax.lean` proves the softmax algebra over `Rat`: `ratMax` and
@@ -3899,4 +3910,5 @@ lake build Intel
 250. Stage 250: plain `cmp`, `not` and the `bfn` mux.
 251. Stage 251: `sync.allwr` waits.
 252. Stage 252: `math.exp` and `math.inv`.
-253. Stage 253 (this PR): row softmax algebra.
+253. Stage 253: row softmax algebra.
+254. Stage 254 (this PR): online softmax invariant.

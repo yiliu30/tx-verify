@@ -3,8 +3,9 @@
 Status: proposal for stages 247+. The GEMM stack (stages 174–245) is merged
 on `main`; this document scopes the next kernel family: the SYCL-TLA FMHA
 prefill (`XeFMHAFwdKernel`, BF16, head dim 128). Stages 247 and 248 are
-merged (PRs #251, #252, #254, #255, #256, #257, #258); decoding is total,
-the MUFU contract is in place and the row-softmax algebra is proved.
+merged (PRs #251, #252, #254, #255, #256, #257, #258, #259); decoding is
+total, the MUFU contract, row-softmax algebra and online-softmax invariant
+are in place.
 
 ## 1. Scope
 
@@ -120,7 +121,7 @@ Decoding is only 7.7% of the work; the new semantics are:
    the fp32 softmax pipeline (done in stage 253 as `TlaSoftmax`).
 7. **Online softmax over KV tiles**: running max `m`, denominator `l`, and
    `O ← O * exp(m_old − m_new) + P·V` rescaling, with the accumulator living
-   across the KV-tile loop.
+   across the KV-tile loop (done in stage 254 as `TlaOnlineSoftmax`).
 8. **Causal masking**: `sel`/`cmp` build the mask on the diagonal tile; the
    theorem must state exactly which `(q, k)` pairs contribute.
 9. **P conversion**: fp32 softmax block → BF16 before the second DPAS.
@@ -165,7 +166,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247-253 are merged (PRs #251, #252, #254, #255, #256, #257, #258).
+Stages 247-254 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |
