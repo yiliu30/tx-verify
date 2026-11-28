@@ -64,8 +64,8 @@ def parse(text: str):
         tokens = split_operands(line)
         opcode = tokens[0]
         operands = [token.rstrip(",") for token in tokens[1:]]
-        if opcode.startswith("(!") and opcode.endswith(")") and operands[:1] == ["goto"]:
-            opcode = opcode + " goto"
+        if opcode.startswith("(") and opcode.endswith(")") and operands:
+            opcode = opcode + " " + operands[0]
             operands = operands[1:]
         stmts.append(("instruction", opcode, operands))
     return stmts

@@ -107,6 +107,12 @@ KNOWN = {
     "IntelGpu.gemmEpilogue_halted": {"Classical.choice"},
     "IntelGpu.realGemm_output": {"Classical.choice"},
     "IntelGpu.realFmhaDpas_form": {"Classical.choice"},
+    # Stage 82 vector-add coverage: `decodeReal` walks `String` operands.
+    "IntelGpu.realVectorAdd_accepted": {"Classical.choice"},
+    "IntelGpu.realVectorAdd_rejectedOps": {"Classical.choice"},
+    "IntelGpu.realVectorAdd_rejectedLabels": {"Classical.choice"},
+    "IntelGpu.masked_mov_rejected": {"Classical.choice"},
+    "IntelGpu.realVectorAdd_not_decoded": {"Classical.choice"},
 }
 
 # One headline theorem per stage, in stage order.
@@ -207,6 +213,10 @@ THEOREMS = [
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_fin"),
     ("Intel.Fp16Ieee", "IntelGpu.foldValIEEE_ne_fin"),
     ("Intel.Fp16Ieee", "IntelGpu.vstep_zero_inf_old"),
+    ("Intel.RealVectorAddCoverage", "IntelGpu.realVectorAdd_accepted"),
+    ("Intel.RealVectorAddCoverage", "IntelGpu.realVectorAdd_rejectedOps"),
+    ("Intel.RealVectorAddCoverage", "IntelGpu.realVectorAdd_not_decoded"),
+    ("Intel.RealVectorAddCoverage", "IntelGpu.masked_mov_rejected"),
 ]
 
 LINE = re.compile(r"^'(?P<name>[^']+)' depends on axioms: \[(?P<axioms>[^\]]*)\]")
