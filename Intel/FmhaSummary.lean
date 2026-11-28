@@ -5,6 +5,7 @@ public import Intel.FmhaPrefillCoverage
 public import Intel.TlaFmhaPv
 public import Intel.TlaFmhaQk
 public import Intel.TlaBf16Rne
+public import Intel.TlaFmhaPvCensus
 public import Intel.TlaEpilogue
 public import Intel.TlaMask
 
@@ -83,11 +84,19 @@ def FmhaExecSummary : Prop :=
 theorem fmha_exec_summary : FmhaExecSummary :=
   ⟨fmhaPrefill_classified, fmhaPrefill_step_total⟩
 
+/-- All 16 PV groups are covered by the chain theorem. -/
+def FmhaPvCensusSummary : Prop :=
+  pvAccs.length = 16 ∧ (pvDpas.all (fun d => decide (d.acc0 ∈ pvAccs))) = true ∧
+  (∀ a : Nat, a ∈ pvAccs → (pvGroup a).length = 2)
+
+theorem fmha_pv_census_summary : FmhaPvCensusSummary :=
+  ⟨by decide, pvDpas_accs_mem, fun a ha => pvGroup_length_of_mem ha⟩
+
 /-- The headline checklist. -/
 theorem fmha_prefill_summary :
     FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary ∧
-    FmhaConvertSummary ∧ FmhaExecSummary :=
+    FmhaConvertSummary ∧ FmhaExecSummary ∧ FmhaPvCensusSummary :=
   ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary,
-   fmha_convert_summary, fmha_exec_summary⟩
+   fmha_convert_summary, fmha_exec_summary, fmha_pv_census_summary⟩
 
 end IntelGpu
