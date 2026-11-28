@@ -336,6 +336,40 @@ one executed pipeline.
 `#print axioms` on `mainloop_epilogue` reports only `[propext, Quot.sound]`;
 `tileSpec_of_mainloop` uses no axioms.
 
+## Stage 27: rounding contract and accumulation error
+
+Everything through stage 26 is exact integer arithmetic, which is the wrong
+shape for a real fp16/bf16 kernel. `Intel/Numeric.lean` supplies the standard
+shape: a per-step contract plus an accumulation bound.
+
+```lean
+def accDot ...                      -- exact, depth-ordered accumulation
+def maccDot ...                     -- the same accumulation on the machine
+theorem maccDot_error ... :         -- n steps are within n * eps
+    (maccDot step a b acc n - accDot a b acc n).natAbs ≤ n * eps
+theorem maccDot_zero_error ...      -- no rounding error ⇒ exact result
+theorem dpas_chain_error ... :      -- T slabs of depth d: error ≤ T * d * eps
+    ... ≤ T * d * eps
+def toInt (w : Word) : Int          -- signed reading of a 32-bit word
+```
+
+The bound grows with accumulation depth `T * d`, not with the number of tiles,
+which is why a kernel splits K into slabs without changing the error class.
+
+The contract
+
+```lean
+hstep : ∀ c x y, (step c x y - (c + x * y)).natAbs ≤ eps
+```
+
+is the hardware assumption: it says each machine multiply-add is within `eps`
+units of the exact one. Deriving it needs bit-level fp16/fp32 semantics, which
+is a separate development; stating it keeps the accumulation argument honest
+and reusable.
+
+`#print axioms` on these reports only `[propext, Quot.sound]` (`maccDot_zero_error`
+uses no axioms).
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -344,8 +378,9 @@ one executed pipeline.
 - SEND/EOT details beyond a halted flag.
 - SLM bank layout and conflicts, sub-group masks, and barrier scheduling.
 - Atomics and the launch ABI.
-- fp16/bf16 rounding and instruction-level DPAS dispatch (the atom is modeled
-  as a tile operation).
+- Bit-level fp16/bf16 rounding: the numeric layer takes the per-step error as
+  a stated hardware contract instead of deriving it.
+- Instruction-level DPAS dispatch (the atom is modeled as a tile operation).
 - Per-work-item staging schedules: the copies are workgroup-wide
   instructions rather than a per-lane distribution.
 
@@ -384,4 +419,5 @@ lake build Intel
 23. Stage 23: assembling executed tiles into `GemmSpecW`.
 24. Stage 24: operand staging from global memory into SLM.
 25. Stage 25: the composed mainloop (stage, sync, DPAS).
-26. Stage 26 (this PR): the full tile pipeline (mainloop + epilogue).
+26. Stage 26: the full tile pipeline (mainloop + epilogue).
+27. Stage 27 (this PR): rounding contract and accumulation error bound.
