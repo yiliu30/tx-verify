@@ -4,9 +4,9 @@ Status: proposal for stages 247+. The GEMM stack (stages 174–245) is merged
 on `main`; this document scopes the next kernel family: the SYCL-TLA FMHA
 prefill (`XeFMHAFwdKernel`, BF16, head dim 128). Stages 247 and 248 are
 merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261,
-#262, #263); decoding is total, and the MUFU contract, softmax pipeline,
-causal mask, DPAS atoms, PV chain and epilogue ratio are proved. The
-remaining gaps are listed in section 8.
+#262, #263, #265); decoding is total, and the MUFU contract, softmax
+pipeline, causal mask, DPAS atoms, QK/PV chains and epilogue ratio are
+proved. The remaining gaps are listed in section 8.
 
 ## 1. Scope
 
@@ -168,7 +168,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247-258 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263).
+Stages 247-259 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |
@@ -214,10 +214,8 @@ the fixed-accumulator PV chain and the epilogue ratio.
 
 Still open:
 
-- **QK^T chain composition**: the QK atoms read A/B windows that overlap the
-  accumulator blocks, so the fixed-accumulator chain theorem does not apply
-  directly. The atom semantics and phase split are proved; the composed
-  windowed sum needs a register-lifetime model.
+- **QK^T chain composition**: done in stage 259 (`TlaFmhaQk`); each of the
+  four blocks is its initial value plus eight slabs.
 - **RNE P→BF16**: the packing views exist, but the rounding conversion from
   FP32 softmax values to BF16 is not modelled yet.
 - **LSE variant**: the imported dump is the non-LSE prefill; the LSE build

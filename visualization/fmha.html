@@ -94,6 +94,7 @@
     <tr><td>256</td><td>#261</td><td>FMHA DPAS atoms, null/alias semantics</td></tr>
     <tr><td>257</td><td>#262</td><td>PV chain slab sum, epilogue ratio</td></tr>
     <tr><td>258</td><td>#263</td><td>summary module and this page</td></tr>
+    <tr><td>259</td><td>#265</td><td>QK^T chain composition</td></tr>
   </table>
 </section>
 
@@ -105,6 +106,7 @@
     <tr><td>4 null + 60 aliased DPAS</td><td><code>fmhaDpas_null_count</code>, <code>fmhaDpas_alias_count</code></td></tr>
     <tr><td>QP split 32 + 32</td><td><code>qkDpas_length</code>, <code>pvDpas_length</code></td></tr>
     <tr><td>Atom slab value and frame</td><td><code>fmhaAtomStep_acc0</code>, <code>fmhaAtomStep_frame</code></td></tr>
+    <tr><td>QK^T chain = 8 slabs per block</td><td><code>qk42_sum</code>, <code>qk50_sum</code>, <code>qk58_sum</code>, <code>qk66_sum</code></td></tr>
     <tr><td>PV chain = initial + slab sum</td><td><code>fmhaAtomRun_fixed_acc</code>, <code>pv74_sum</code></td></tr>
     <tr><td>Row max upper bound</td><td><code>rowMax_ge_mem</code></td></tr>
     <tr><td>Softmax weights sum to one</td><td><code>softmaxWeights_sum_one</code></td></tr>
@@ -119,7 +121,6 @@
   <h2>Open gaps</h2>
   <table>
     <tr><th>Gap</th><th>Status</th></tr>
-    <tr><td>QK^T chain composition with accumulator-overlapping A/B windows</td><td><span class="tag pending">atom semantics only</span></td></tr>
     <tr><td>RNE fp32 &rarr; BF16 conversion before PV</td><td><span class="tag pending">packing exists, rounding model pending</span></td></tr>
     <tr><td>LSE variant <code>math.log</code> (8 forms in the LSE dump)</td><td><span class="tag pending">non-LSE dump imported</span></td></tr>
     <tr><td>Per-op MUFU samples</td><td><span class="tag pending">end-to-end 1.5e-05 only</span></td></tr>
