@@ -2,8 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Export a small IGC assembly subset to a Lean `Program` definition.
 
-Only the line-oriented subset used by the stage-4 GEMM loop fixture is
-parsed. Operands stay raw strings; decoding is a later stage.
+The parser is line-oriented. It keeps labels and instructions as raw strings;
+decoding is a later stage. Directives (`.decl`, `.input`, ...), `FILE`/`LOC`
+markers and comments are skipped. Operands that contain a space inside
+parentheses, such as an execution size `(M1_NM, 1)`, are kept as one operand,
+and a leading predicate such as `(!P1) goto` is kept as one opcode.
 """
 
 import argparse
@@ -18,10 +21,10 @@ public import Intel.Syntax
 
 @[expose] public section
 
-namespace IntelGpu
+{doc}namespace IntelGpu
 
-def gemmLoop : Program :=
-  { statements := [
+def {name} : Program :=
+  {{ statements := [
 """
 
 FOOTER = """  ] }
@@ -30,24 +33,46 @@ end IntelGpu
 """
 
 
+def split_operands(text: str) -> list[str]:
+    """Split on spaces, but keep parenthesised groups together."""
+    tokens: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for part in text.split():
+        current.append(part)
+        depth += part.count("(") - part.count(")")
+        if depth <= 0:
+            tokens.append(" ".join(current))
+            current = []
+            depth = 0
+    if current:
+        tokens.append(" ".join(current))
+    return tokens
+
+
 def parse(text: str):
     stmts = []
     for raw in text.splitlines():
         line = raw.split("//", 1)[0].strip()
-        if not line:
+        if not line or line.startswith("."):
+            continue
+        if line.startswith("FILE ") or line.startswith("LOC "):
             continue
         if line.endswith(":"):
             stmts.append(("label", line[:-1]))
             continue
-        parts = line.split()
-        opcode = parts[0]
-        operands = [p.rstrip(",") for p in parts[1:]]
+        tokens = split_operands(line)
+        opcode = tokens[0]
+        operands = [token.rstrip(",") for token in tokens[1:]]
+        if opcode.startswith("(!") and opcode.endswith(")") and operands[:1] == ["goto"]:
+            opcode = opcode + " goto"
+            operands = operands[1:]
         stmts.append(("instruction", opcode, operands))
     return stmts
 
 
-def lean(stmts) -> str:
-    out = [HEADER]
+def lean(stmts, name: str = "gemmLoop", doc: str = "") -> str:
+    out = [HEADER.format(name=name, doc=doc)]
     for stmt in stmts:
         if stmt[0] == "label":
             out.append(f"    .label {json.dumps(stmt[1])},\n")
@@ -62,9 +87,14 @@ def main():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument("asm", type=Path)
     cli.add_argument("-o", "--output", type=Path, required=True)
+    cli.add_argument("--name", default="gemmLoop", help="Lean definition name")
+    cli.add_argument("--doc", type=Path, help="file with a module doc comment to insert")
     cli.add_argument("--check", action="store_true")
     args = cli.parse_args()
-    text = lean(parse(args.asm.read_text()))
+    doc = args.doc.read_text() if args.doc else ""
+    if doc and not doc.endswith("\n\n"):
+        doc = doc.rstrip("\n") + "\n\n"
+    text = lean(parse(args.asm.read_text()), args.name, doc)
     if args.check:
         if not args.output.exists() or args.output.read_text() != text:
             raise SystemExit(f"{args.output} is stale")
