@@ -108,6 +108,7 @@
     <tr><td>269</td><td>#275</td><td>PV load &rarr; BF16 operand bridge</td></tr>
     <tr><td>270</td><td>#276</td><td>LSE prefill dump imported and verified</td></tr>
     <tr><td>271</td><td>#277</td><td>measured MUFU samples (exp/inv/log)</td></tr>
+    <tr><td>272</td><td>#278</td><td>hardware conformance breadth (256/512/1024, batch 2, 2 heads)</td></tr>
   </table>
 </section>
 
@@ -142,6 +143,8 @@
     <tr><td>LSE variant <code>math.log</code></td><td><span class="tag ok">imported, 2694/2694 decoded, hardware Passed</span></td></tr>
     <tr><td>Program-level DPAS composition with the A/B reload schedule and loop</td><td><span class="tag pending">first PV load bridge (PC 1543) proved</span></td></tr>
     <tr><td>Float-valued half-ulp bound of the RNE conversion</td><td><span class="tag pending">structural bound proved</span></td></tr>
+    <tr><td>Causal hardware conformance</td><td><span class="tag pending">LSE example rejects --is_causal; plain reference broken</span></td></tr>
+    <tr><td>Shapes</td><td><span class="tag ok">256/512/1024, batch 2, 2 heads Passed</span></td></tr>
     <tr><td>Per-op MUFU samples</td><td><span class="tag ok">measured: exp 1.98e-07, inv 1.15e-07, log 7.66e-08</span></td></tr>
     <tr><td>Plain prefill runner <code>--verify=1</code></td><td><span class="tag gap">kErrorInternal on the lab host</span></td></tr>
     <tr><td>varlen, paged KV, FP8/MXFP, GQA/MQA, decode</td><td><span class="tag gap">out of scope</span></td></tr>

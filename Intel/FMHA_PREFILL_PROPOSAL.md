@@ -4,7 +4,7 @@ Status: proposal for stages 247+. The GEMM stack (stages 174–245) is merged
 on `main`; this document scopes the next kernel family: the SYCL-TLA FMHA
 prefill (`XeFMHAFwdKernel`, BF16, head dim 128). Stages 247 and 248 are
 merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261,
-#262, #263, #265, #266, #267, #268, #269, #270, #271, #272, #273, #274, #275, #276, #277); decoding and execution are total,
+#262, #263, #265, #266, #267, #268, #269, #270, #271, #272, #273, #274, #275, #276, #277, #278); decoding and execution are total,
 and the MUFU contract, softmax pipeline, causal mask, DPAS atoms, QK/PV
 chains, RNE conversion, epilogue ratio and pipeline order are proved. The
 remaining gaps are listed in section 8.
@@ -170,7 +170,7 @@ hardware samples recorded with the dump provenance.
 ## 6. Proposed stages
 
 Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
-Stages 247-271 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265, #266, #267, #268, #269, #270, #271, #272, #273, #274, #275, #276, #277).
+Stages 247-272 are merged (PRs #251, #252, #254, #255, #256, #257, #258, #259, #260, #261, #262, #263, #265, #266, #267, #268, #269, #270, #271, #272, #273, #274, #275, #276, #277, #278).
 
 | Stage | Deliverable | Acceptance |
 | --- | --- | --- |
@@ -230,5 +230,7 @@ Still open:
   `7.66e-08` (log), recorded in `Intel/MufuSamples.lean`.
 - **Plain runner**: its `--verify=1` path is broken on the lab host
   (`kErrorInternal`, zero reference); the LSE runner is the pinned harness.
-- **Shapes and variants**: 256x256 only; varlen, paged KV, FP8/MXFP, GQA/MQA
-  and decode remain out of scope.
+- **Shapes and variants**: LSE hardware conformance now covers 256/512/1024,
+  batch 2 and 2 Q/KV heads (stage 272). Causal needs an independent host
+  reference (the LSE example rejects `--is_causal`; the plain reference is
+  broken). Varlen, paged KV, FP8/MXFP, GQA/MQA and decode remain out of scope.
