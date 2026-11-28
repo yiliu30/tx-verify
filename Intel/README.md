@@ -2841,6 +2841,15 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 192: more register-destination ALU ops
+
+`Intel/TlaAluExec.lean` now also executes the register-destination `mul`, `or`,
+`shl`, `shr` and `asr` forms, with written-form lemmas for each.
+`tlaAluStep?_mach_none` records that the multiply-high forms remain
+unmodelled. The executed subset covers 54 of the 109 ALU instructions
+(`tlaAlu_modeled_count`, stated on a dummy register file because `isSome` is
+independent of the register contents).
+
 ## Stage 191: all ALU destinations
 
 `Intel/TlaAlu.lean` now parses all 109 ALU instructions, including the
@@ -3276,4 +3285,5 @@ lake build Intel
 188. Stage 188: decoding the predicated ALU forms.
 189. Stage 189: executing the prologue ALU.
 190. Stage 190: ALU parsed/rejected census.
-191. Stage 191 (this PR): all ALU destinations.
+191. Stage 191: all ALU destinations.
+192. Stage 192 (this PR): more register-destination ALU ops.

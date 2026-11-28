@@ -30,6 +30,12 @@ def tlaAluStep? (rf : RegFile) (a : TlaAlu) : Option RegFile :=
       match a.op with
       | .and => some (writeTlaMasked rf d a.exec (fun i => f i &&& g i))
       | .add => some (writeTlaMasked rf d a.exec (fun i => f i + g i))
+      | .mul => some (writeTlaMasked rf d a.exec (fun i => f i * g i))
+      | .or => some (writeTlaMasked rf d a.exec (fun i => f i ||| g i))
+      | .shl => some (writeTlaMasked rf d a.exec (fun i => f i <<< (g i).toNat))
+      | .shr => some (writeTlaMasked rf d a.exec (fun i => f i >>> (g i).toNat))
+      | .asr => some (writeTlaMasked rf d a.exec
+          (fun i => (f i).sshiftRight (g i).toNat))
       | .mad =>
           match a.src3 with
           | some s3 =>
@@ -53,6 +59,34 @@ theorem tlaAluStep?_mad (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 s3 : TlaSrc) 
     tlaAluStep? rf ⟨.mad, e, .r d, s1, s2, some s3⟩ =
       some (writeTlaMasked rf d e
         (fun i => readTlaSrc rf s1 i * readTlaSrc rf s2 i + readTlaSrc rf s3 i)) := rfl
+
+theorem tlaAluStep?_mul (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
+    tlaAluStep? rf ⟨.mul, e, .r d, s1, s2, none⟩ =
+      some (writeTlaMasked rf d e
+        (fun i => readTlaSrc rf s1 i * readTlaSrc rf s2 i)) := rfl
+
+theorem tlaAluStep?_or (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
+    tlaAluStep? rf ⟨.or, e, .r d, s1, s2, none⟩ =
+      some (writeTlaMasked rf d e
+        (fun i => readTlaSrc rf s1 i ||| readTlaSrc rf s2 i)) := rfl
+
+theorem tlaAluStep?_shl (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
+    tlaAluStep? rf ⟨.shl, e, .r d, s1, s2, none⟩ =
+      some (writeTlaMasked rf d e
+        (fun i => readTlaSrc rf s1 i <<< (readTlaSrc rf s2 i).toNat)) := rfl
+
+theorem tlaAluStep?_shr (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
+    tlaAluStep? rf ⟨.shr, e, .r d, s1, s2, none⟩ =
+      some (writeTlaMasked rf d e
+        (fun i => readTlaSrc rf s1 i >>> (readTlaSrc rf s2 i).toNat)) := rfl
+
+theorem tlaAluStep?_asr (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
+    tlaAluStep? rf ⟨.asr, e, .r d, s1, s2, none⟩ =
+      some (writeTlaMasked rf d e
+        (fun i => (readTlaSrc rf s1 i).sshiftRight (readTlaSrc rf s2 i).toNat)) := rfl
+
+theorem tlaAluStep?_mach_none (rf : RegFile) (e : Exec) (d : Grf) (s1 s2 : TlaSrc) :
+    tlaAluStep? rf ⟨.mach, e, .r d, s1, s2, none⟩ = none := rfl
 
 /-- An active unit-stride write returns the source value. -/
 theorem writeTlaMasked_self_active (rf : RegFile) (g : Grf) (e : Exec)
@@ -113,5 +147,12 @@ theorem prologue_mad_value (rf : RegFile) :
   · rw [writeTlaMasked_self_active rf ⟨127, 0, 0, 1, 1, 1⟩ ⟨1, 0, true⟩ _ 0
       (by decide) rfl (by decide)]
     simp [readTlaSrc, srcIndex]
+
+set_option maxRecDepth 100000 in
+/-- 54 of the 109 ALU instructions are in the executed subset. -/
+theorem tlaAlu_modeled_count :
+    (realTlaGemmAlu.filter
+      (fun a => (tlaAluStep? (fun _ _ => 0) a).isSome)).length = 54 := by
+  decide
 
 end IntelGpu
