@@ -9,12 +9,13 @@ public import Intel.TlaMovExec
 # Decoding the predicated SYCL-TLA ALU forms
 
 The dump uses predicated `and`/`add`/`mad`/`mul`/`shr`/`shl`/`or`/`asr`/
-`mach`/`macl` instructions. This module gives the register-destination forms a
-structured `TlaAlu` representation: operation, execution control, destination,
-two sources and an optional third source for `mad`.
+`mach`/`macl` instructions. This module gives all of them a structured
+`TlaAlu` representation: operation, execution control, destination class
+(`r`, `acc`, `a` or `cr`), two sources and an optional third source for `mad`.
 
-The parser is fail-closed: non-`r` destinations (`acc0`, `a0`, `cr0`) are not
-accepted yet. The census records how many of each form parse.
+All 109 ALU instructions in the dump parse. Execution currently handles the
+`r`-destination `and`/`add`/`mad` subset; the other classes are decoded but
+not executed yet.
 -/
 
 namespace IntelGpu
@@ -23,10 +24,20 @@ inductive TlaAluOp where
   | and | add | mul | shr | shl | or | asr | mad | mach | macl
   deriving Repr, DecidableEq
 
+/-- An ALU destination: a GRF, an accumulator, an address register or a
+control register. -/
+inductive TlaAluDst where
+  | r (g : Grf)
+  | acc (num sub : Nat)
+  | addr (num sub : Nat)
+  | cr (num sub : Nat)
+  | flag (num sub : Nat)
+  deriving Repr, DecidableEq
+
 structure TlaAlu where
   op : TlaAluOp
   exec : Exec
-  dst : Grf
+  dst : TlaAluDst
   src1 : TlaSrc
   src2 : TlaSrc
   src3 : Option TlaSrc := none
@@ -59,66 +70,95 @@ def parseTlaSrcAlu (s : String) : Option TlaSrc :=
     | _ => parseTlaSrc s
   else parseTlaSrc s
 
-def parseTlaAluInstr : TlaInstr → Option TlaAlu
-  | .predicated "(W) mad" (e :: dst :: s1 :: s2 :: s3 :: _) =>
-      if isRReg dst then
-        match parseTlaExec e, parseTlaDstGrf dst, parseTlaSrcAlu s1, parseTlaSrcAlu s2,
-          parseTlaSrcAlu s3 with
-        | some ex, some d, some a, some b, some c =>
-            some ⟨.mad, ex, d, a, b, some c⟩
-        | _, _, _, _, _ => none
-      else none
-  | .predicated op (e :: dst :: s1 :: s2 :: _) =>
-      if isRReg dst then
-        match parseTlaAluOp op, parseTlaExec e, parseTlaDstGrf dst,
-          parseTlaSrcAlu s1, parseTlaSrcAlu s2 with
-        | some o, some ex, some d, some a, some b => some ⟨o, ex, d, a, b, none⟩
-        | _, _, _, _, _ => none
-      else none
+/-- Parse an ALU destination class. -/
+def parseTlaAluDst (s : String) : Option TlaAluDst :=
+  match (operandCore s).toList with
+  | 'r' :: _ => (parseTlaDstGrf s).map .r
+  | 'a' :: 'c' :: 'c' :: _ =>
+      match numRuns (operandCore s) with
+      | [n, sub, _] => some (.acc n sub)
+      | _ => none
+  | 'a' :: _ =>
+      match numRuns (operandCore s) with
+      | [n, sub, _] => some (.addr n sub)
+      | _ => none
+  | 'c' :: 'r' :: _ =>
+      match numRuns (operandCore s) with
+      | [n, sub, _] => some (.cr n sub)
+      | _ => none
+  | 'f' :: _ =>
+      match numRuns (operandCore s) with
+      | [n, sub, _] => some (.flag n sub)
+      | _ => none
   | _ => none
 
-/-- The decoded register-destination ALU instructions. -/
+def parseTlaAluInstr : TlaInstr → Option TlaAlu
+  | .predicated "(W) mad" (e :: dst :: s1 :: s2 :: s3 :: _) =>
+      match parseTlaExec e, parseTlaAluDst dst, parseTlaSrcAlu s1, parseTlaSrcAlu s2,
+        parseTlaSrcAlu s3 with
+      | some ex, some d, some a, some b, some c =>
+          some ⟨.mad, ex, d, a, b, some c⟩
+      | _, _, _, _, _ => none
+  | .predicated op (e :: dst :: s1 :: s2 :: _) =>
+      match parseTlaAluOp op, parseTlaExec e, parseTlaAluDst dst,
+        parseTlaSrcAlu s1, parseTlaSrcAlu s2 with
+      | some o, some ex, some d, some a, some b => some ⟨o, ex, d, a, b, none⟩
+      | _, _, _, _, _ => none
+  | _ => none
+
+/-- The decoded ALU instructions. -/
 def realTlaGemmAlu : List TlaAlu :=
   (decodeTlaProgram realTlaGemm).filterMap parseTlaAluInstr
 
 theorem parseTlaAlu_and :
     parseTlaAluInstr (.predicated "(W) and"
       ["(1|M0)", "r127.2<1>:ud", "r0.0<0;1,0>:ud", "0xFFFFFFC0:ud"]) =
-      some ⟨.and, ⟨1, 0, true⟩, ⟨127, 0, 2, 1, 1, 1⟩,
+      some ⟨.and, ⟨1, 0, true⟩, .r ⟨127, 0, 2, 1, 1, 1⟩,
         .reg ⟨0, 0, 0, 0, 1, 0⟩, .imm (0xFFFFFFC0 : Int) .ud, none⟩ := by
   decide
 
 theorem parseTlaAlu_add :
     parseTlaAluInstr (.predicated "(W) add"
       ["(1|M0)", "r127.2<1>:ud", "r127.2<0;1,0>:ud", "0x280:ud"]) =
-      some ⟨.add, ⟨1, 0, true⟩, ⟨127, 0, 2, 1, 1, 1⟩,
+      some ⟨.add, ⟨1, 0, true⟩, .r ⟨127, 0, 2, 1, 1, 1⟩,
         .reg ⟨127, 0, 2, 0, 1, 0⟩, .imm (0x280 : Int) .ud, none⟩ := by
   decide
 
 theorem parseTlaAlu_mad :
     parseTlaAluInstr (.predicated "(W) mad"
       ["(1|M0)", "r127.0<1>:ud", "r127.2<0;0>:ud", "r127.0<0;0>:uw", "0x40:uw"]) =
-      some ⟨.mad, ⟨1, 0, true⟩, ⟨127, 0, 0, 1, 1, 1⟩,
+      some ⟨.mad, ⟨1, 0, true⟩, .r ⟨127, 0, 0, 1, 1, 1⟩,
         .reg ⟨127, 0, 2, 0, 1, 0⟩, .reg ⟨127, 0, 0, 0, 1, 0⟩,
         some (.imm (0x40 : Int) .w16)⟩ := by
   decide
 
 set_option maxRecDepth 100000 in
-/-- The number of decoded `and` forms with `r` destinations. -/
+/-- All 109 ALU instructions parse. -/
+theorem realTlaGemmAlu_total : realTlaGemmAlu.length = 109 := by decide
+
+set_option maxRecDepth 100000 in
+/-- The number of decoded `and` forms. -/
 theorem realTlaGemmAlu_and_count :
-    (realTlaGemmAlu.filter (fun a => a.op = .and)).length = 4 := by
-  decide
+    (realTlaGemmAlu.filter (fun a => a.op = .and)).length = 5 := by decide
 
 set_option maxRecDepth 100000 in
 /-- The number of decoded `add` forms. -/
 theorem realTlaGemmAlu_add_count :
-    (realTlaGemmAlu.filter (fun a => a.op = .add)).length = 31 := by
-  decide
+    (realTlaGemmAlu.filter (fun a => a.op = .add)).length = 31 := by decide
 
 set_option maxRecDepth 100000 in
-/-- The number of decoded `mad` forms. -/
-theorem realTlaGemmAlu_mad_count :
-    (realTlaGemmAlu.filter (fun a => a.op = .mad)).length = 1 := by
-  decide
+/-- The number of decoded `mul` forms. -/
+theorem realTlaGemmAlu_mul_count :
+    (realTlaGemmAlu.filter (fun a => a.op = .mul)).length = 14 := by decide
+
+set_option maxRecDepth 100000 in
+/-- The number of decoded `shr` forms. -/
+theorem realTlaGemmAlu_shr_count :
+    (realTlaGemmAlu.filter (fun a => a.op = .shr)).length = 25 := by decide
+
+set_option maxRecDepth 100000 in
+/-- The number of decoded `or` forms. -/
+theorem realTlaGemmAlu_or_count :
+    (realTlaGemmAlu.filter (fun a => a.op = .or)).length = 1 := by decide
 
 end IntelGpu
