@@ -2841,6 +2841,18 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 176: register-level execution of the SYCL-TLA DPAS chain
+
+`Intel/TlaDpasExec.lean` parses the 32 DPAS instructions of the real
+SYCL-TLA GEMM into their four register bases and executes each as an 8x8
+depth-16 slab on the logical register file of `Intel.FmhaExec`.
+`tlaDpasStep_acc0` and `tlaDpasStep_acc1` give the two accumulator blocks
+after one step, and `tlaDpasStep_frame` fixes everything else. The census
+proves 32 DPAS, both accumulators always `r21`/`r13`, B bases exactly
+`64..120` and A bases exactly `30..58`. The 32-step fold is defined but its
+sum theorem is the next stage; the BF16 bit interpretation is also still to
+come.
+
 ## Stage 175: total decoder for the SYCL-TLA dump
 
 `Intel/TlaDecode.lean` adds `TlaInstr` and a total, lossless decoder for the
@@ -3107,4 +3119,5 @@ lake build Intel
 172. Stage 172: directed-rounding FMA.
 173. Stage 173: review stage map refresh.
 174. Stage 174: real SYCL-TLA GEMM import.
-175. Stage 175 (this PR): total decoder for the SYCL-TLA dump.
+175. Stage 175: total decoder for the SYCL-TLA dump.
+176. Stage 176 (this PR): register-level execution of the SYCL-TLA DPAS chain.
