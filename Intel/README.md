@@ -2479,6 +2479,17 @@ frames. `vaLoop_kernel_pc0_mem` composes those facts with stage 138, so the
 kernel's `C[id] = A[id] + B[id]` effect now starts at PC 0 with the launch
 registers, the size constant and the three pointers.
 
+## Stage 141: generic execution-mask laws
+
+`Intel/MaskExec.lean` supplies the reusable laws behind masked execution:
+`Exec.laneActive_not_noMask` and `Exec.laneActive_noMask` characterize the
+active window, `Exec.laneIndex_lt_size` and `Exec.laneIndex_injective_on_active`
+cover operand indices, and `writeMaskedWith_unit_coverage` states that a
+unit-stride masked write touches exactly the destination images of its active
+lanes and fixes every other element. `writeMaskedWith_commute_unit` gives the
+footprint condition under which two masked writes commute, and the `_NM` laws
+record that `_NM` means "no channel mask" rather than an empty mask.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2681,4 +2692,5 @@ lake build Intel
 137. Stage 137: prove the per-lane memory effect on the decoded path.
 138. Stage 138: derive the path guards from the decoded prefix.
 139. Stage 139: per-location visibility and release/acquire.
-140. Stage 140 (this PR): the decoded kernel entry from PC 0.
+140. Stage 140: the decoded kernel entry from PC 0.
+141. Stage 141 (this PR): generic execution-mask laws.
