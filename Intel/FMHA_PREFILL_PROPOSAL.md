@@ -21,8 +21,8 @@ Hardware and dumps (lab GPU, oneAPI 2026.1 IGC):
   `numAcc=8`, `numSWSB=32`;
 - 64 `dpas.8x8 (16|M0)` instructions with BF16 sources and FP32
   accumulators (the `XE_DPAS_TT<8, float, bfloat16, bfloat16, float>`
-  8x8x16 atom), all with `null` as the second accumulator; 40 carry
-  `{Atomic}` and 24 do not;
+  8x8x16 atom): 4 use `null` as the second accumulator and 60 alias it to
+  the first accumulator; 40 carry `{Atomic}` and 24 do not;
 - softmax path: 33 `math.exp`, 1 `math.inv` (the LSE variant adds 8
   `math.log`), plus `cmp`/`sel`/`mad` for max, mask and sum;
 - 66 `sel`, 69 `sync.nop`, 24 `sync.allrd`, 8 `sync.allwr`, 1 `sync.bar`,
@@ -75,10 +75,12 @@ Decoding is only 7.7% of the work; the new semantics are:
    theorem must be tolerance-based.
 4. **`sync.allwr`**: an all-write scoreboard wait; extends the `sync` classes
    and the ordering story of stage 228.
-5. **DPAS with a `null` second accumulator and the `Atomic` flag**: 64 forms,
-   8x8x16 BF16 atom (the same atom as the GEMM), second accumulator unused,
-   and the flag recorded but its arithmetic meaning to be confirmed (both
-   dumps accumulate; `Atomic` appears in 40 of 64 forms).
+5. **DPAS second-accumulator aliasing and the `Atomic` flag**: 64 forms,
+   8x8x16 BF16 atom (the same atom as the GEMM); the second accumulator is
+  either `null` (4 forms) or aliased to the first (60 forms), so the model
+  must skip `null` and treat the alias as one accumulation; the flag is
+  recorded but its arithmetic meaning is to be confirmed (both dumps
+  accumulate; `Atomic` appears in 40 of 64 forms).
 6. **Row softmax**: row max via `cmp`/`sel`, `exp`, sum, reciprocal, scale —
    the fp32 softmax pipeline.
 7. **Online softmax over KV tiles**: running max `m`, denominator `l`, and
@@ -119,7 +121,7 @@ Each stage is one stacked PR with `lake build Intel` and the full axiom audit.
 | 253 | Row-softmax algebra (max, exp, sum, reciprocal) | softmax value theorem on a full row |
 | 254 | Online-softmax invariant and KV-tile rescaling | fold theorem: running (m, l, O) equals two-pass softmax |
 | 255 | Causal mask theorem | exact (q, k) contribution set on the diagonal tile |
-| 256 | QK^T DPAS phase (64 atoms, null acc1) | slab sum over the attention tiles; null-accumulator handling |
+| 256 | QK^T DPAS phase (64 atoms, `null`-or-aliased acc1) | slab sum over the attention tiles; null and aliased accumulator handling |
 | 257 | P→BF16 conversion, PV DPAS phase, epilogue O/LSE | composed attention formula with the recorded rounding |
 | 258 | End-to-end prefill conformance | tolerance-based hardware runs (LSE runner + host reference), dump hash, review/visualization update |
 
