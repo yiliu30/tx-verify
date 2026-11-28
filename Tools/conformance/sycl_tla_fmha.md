@@ -35,3 +35,20 @@ dense input grid) still need a microbenchmark run and will refine the
 `expErr`/`invErr` instantiation used by the stage-258 conformance theorem.
 
 Product names and host details are withheld per the project's policy.
+
+
+## LSE prefill run
+
+A second run used the LSE prefill binary (`06_xe_fmha_fwd_lse`,
+`head_size_qk = head_size_vo = 128`, batch 1, 1 Q/KV head, 256x256) on the
+same lab GPU family:
+
+- compiler: oneAPI 2025.3 IGC (Xe2);
+- `Full kernel (LSE) output vs reference`: **Passed**;
+- `LSE output vs host log-sum-exp reference`: **Passed**, max abs error
+  **`1.52588e-05`**;
+- `Sequence-parallel (1 chunks) combined vs reference`: **Passed**.
+
+The assembly of this binary is imported in `Intel/Examples/RealFmhaLse.lean`
+(2581 instructions / 2694 statements, sha256 provenance there) and
+`Intel/FmhaLseCoverage.lean` proves 2694/2694 decode and execution.

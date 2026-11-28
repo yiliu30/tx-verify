@@ -7,6 +7,7 @@ public import Intel.TlaFmhaQk
 public import Intel.TlaBf16Rne
 public import Intel.TlaFmhaPvCensus
 public import Intel.TlaFmhaSchedule
+public import Intel.FmhaLseCoverage
 public import Intel.TlaEpilogue
 public import Intel.TlaMask
 
@@ -128,13 +129,28 @@ def FmhaBf16Summary : Prop :=
 
 theorem fmha_bf16_summary : FmhaBf16Summary := fmhaPrefill_dpas_bf16
 
+/-- The LSE dump is fully decoded and executable. -/
+def FmhaLseDumpSummary : Prop :=
+  lseCode.length = 2694 ∧
+  (lsePc.filter (fun p => decodedAll p.2)).length = 2694 ∧
+  lseUnclassified.length = 0 ∧
+  (lsePc.filter (fun p => isDpas p.2)).length = 64 ∧
+  (lsePc.filter (fun p => match parseTlaMath p.2 with
+    | some m => m.op = .log | none => false)).length = 16 ∧
+  lsePc.all (fun p => (tlaStepFmha? canonMachine p.2).isSome) = true
+
+theorem fmha_lse_dump_summary : FmhaLseDumpSummary :=
+  ⟨lseCode_length, lse_decoded_count, lse_unclassified_count, lse_dpas_count,
+   lse_log_count, lse_step_total⟩
+
 /-- The headline checklist. -/
 theorem fmha_prefill_summary :
     FmhaDecodeSummary ∧ FmhaScalarSummary ∧ FmhaPhaseSummary ∧ FmhaQkSummary ∧
     FmhaConvertSummary ∧ FmhaExecSummary ∧ FmhaPvCensusSummary ∧
-    FmhaScheduleSummary ∧ FmhaLseSummary ∧ FmhaBf16Summary :=
+    FmhaScheduleSummary ∧ FmhaLseSummary ∧ FmhaBf16Summary ∧ FmhaLseDumpSummary :=
   ⟨fmha_decode_summary, fmha_scalar_summary, fmha_phase_summary, fmha_qk_summary,
    fmha_convert_summary, fmha_exec_summary, fmha_pv_census_summary,
-   fmha_schedule_summary, fmha_lse_summary, fmha_bf16_summary⟩
+   fmha_schedule_summary, fmha_lse_summary, fmha_bf16_summary,
+   fmha_lse_dump_summary⟩
 
 end IntelGpu

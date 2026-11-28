@@ -111,6 +111,7 @@ def classifyOp (i : TlaInstr) : TlaOp :=
   | .plain "sync.nop" _ => .sync
   | .plain "sync.allrd" _ => .sync
   | .predicated "(W) sync.bar" _ => .sync
+  | .plain "join" _ => .sync
   | _ => .other
 
 /-- Execute one instruction over the machine with an explicit classifier. -/

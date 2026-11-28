@@ -29,9 +29,17 @@ def isJmpiOp (op : String) : Bool :=
   | 'i' :: 'p' :: 'm' :: 'j' :: _ => true
   | _ => false
 
+/-- Does the opcode end in ` goto`? -/
+def isGotoOp (op : String) : Bool :=
+  match op.toList.reverse with
+  | 'o' :: 't' :: 'o' :: 'g' :: ' ' :: _ => true
+  | _ => false
+
 def parseTlaJmpInstr : TlaInstr → Option TlaJmp
   | .predicated op [target] =>
       if isJmpiOp op then some ⟨op, target⟩ else none
+  | .predicated op (_e :: target :: _) =>
+      if isJmpiOp op || isGotoOp op then some ⟨op, target⟩ else none
   | _ => none
 
 def realTlaGemmJmps : List TlaJmp :=

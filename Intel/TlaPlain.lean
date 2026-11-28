@@ -68,7 +68,8 @@ def realTlaGemmAluPlain : List TlaAlu :=
 
 /-- A plain `store_block2d.ugm.*` opcode. -/
 def isPlainStoreOp (op : String) : Bool :=
-  listHasPrefix "store_block2d.ugm".toList op.toList
+  listHasPrefix "store_block2d.ugm".toList op.toList ||
+    listHasPrefix "store.ugm".toList op.toList
 
 /-- A plain block2d store form; the printed order is address then data. -/
 def parseTlaBlock2dPlainStore : TlaInstr → Option TlaBlock2d

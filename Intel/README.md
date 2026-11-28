@@ -2841,6 +2841,16 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 270: the FMHA prefill LSE dump
+
+`Intel/Examples/RealFmhaLse.lean` imports the LSE prefill kernel (2581
+instructions / 2694 statements, sha256 provenance). The parser extensions
+cover predicated `math.exp`/`math.inv`/`math.log`, plain `store.ugm`, `join`
+and predicated `goto`; `Intel/FmhaLseCoverage.lean` proves 2694/2694 decode,
+zero unclassified, total classification and total execution, with 64 DPAS,
+33 `exp`, 16 `log`, 17 `inv`, 16 `join` and 32 plain stores. A fresh hardware
+run reports Full/LSE/SP all Passed with LSE max abs error `1.52588e-05`.
+
 ## Stage 269: PV load -> BF16 operand bridge
 
 `Intel/TlaFmhaLoad.lean` lifts the GEMM load-window bridge to the packed-BF16
@@ -4067,4 +4077,5 @@ lake build Intel
 266. Stage 266: packed-BF16 DPAS atom semantics.
 267. Stage 267: LSE model support.
 268. Stage 268: BF16 operand check.
-269. Stage 269 (this PR): PV load -> BF16 operand bridge.
+269. Stage 269: PV load -> BF16 operand bridge.
+270. Stage 270 (this PR): the FMHA prefill LSE dump.
