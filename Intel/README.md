@@ -2539,6 +2539,17 @@ other word at its initial value. The module notes the literal "`start < size`
 implies all `k < n` are in range" statement is false and uses the correct
 boundary instead.
 
+## Stage 147: SBID fields in an encoded SEND descriptor
+
+`Intel/SbidEncoding.lean` makes the abstract `Token := Nat` of the SEND model
+concrete. It documents one transcribed descriptor layout (SBID at bits
+`[8, 16)`), defines `sbidOf`/`mkDesc`, and proves `sbidOf_mk`,
+`distinct_sbids_distinct_tokens`, the two-SBID pending/all-done progression,
+and that waiting on or committing one token does not consume the other.
+`loadPipelineSbid_value` reuses the pipeline facts on an encoded descriptor.
+Out-of-range SBID fields are rejected. The layout is a model assumption, not
+a binary reading: the dumps do not print SBIDs.
+
 ## Not modeled yet
 
 - IGC text parsing beyond the add-one and integer-GEMM forms, and general
@@ -2747,4 +2758,5 @@ lake build Intel
 143. Stage 143: predicated lanes write nothing.
 144. Stage 144: reaching `ret` with the halt flag.
 145. Stage 145: global/SLM disjointness and workgroup barriers.
-146. Stage 146 (this PR): grid-stride indices and store composition.
+146. Stage 146: grid-stride indices and store composition.
+147. Stage 147 (this PR): SBID fields in an encoded SEND descriptor.

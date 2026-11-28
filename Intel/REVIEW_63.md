@@ -13,7 +13,7 @@ fork.
 | P0 reject unsupported explicitly | 62b (#64), 63 (#65), 82 (#84), 92 | `rejected`, `realGemm_rejectedOps`, `realVectorAdd_rejectedOps`, the fail-closed `parseExec` mask check, `masked_mov_decodes` and `parseExec_rejects_M9` | addressed; all dumps are all-or-nothing |
 | P0 unified semantics | 63-67 (#65-#69), 68-77 (#70-#79), 83-85 (#85-#87), 104-113 | one `RInstr`/`stepWith` model; `realAddOne_effect`, `realGemm_output`, `realVectorAdd_effect`; loop vector-add tables, index, body effect, per-lane CF and decoded branch sites | addressed for the modeled slots; predicate-value composition remains |
 | P0 GRF and SIMD | 64 (#66), 66 (#68), 68 (#70), 83 (#85), 90-98, 103, 105, 107, 112, 141 | regions, aliases, execution sizes in `Grf`/`gemmAlias`; per-lane predicates, predicated `sel`, predicate `and`/`or`, register comparisons, both predicated gotos; M1-M8 masks, all six masked moves, frame laws, a wrong-mask negative test, correct destination `<hstride>` parsing, dword/qword view laws, the 24-lane pack layout and a per-lane CF interpreter; generic active-window, operand-index, write-coverage and commutation laws | partial: masked moves execute with lane offsets, but other instructions do not yet consume `Exec`; decoded branch composition is stages 130-138 |
-| P0 SEND and SBID | 78 (#80) | `issueLoad`/`issueStore`/`wait`/`commitLoad`, `loadPipeline_value`, `storePipeline_value`, `addOnePipeline_value` | mechanism modeled; exact SBIDs are not printed and remain assumptions |
+| P0 SEND and SBID | 78 (#80), 147 | `issueLoad`/`issueStore`/`wait`/`commitLoad`, `loadPipeline_value`, `storePipeline_value`, `addOnePipeline_value`; one transcribed descriptor layout with SBID extraction, distinct-token progression and out-of-range rejection | mechanism modeled; the SBID bit layout is a documented transcription assumption because the dumps do not print the field |
 | P1 memory and concurrency | 60, 64 (#66), 67 (#69), 106, 139 | word/byte memory, alignment, `load32LE_store32LE_*`, `realAddOne_byteRangesDisjoint`, per-lane stores and frames, real loop-body `load/add/store` effect; a per-location visibility model with release/acquire message passing; global/SLM address-space disjointness and workgroup-barrier SLM visibility | partial: cacheless model with full fences; no caches, relaxed atomics, bank conflicts or hardware address aliasing |
 | P1 DPAS refinement | 49, 50, 79 (#81), 86 (#88), 99-101, 142 | decoded `dpas.8x8`; `fmhaFp8Atom` 8x8x32 vs `tlaXeF16Atom` 8x16x16; atom counts 1 vs 2; packed A/B/C layouts, collision-free addresses and decoded register bases; value equality with one depth-32 slab, K=16 split and 2x1/2x2 tile composition | addressed for the coded 8x8x32 layout |
 | P1 numerical semantics | 27-31, 43-56, 61, 80 (#82) | fixed-point bounds, NaN payload propagation, `vstepIEEE` with `0 * inf = NaN` | partial: not a full IEEE FMA |
@@ -34,7 +34,7 @@ fork.
   `Tools/conformance/`, plus the decoder rejection theorems.
 - Build and full axiom audit in CI, assumptions separate:
   `lake build Intel` (77 jobs) and `Tools/check_axioms.py --all`
-  (688 theorems, 230 documented exceptions at stage 146).
+  (722 theorems, 230 documented exceptions at stage 147).
 - Document the trusted base: below and in `Intel/README.md`.
 
 ## Trusted base
