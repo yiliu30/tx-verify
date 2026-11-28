@@ -662,6 +662,29 @@ that tile's accumulator. Those are the remaining half.
 
 `#print axioms` on each reports only `[propext, Quot.sound]`.
 
+## Stage 41: blocks are separated
+
+Stage 40 left `Separated` as a hypothesis. This stage derives it.
+
+```lean
+theorem mul_add_inj ...          -- BM-ary carries are injective below BM
+theorem addr_inj ...             -- row-major addresses injective when the column fits ldC
+theorem separated_of_width ... :
+    -- N ≤ ldC, and every origin's block fits N  ⇒  Separated base ldC BM BN origins
+    Separated base ldC BM BN origins
+```
+
+Two different tile origins therefore never share a buffer address, given the
+usual `N ≤ ldC` and that each tile block lies inside the matrix width. The
+address arithmetic is the part stage 40 could not do with `BN ≤ ldC` alone:
+global columns reach `p.2 * BN + n`, so the bound has to be the matrix width,
+not the tile width.
+
+Still open and stated as such: `writeTiles_block` — that a word *inside* a
+block ends up holding that tile's accumulator.
+
+`#print axioms` on each reports only `[propext, Quot.sound]`.
+
 ## Not modeled yet
 
 - IGC text parsing and register aliases (`r7:4`, `r12:2`).
@@ -727,4 +750,5 @@ lake build Intel
 37. Stage 37: distributed staging across lanes.
 38. Stage 38: fp16-shaped values on a shared grid.
 39. Stage 39: the epilogue is a frame-preserving write.
-40. Stage 40 (this PR): one output buffer for all tiles (frame law).
+40. Stage 40: one output buffer for all tiles (frame law).
+41. Stage 41 (this PR): blocks are separated.

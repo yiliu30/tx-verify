@@ -54,6 +54,7 @@ THEOREMS = [
     ("Intel.EpilogueLd", "IntelGpu.epilogueLd_correct"),
     ("Intel.EpilogueFrame", "IntelGpu.epilogueLd_frame"),
     ("Intel.SharedBuffer", "IntelGpu.writeTiles_frame"),
+    ("Intel.SharedBuffer", "IntelGpu.separated_of_width"),
     ("Intel.GemmAssembly", "IntelGpu.tlaXeF16_gemm_executed"),
     ("Intel.Staging", "IntelGpu.stageSlab_correct"),
     ("Intel.Mainloop", "IntelGpu.mainloop_correct"),
