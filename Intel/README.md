@@ -2841,6 +2841,17 @@ and hardware timing are not modeled.
 with their PR numbers and one-line results, and the stack range is updated to
 `#64-#166`. No Lean declarations change in this stage.
 
+## Stage 251: `sync.allwr` waits
+
+`Intel/TlaSyncAllwr.lean` decodes the eight `sync.allwr ($a,$b,...)` forms,
+records their scoreboard sets (`fmhaPrefill_syncAllwr_waits`), proves every
+set is nonempty, and that membership implies the wait predicate
+(`waitsOn_of_mem`). The dispatcher gains a `.syncAllwr` class whose step is
+the identity (`tlaStep?_syncAllwr`) and leaves memory untouched
+(`tlaStep?_syncAllwr_mem`), so every prior store stays visible across the
+wait. FMHA prefill coverage rises from 1923/1965 to **1931/1965 (98.3%)**;
+the remaining 34 are `math.exp` 33 and `math.inv`.
+
 ## Stage 250: plain `cmp`, `not` and the `bfn` mux
 
 The three remaining scalar singletons now decode and execute. The plain
@@ -3863,4 +3874,5 @@ lake build Intel
 247. Stage 247: FMHA prefill dump coverage.
 248. Stage 248: negated sources and `.v` immediates.
 249. Stage 249: the select instruction.
-250. Stage 250 (this PR): plain `cmp`, `not` and the `bfn` mux.
+250. Stage 250: plain `cmp`, `not` and the `bfn` mux.
+251. Stage 251 (this PR): `sync.allwr` waits.

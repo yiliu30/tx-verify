@@ -3,6 +3,7 @@ module
 
 public import Intel.TlaCmpGate
 public import Intel.TlaSel
+public import Intel.TlaSyncAllwr
 public import Intel.TlaBfnExec
 public import Intel.TlaLoadPhase
 public import Intel.TlaControlDecode
@@ -44,6 +45,7 @@ inductive TlaOp where
   | b2d (b : TlaBlock2d)
   | cmp (c : TlaCmp)
   | sel (s : TlaSel)
+  | syncAllwr (s : TlaSyncAllwr)
   | bfn (b : TlaBfn)
   | send (s : TlaSend)
   | sync
@@ -93,6 +95,9 @@ def classifyOp (i : TlaInstr) : TlaOp :=
   match parseTlaJmpInstr i with
   | some j => .jmp j
   | none =>
+  match parseTlaSyncAllwr i with
+  | some s => .syncAllwr s
+  | none =>
   match i with
   | .label _ => .label
   | .plain "sync.nop" _ => .sync
@@ -118,6 +123,7 @@ def tlaStep? (m : TlaFullMachine) (i : TlaInstr) : Option (TlaFullMachine × Tla
       some ({ m with state := { m.state with regs := b.step m.state.regs } }, .next)
   | .send s => some ({ m with log := tlaSendStep m.log s }, .next)
   | .sync => some (m, .next)
+  | .syncAllwr _ => some (m, .next)
   | .jmp j => some (m, .jump j.target)
   | .label => some (m, .next)
   | .other => none
@@ -166,6 +172,18 @@ theorem tlaStep?_send (m : TlaFullMachine) (i : TlaInstr) (s : TlaSend)
     (h : classifyOp i = .send s) :
     tlaStep? m i = some ({ m with log := tlaSendStep m.log s }, .next) := by
   simp [tlaStep?, h]
+
+theorem tlaStep?_syncAllwr (m : TlaFullMachine) (i : TlaInstr) (s : TlaSyncAllwr)
+    (h : classifyOp i = .syncAllwr s) :
+    tlaStep? m i = some (m, .next) := by
+  simp [tlaStep?, h]
+
+/-- A wait leaves the machine, including memory, untouched. -/
+theorem tlaStep?_syncAllwr_mem (m : TlaFullMachine) (i : TlaInstr) (s : TlaSyncAllwr)
+    (h : classifyOp i = .syncAllwr s) :
+    (tlaStep? m i).map (fun p => p.1.mem) = some m.mem := by
+  rw [tlaStep?_syncAllwr m i s h]
+  rfl
 
 theorem tlaStep?_sync (m : TlaFullMachine) (i : TlaInstr) (h : classifyOp i = .sync) :
     tlaStep? m i = some (m, .next) := by

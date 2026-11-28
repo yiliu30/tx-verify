@@ -3,6 +3,7 @@ module
 
 public import Intel.TlaCmpCond
 public import Intel.TlaSel
+public import Intel.TlaSyncAllwr
 public import Intel.TlaMovExec
 
 @[expose] public section
@@ -175,6 +176,7 @@ def decodedAll (i : TlaInstr) : Bool :=
     (parseTlaBlock2dInstr i).isSome || (parseTlaBlock2dPlain i).isSome ||
     (parseTlaBlock2dPlainStore i).isSome ||
     (parseTlaCmpInstr i).isSome || (parseTlaSelInstr i).isSome ||
+    (parseTlaSyncAllwr i).isSome ||
     (parseTlaJmpInstr i).isSome ||
     (parseTlaBfn i).isSome || (parseTlaSend i).isSome ||
     (match i with
