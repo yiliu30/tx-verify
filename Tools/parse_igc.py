@@ -23,6 +23,7 @@ public import Intel.Syntax
 
 {doc}namespace IntelGpu
 
+set_option maxRecDepth 1000000 in
 def {name} : Program :=
   {{ statements := [
 """
